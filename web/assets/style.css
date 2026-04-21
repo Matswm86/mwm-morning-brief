@@ -713,6 +713,127 @@ body {
 }
 .vix-chart { width: 100%; min-height: 260px; }
 
+/* ---- Trade Environment panel (Track B, 2026-04-21) ---- */
+.trade-guard-section {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--rule-soft);
+  padding: 22px 26px 18px;
+  margin: 0 0 36px;
+  box-shadow: var(--shadow-1);
+}
+.trade-guard-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.trade-guard-title { display: flex; gap: 12px; align-items: baseline; }
+.trade-guard-grid { display: flex; flex-direction: column; gap: 0; }
+.trade-guard-row {
+  display: grid;
+  grid-template-columns: 110px 110px 1fr 2fr;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--rule-soft);
+  font-size: 14px;
+}
+.trade-guard-row:last-child { border-bottom: none; }
+.trade-guard-head-row {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 6px 0;
+}
+.tg-strat {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.trade-guard-head-row .tg-strat,
+.trade-guard-head-row .tg-verdict,
+.trade-guard-head-row .tg-risk,
+.trade-guard-head-row .tg-concern {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.tg-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: #E5DECC;
+  color: var(--ink-2);
+  text-align: center;
+  min-width: 80px;
+}
+.tg-proceed { background: #DCE9DF; color: #2F7D52; }
+.tg-caution { background: #F2E6C6; color: #8E6E1A; }
+.tg-skip    { background: #EFD4D0; color: #962F2F; }
+.tg-risk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.tg-risk-num { min-width: 60px; }
+.tg-risk-bar {
+  display: inline-block;
+  height: 6px;
+  flex: 1;
+  background: var(--bg-soft);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.tg-risk-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--muted);
+  transition: width 0.3s ease;
+}
+.tg-risk-fill.tg-proceed { background: #4a8f5a; }
+.tg-risk-fill.tg-caution { background: #b88e3c; }
+.tg-risk-fill.tg-skip    { background: #b84a4a; }
+.tg-concern {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trade-guard-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule-soft);
+  font-size: 11px;
+  color: var(--muted);
+}
+@media (max-width: 720px) {
+  .trade-guard-row {
+    grid-template-columns: 90px 90px 1fr;
+  }
+  .trade-guard-row .tg-concern { grid-column: 1 / -1; opacity: 0.85; }
+  .trade-guard-head-row .tg-concern { display: none; }
+}
+
 /* ---- Print ---- */
 @media print {
   body { background: white; }

@@ -29,6 +29,7 @@ from fetchers import tech_ai as f_tech
 from fetchers import research as f_research
 from fetchers import consciousness as f_conscious
 from fetchers import system as f_system
+from fetchers import trade_guard_daily as f_trade_guard
 import strategy as strategy_picker
 import llm
 
@@ -127,6 +128,12 @@ def build(use_llm: bool = True) -> dict:
         calibration = {"status": "error", "n": 0, "error": str(e)}
     regime["calibration"] = calibration
 
+    try:
+        trade_guard = f_trade_guard.fetch()
+    except Exception as e:
+        log.exception("trade_guard_daily fetch failed")
+        trade_guard = {"status": "error", "error": str(e), "per_strategy": {}, "orb_handoff": {}}
+
     sections: dict[str, dict] = {}
     with ThreadPoolExecutor(max_workers=len(SECTIONS)) as pool:
         futures = {pool.submit(_run_section, k, lbl, mod, use_llm): k
@@ -143,6 +150,7 @@ def build(use_llm: bool = True) -> dict:
                 sections[k] = empty_section(status="err")
 
     brief = build_brief(regime=regime, strategy=strategy, sections=sections)
+    brief["trade_guard"] = trade_guard
     return brief
 
 

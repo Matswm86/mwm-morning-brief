@@ -86,6 +86,47 @@
     </div>
   </section>
 
+  <!-- Trade Environment (Track B reasoning tools) -->
+  <section class="trade-guard-section" id="trade-guard-section">
+    <div class="trade-guard-head">
+      <div class="trade-guard-title">
+        <span class="eyebrow">Trade Environment</span>
+        <span class="eyebrow-soft" id="tg-handoff-pill">handoff loading…</span>
+      </div>
+      <span class="eyebrow-soft" id="tg-source">deterministic · 05:30 UTC</span>
+    </div>
+    <div class="trade-guard-grid">
+      <div class="trade-guard-row trade-guard-head-row">
+        <span class="tg-strat">Strategy</span>
+        <span class="tg-verdict">Verdict</span>
+        <span class="tg-risk">Risk</span>
+        <span class="tg-concern">Top concern</span>
+      </div>
+      <article class="trade-guard-row" id="tg-row-liqsweep">
+        <span class="tg-strat">LiqSweep</span>
+        <span class="tg-verdict tg-badge" id="tg-verdict-liqsweep">—</span>
+        <span class="tg-risk">
+          <span class="tg-risk-num" id="tg-risk-liqsweep">—</span>
+          <span class="tg-risk-bar"><span class="tg-risk-fill" id="tg-bar-liqsweep" style="width:0%"></span></span>
+        </span>
+        <span class="tg-concern" id="tg-concern-liqsweep">—</span>
+      </article>
+      <article class="trade-guard-row" id="tg-row-orb">
+        <span class="tg-strat">ORB</span>
+        <span class="tg-verdict tg-badge" id="tg-verdict-orb">—</span>
+        <span class="tg-risk">
+          <span class="tg-risk-num" id="tg-risk-orb">—</span>
+          <span class="tg-risk-bar"><span class="tg-risk-fill" id="tg-bar-orb" style="width:0%"></span></span>
+        </span>
+        <span class="tg-concern" id="tg-concern-orb">—</span>
+      </article>
+    </div>
+    <div class="trade-guard-foot">
+      <span class="mono" id="tg-handoff-line">ORB handoff: —</span>
+      <span class="mono" id="tg-updated">—</span>
+    </div>
+  </section>
+
   <!-- Live MNQ chart -->
   <section class="chart-section">
     <div class="chart-head">
@@ -181,5 +222,6 @@
 <script src="assets/app.js" defer></script>
 <script src="assets/chart.js" defer></script>
 <script src="assets/regime.js" defer></script>
+<script src="assets/trade_guard.js" defer></script>
 </body>
 </html>

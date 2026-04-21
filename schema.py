@@ -30,6 +30,29 @@ Shape (morning_brief.v1):
       "lede": str,
       "bullets": [{"headline": str, "body": str, "url"?: str}]
     }, ...
+  },
+  "trade_guard": {                 # optional — added 2026-04-21 (Track B)
+    "date": str,
+    "per_strategy": {
+      "liqsweep|mrb|orb": {
+        "verdict": "PROCEED|CAUTION|SKIP|—",
+        "risk_score": int|null,
+        "severity": str,
+        "top_concern": str,
+        "alerts": [str],
+        "regime": str,
+      }
+    },
+    "orb_handoff": {
+      "status": "fresh|mid|stale|orphaned",
+      "verdict": "OK|WARN|CRITICAL|ERROR",
+      "age_h": float|null,
+      "price_drift_pct": float|null,
+      "next_action": str,
+    },
+    "generated_at": str,
+    "source": str,
+    "status": "ok|warn|err",
   }
 }
 """
