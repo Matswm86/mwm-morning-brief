@@ -1,0 +1,14 @@
+[Unit]
+Description=Rebuild morning brief after LDN market-detector fire (08:15 Europe/Oslo, Mon-Fri)
+
+[Timer]
+# mwm-market-detector-ldn.timer fires at 08:00 Europe/Oslo. Give it 15 min
+# to land latest_ldn.json + calibration refresh, then rebuild brief.json
+# so same-day LDN session tile appears without waiting until next 05:30 UTC.
+OnCalendar=Mon..Fri *-*-* 08:15:00 Europe/Oslo
+RandomizedDelaySec=60
+Persistent=false
+Unit=mwm-morning-brief.service
+
+[Install]
+WantedBy=timers.target

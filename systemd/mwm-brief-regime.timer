@@ -1,0 +1,13 @@
+[Unit]
+Description=Daily regime refresh (VIX + SPX SMAs + credit + tripwires) at 22:00 UTC
+
+[Timer]
+# Daily 22:00 UTC — after NY close, before Asia open. Same refresh for
+# brief.mwmai.no. Missed runs catch up via Persistent=true.
+OnCalendar=*-*-* 22:00:00 UTC
+RandomizedDelaySec=300
+Persistent=true
+Unit=mwm-brief-regime.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,15 @@
+[Unit]
+Description=MWM brief.mwmai.no regime monitor — daily VIX + trend + credit refresh
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/mats/services/morning-brief
+ExecStart=/usr/bin/python3 -m fetchers.regime_monitor
+ExecStartPost=/usr/bin/rsync -az web/regime.json mats@204.168.244.173:/var/www/brief/regime.json
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mwm-brief-regime
+TimeoutStartSec=120
+Nice=10

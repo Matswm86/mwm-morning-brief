@@ -1,0 +1,15 @@
+[Unit]
+Description=Rebuild morning brief after NY market-detector fire (15:00 Europe/Oslo, Mon-Fri)
+
+[Timer]
+# mwm-market-detector-ny.timer fires at 14:30 Europe/Oslo. Give it 30 min
+# to land latest_ny.json + calibration refresh, then rebuild brief.json
+# so NY session tile appears same-day (and LDN tile stays fresh into
+# NY hours).
+OnCalendar=Mon..Fri *-*-* 15:00:00 Europe/Oslo
+RandomizedDelaySec=60
+Persistent=false
+Unit=mwm-morning-brief.service
+
+[Install]
+WantedBy=timers.target

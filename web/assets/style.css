@@ -635,6 +635,84 @@ body {
   font-size: 0.80em; opacity: 0.60;
 }
 
+/* ---- Regime monitor ---- */
+.regime-section {
+  margin: 22px 0;
+  padding: 14px 16px 12px;
+  border: 1px solid rgba(59, 47, 47, 0.12);
+  border-radius: 10px;
+  background: #F9F5EC;
+}
+.regime-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.regime-title { display: flex; flex-direction: column; gap: 2px; }
+.regime-title .eyebrow-soft {
+  font-family: 'Fraunces', serif;
+  font-size: 1.15em; font-weight: 600; color: #3B2F2F;
+}
+.edge-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em; font-weight: 600;
+  padding: 4px 10px; border-radius: 4px;
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+.edge-badge[data-flag="green"]   { background: #E3F0E6; color: #2F7D52; }
+.edge-badge[data-flag="amber"]   { background: #FBEFD7; color: #A36A1A; }
+.edge-badge[data-flag="red"]     { background: #F7E0D9; color: #B43E28; }
+.edge-badge[data-flag="unknown"] { background: rgba(59,47,47,0.08); color: #6B4423; }
+
+.regime-grid {
+  display: grid; gap: 8px;
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 640px) {
+  .regime-grid { grid-template-columns: 1fr; }
+}
+.regime-row {
+  padding: 10px 12px;
+  border: 1px solid rgba(59,47,47,0.10);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.55);
+}
+.regime-row-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 4px;
+}
+.regime-row-head .k {
+  font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.08em;
+  color: #6B4423; font-weight: 600;
+}
+.regime-row-head .v {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.90em; font-weight: 500;
+  color: #3B2F2F;
+}
+.regime-row-body {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82em; color: #3B2F2F; opacity: 0.80;
+  line-height: 1.5;
+}
+.regime-row-body .flag-on  { color: #B43E28; font-weight: 600; }
+.regime-row-body .flag-off { color: #6B4423; opacity: 0.55; }
+
+.regime-rationale {
+  margin: 10px 0 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.80em; color: #3B2F2F; opacity: 0.70;
+  padding-left: 10px;
+  border-left: 2px solid rgba(59,47,47,0.15);
+}
+.vix-chart-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-top: 6px; margin-bottom: 8px;
+}
+.vix-chart-head .eyebrow-soft {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500; font-size: 0.90em;
+}
+.vix-chart { width: 100%; min-height: 260px; }
+
 /* ---- Print ---- */
 @media print {
   body { background: white; }

@@ -1,6 +1,7 @@
 # Runtime state (regenerated every build / bar refresh)
 web/brief.json
 web/bars_mnq.json
+web/regime.json
 logs/
 samples/
 

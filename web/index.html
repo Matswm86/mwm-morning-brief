@@ -94,8 +94,50 @@
     </div>
     <div id="mnq-chart" class="mnq-chart"></div>
     <div class="chart-foot">
-      <span class="mono" id="chart-source">Yahoo NQ=F · 5m · 15min delay</span>
+      <span class="mono" id="chart-source">TopstepX · MNQ · 5m</span>
       <span class="mono" id="chart-updated">—</span>
+    </div>
+  </section>
+
+  <!-- Long-term regime monitor -->
+  <section class="regime-section" id="regime-section">
+    <div class="regime-head">
+      <div class="regime-title">
+        <span class="eyebrow">Regime Monitor</span>
+        <span class="eyebrow-soft" id="regime-verdict">loading…</span>
+      </div>
+      <span class="edge-badge" id="edge-badge" data-flag="unknown">edge —</span>
+    </div>
+
+    <div class="regime-grid">
+      <article class="regime-row" id="row-trend">
+        <div class="regime-row-head"><span class="k">Trend</span><span class="v" id="trend-state">—</span></div>
+        <div class="regime-row-body" id="trend-body">&nbsp;</div>
+      </article>
+      <article class="regime-row" id="row-vol">
+        <div class="regime-row-head"><span class="k">Volatility</span><span class="v" id="vol-label">—</span></div>
+        <div class="regime-row-body" id="vol-body">&nbsp;</div>
+      </article>
+      <article class="regime-row" id="row-credit">
+        <div class="regime-row-head"><span class="k">Credit / Curve</span><span class="v" id="credit-label">—</span></div>
+        <div class="regime-row-body" id="credit-body">&nbsp;</div>
+      </article>
+      <article class="regime-row" id="row-tripwires">
+        <div class="regime-row-head"><span class="k">Tripwires</span><span class="v" id="tripwires-label">0 / 4</span></div>
+        <div class="regime-row-body" id="tripwires-body">&nbsp;</div>
+      </article>
+    </div>
+
+    <div class="regime-rationale" id="regime-rationale">&nbsp;</div>
+
+    <div class="vix-chart-head">
+      <span class="eyebrow">VIX · 2012 — today</span>
+      <span class="eyebrow-soft" id="vix-chart-subtitle">strategy-valid era shaded</span>
+    </div>
+    <div id="vix-chart" class="vix-chart"></div>
+    <div class="chart-foot">
+      <span class="mono">FRED VIXCLS · daily · bands at 12 / 20 / 30 / 50</span>
+      <span class="mono" id="regime-updated">—</span>
     </div>
   </section>
 
@@ -138,5 +180,6 @@
 <script src="assets/lightweight-charts.js" defer></script>
 <script src="assets/app.js" defer></script>
 <script src="assets/chart.js" defer></script>
+<script src="assets/regime.js" defer></script>
 </body>
 </html>
