@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Morning Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23C8553D'/%3E%3C/svg%3E">
+</head>
+<body>
+<div class="viewport">
+
+  <header class="masthead">
+    <div class="masthead-left">
+      <span class="mark" aria-hidden="true"></span>
+      <div class="titleblock">
+        <h1>Morning Brief</h1>
+        <p class="dateline" id="dateline">&nbsp;</p>
+      </div>
+    </div>
+    <div class="masthead-right">
+      <span class="pill" id="freshness">loading…</span>
+      <button class="refresh-btn" id="refresh" title="Refresh">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Hero: Regime + Strategy -->
+  <section class="hero" id="hero">
+    <div class="hero-label">
+      <span class="eyebrow">Today's Regime</span>
+      <span class="sep" aria-hidden="true">·</span>
+      <span class="eyebrow-soft" id="regime-session">Market Detector</span>
+    </div>
+
+    <div class="hero-session-pair" id="hero-session-pair" hidden></div>
+
+    <div class="hero-grid">
+      <article class="hero-card tier-card" id="tier-card">
+        <div class="hero-card-head">Tier</div>
+        <div class="tier-ring" id="tier-ring">
+          <span class="tier-letter" id="tier-letter">—</span>
+        </div>
+        <div class="tier-caption" id="tier-caption">awaiting open</div>
+      </article>
+
+      <article class="hero-card strategy-card" id="strategy-card">
+        <div class="hero-card-head">Strategy Today</div>
+        <div class="strategy-name" id="strategy-name">—</div>
+        <div class="strategy-sub" id="strategy-sub">&nbsp;</div>
+        <div class="strategy-why" id="strategy-why">&nbsp;</div>
+      </article>
+
+      <article class="hero-card contracts-card" id="contracts-card">
+        <div class="hero-card-head">Contract Ladder</div>
+        <div class="contract-row">
+          <span class="contract-num" id="contract-num">0</span>
+          <span class="contract-sym" id="contract-sym">MNQ</span>
+        </div>
+        <div class="contract-sub" id="contract-sub">stand down</div>
+      </article>
+    </div>
+
+    <div class="hero-strip" id="hero-strip">
+      <div class="hero-strip-item"><span class="k">Strategy code</span><span class="v" id="strat-code">—</span></div>
+      <div class="hero-strip-item"><span class="k">Volatility</span><span class="v" id="vol-state">—</span></div>
+      <div class="hero-strip-item"><span class="k">Direction bias</span><span class="v" id="dir-bias">—</span></div>
+      <div class="hero-strip-item"><span class="k">Signal age</span><span class="v" id="signal-age">—</span></div>
+    </div>
+
+    <div class="model-accuracy" id="model-accuracy">
+      <div class="accuracy-head">
+        <span class="eyebrow">Model accuracy</span>
+        <span class="eyebrow-soft" id="accuracy-n">—</span>
+      </div>
+      <div class="accuracy-grid">
+        <div class="accuracy-cell"><span class="k">Direction</span><span class="v" id="acc-direction">—</span></div>
+        <div class="accuracy-cell"><span class="k">Strategy</span><span class="v" id="acc-strategy">—</span></div>
+        <div class="accuracy-cell"><span class="k">Sim PnL</span><span class="v" id="acc-sim">—</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live MNQ chart -->
+  <section class="chart-section">
+    <div class="chart-head">
+      <span class="eyebrow">MNQ · live</span>
+      <span class="eyebrow-soft" id="chart-last">—</span>
+    </div>
+    <div id="mnq-chart" class="mnq-chart"></div>
+    <div class="chart-foot">
+      <span class="mono" id="chart-source">Yahoo NQ=F · 5m · 15min delay</span>
+      <span class="mono" id="chart-updated">—</span>
+    </div>
+  </section>
+
+  <!-- News grid -->
+  <main class="grid" id="grid">
+    <!-- cards injected here -->
+  </main>
+
+  <footer class="colophon">
+    <div class="colophon-left">
+      <span class="mono" id="schema-tag">morning_brief.v1</span>
+      <span class="sep" aria-hidden="true">·</span>
+      <span id="source-count">—</span>
+    </div>
+    <div class="colophon-right">
+      <span id="generated-at">—</span>
+    </div>
+  </footer>
+
+</div>
+
+<template id="card-template">
+  <article class="card" data-section="">
+    <header class="card-head">
+      <div class="card-title">
+        <span class="card-icon" aria-hidden="true"></span>
+        <h2></h2>
+      </div>
+      <span class="card-meta"></span>
+    </header>
+    <div class="card-lede"></div>
+    <ul class="card-bullets"></ul>
+    <footer class="card-foot">
+      <span class="card-source"></span>
+      <span class="card-time"></span>
+    </footer>
+  </article>
+</template>
+
+<script src="assets/lightweight-charts.js" defer></script>
+<script src="assets/app.js" defer></script>
+<script src="assets/chart.js" defer></script>
+</body>
+</html>

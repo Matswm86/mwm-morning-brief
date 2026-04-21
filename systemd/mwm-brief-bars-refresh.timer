@@ -1,0 +1,11 @@
+[Unit]
+Description=MWM brief.mwmai.no bars refresh — every 5 min Mon-Fri
+
+[Timer]
+# CME MNQ is 23×5 (Sun 17:00 ET → Fri 16:00 ET). Refresh every 5 min
+# during the weekday window; skip the Sat/Sun Globex gap.
+OnCalendar=Mon..Fri *-*-* *:00/5:00 Europe/Oslo
+Persistent=false
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=MWM-AI Morning Brief — build + deploy to brief.mwmai.no
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/mats/services/morning-brief
+ExecStart=/usr/bin/python3 /home/mats/services/morning-brief/builder.py
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mwm-morning-brief
+TimeoutStartSec=240
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,12 @@
+[Unit]
+Description=MWM brief.mwmai.no MNQ bars refresh (5-min during market hours)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/mats/services/morning-brief/bar_refresh.sh
+StandardOutput=journal
+StandardError=journal
+Nice=10
+TimeoutStartSec=3min

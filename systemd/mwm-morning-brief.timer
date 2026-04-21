@@ -1,0 +1,11 @@
+[Unit]
+Description=Fire morning brief daily at 05:30 UTC (07:30 Oslo CEST / 06:30 CET)
+
+[Timer]
+OnCalendar=*-*-* 05:30:00 UTC
+RandomizedDelaySec=120
+Persistent=true
+Unit=mwm-morning-brief.service
+
+[Install]
+WantedBy=timers.target
