@@ -26,11 +26,18 @@ except Exception as e:  # pragma: no cover
     logging.getLogger("morning-brief.llm").warning("llm_backends unavailable: %s", e)
 
 try:
-    from memento import CompressionResult, compress_with_judge, load_rubric  # type: ignore
+    from memento import (  # type: ignore
+        MORNING_BRIEF_CHECKS,
+        CompressionResult,
+        compress_with_judge,
+        load_rubric,
+    )
     _RUBRIC = load_rubric("morning_brief")
+    _CHECKS = list(MORNING_BRIEF_CHECKS)
 except Exception as e:  # pragma: no cover
     compress_with_judge = None  # type: ignore
     _RUBRIC = None
+    _CHECKS = None
     logging.getLogger("morning-brief.llm").warning("memento unavailable: %s", e)
 
 log = logging.getLogger("morning-brief.llm")
@@ -43,8 +50,11 @@ SUMMARY_SYSTEM = (
     "crisp and factual) and 3–5 bullet points. Each bullet has a short "
     "headline (≤6 words) and a body (≤22 words). Prefer numbers, names, and "
     "concrete facts over adjectives. Never invent items not in the input. "
+    "Every bullet MUST include an integer `source_idx` equal to the 1-based "
+    "number of the input item it was derived from. If a bullet fuses two "
+    "items, pick the most load-bearing item's number. "
     "Reply with JSON only, matching this schema exactly: "
-    '{"lede": "...", "bullets": [{"headline": "...", "body": "...", "url": "..." }]}'
+    '{"lede": "...", "bullets": [{"headline": "...", "body": "...", "url": "...", "source_idx": 1}]}'
 )
 
 
@@ -52,7 +62,9 @@ def summarise(section_label: str, items: list[dict], max_bullets: int = 5) -> di
     """Turn raw fetcher items into {lede, bullets}. Fail-open to raw items.
 
     Path A (default): core/memento compress-with-judge loop, up to 2
-    refinements against the morning_brief rubric.
+    refinements against the morning_brief rubric. Deterministic checks
+    (URL provenance, source_idx, bullet/lede length) run BEFORE the LLM
+    judge and short-circuit failed iterations with targeted feedback.
     Path B (BRIEF_MEMENTO=0, or memento import failed): legacy single-shot.
     """
     if not items:
@@ -63,7 +75,7 @@ def summarise(section_label: str, items: list[dict], max_bullets: int = 5) -> di
     user_prompt = _render_prompt(section_label, items, max_bullets)
 
     if USE_MEMENTO and compress_with_judge is not None and _RUBRIC is not None:
-        text = _run_memento(section_label, user_prompt)
+        text = _run_memento(section_label, user_prompt, num_items=len(items[:30]))
     else:
         text = _run_single_shot(user_prompt)
 
@@ -72,7 +84,7 @@ def summarise(section_label: str, items: list[dict], max_bullets: int = 5) -> di
     return _parse_brief_json(text, items, max_bullets)
 
 
-def _run_memento(section_label: str, user_prompt: str) -> str:
+def _run_memento(section_label: str, user_prompt: str, *, num_items: int) -> str:
     """Iterative compress-with-judge loop. Returns best candidate text."""
 
     def compressor(feedback_suffix: str):
@@ -104,15 +116,21 @@ def _run_memento(section_label: str, user_prompt: str) -> str:
             compressor_fn=compressor,
             llm_fn=judge_llm,
             max_iterations=2,
+            checks=_CHECKS,
+            check_meta={"num_items": num_items},
         )
     except Exception as e:
         log.warning("%s memento loop failed, falling back single-shot: %s", section_label, e)
         return _run_single_shot(user_prompt)
 
+    checks_info = ""
+    if result.check_failures:
+        checks_info = f" checks_failed={len(result.check_failures)}"
     log.info(
-        "%s memento: accepted=%s iters=%d score=%d/%d backend=%s",
+        "%s memento: accepted=%s iters=%d score=%d/%d backend=%s%s",
         section_label, result.accepted, result.iterations,
         result.best_score, _RUBRIC.max_total, result.compressor_backend,
+        checks_info,
     )
     return result.text
 
@@ -151,6 +169,12 @@ def _parse_brief_json(text: str, items: list[dict], max_bullets: int) -> dict:
         out = {"headline": hd, "body": bd}
         if url.startswith("http"):
             out["url"] = url
+        src_idx = b.get("source_idx")
+        try:
+            if src_idx is not None and 1 <= int(src_idx) <= len(items):
+                out["source_idx"] = int(src_idx)
+        except (TypeError, ValueError):
+            pass
         cleaned.append(out)
     lede = str(data.get("lede", "")).strip()[:240]
     return {"lede": lede, "bullets": cleaned}

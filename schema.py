@@ -28,7 +28,7 @@ Shape (morning_brief.v1):
       "status": "ok|warn|err",
       "generated_at": str,
       "lede": str,
-      "bullets": [{"headline": str, "body": str, "url"?: str}]
+      "bullets": [{"headline": str, "body": str, "url"?: str, "source_idx"?: int}]
     }, ...
   },
   "trade_guard": {                 # optional — added 2026-04-21 (Track B)
