@@ -30,6 +30,8 @@ from fetchers import research as f_research
 from fetchers import consciousness as f_conscious
 from fetchers import system as f_system
 from fetchers import trade_guard_daily as f_trade_guard
+from fetchers import trade_tracker as f_trade_tracker
+from fetchers import backtest_stats as f_backtest_stats
 import strategy as strategy_picker
 import llm
 
@@ -134,6 +136,18 @@ def build(use_llm: bool = True) -> dict:
         log.exception("trade_guard_daily fetch failed")
         trade_guard = {"status": "error", "error": str(e), "per_strategy": {}, "orb_handoff": {}}
 
+    try:
+        trade_tracker = f_trade_tracker.fetch()
+    except Exception as e:
+        log.exception("trade_tracker fetch failed")
+        trade_tracker = {"status": "error", "error": str(e)}
+
+    try:
+        backtest_stats = f_backtest_stats.fetch()
+    except Exception as e:
+        log.exception("backtest_stats fetch failed")
+        backtest_stats = {"status": "error", "error": str(e)}
+
     sections: dict[str, dict] = {}
     with ThreadPoolExecutor(max_workers=len(SECTIONS)) as pool:
         futures = {pool.submit(_run_section, k, lbl, mod, use_llm): k
@@ -151,6 +165,8 @@ def build(use_llm: bool = True) -> dict:
 
     brief = build_brief(regime=regime, strategy=strategy, sections=sections)
     brief["trade_guard"] = trade_guard
+    brief["trade_tracker"] = trade_tracker
+    brief["backtest_stats"] = backtest_stats
     return brief
 
 
