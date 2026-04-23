@@ -166,6 +166,27 @@
     </div>
   </section>
 
+  <!-- Cell Activity (per-cell breakdown of the 7 live practice services) -->
+  <section class="cell-section" id="cell-section" hidden>
+    <div class="cell-head">
+      <div class="cell-title">
+        <span class="eyebrow">Cell Activity</span>
+        <span class="eyebrow-soft" id="cell-summary">loading…</span>
+      </div>
+      <span class="eyebrow-soft" id="cell-sync">—</span>
+    </div>
+    <div class="cell-grid" id="cell-grid">
+      <div class="cell-row cell-head-row">
+        <span class="cell-col-name">Cell</span>
+        <span class="cell-col-spec">Spec</span>
+        <span class="cell-col-window">Window</span>
+        <span class="cell-col-counts">Today</span>
+        <span class="cell-col-status">Status</span>
+      </div>
+      <!-- rows injected by per_cell.js -->
+    </div>
+  </section>
+
   <!-- Live MNQ chart -->
   <section class="chart-section">
     <div class="chart-head">
@@ -365,5 +386,6 @@
 <script src="assets/trade_guard.js" defer></script>
 <script src="assets/tracker.js" defer></script>
 <script src="assets/backtest_stats.js" defer></script>
+<script src="assets/per_cell.js" defer></script>
 </body>
 </html>

@@ -1,0 +1,12 @@
+[Unit]
+Description=MWM brief — pull JSONL event logs from VPS practice services
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/mats/services/morning-brief/scripts/sync_vps_logs.sh
+StandardOutput=journal
+StandardError=journal
+Nice=15
+TimeoutStartSec=2min

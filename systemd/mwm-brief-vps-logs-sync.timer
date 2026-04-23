@@ -1,0 +1,10 @@
+[Unit]
+Description=MWM brief — rsync VPS practice-service logs every 5 min
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Persistent=false
+
+[Install]
+WantedBy=timers.target

@@ -32,6 +32,7 @@ from fetchers import system as f_system
 from fetchers import trade_guard_daily as f_trade_guard
 from fetchers import trade_tracker as f_trade_tracker
 from fetchers import backtest_stats as f_backtest_stats
+from fetchers import per_cell_tracker as f_per_cell
 import strategy as strategy_picker
 import llm
 
@@ -148,6 +149,12 @@ def build(use_llm: bool = True) -> dict:
         log.exception("backtest_stats fetch failed")
         backtest_stats = {"status": "error", "error": str(e)}
 
+    try:
+        cell_activity = f_per_cell.fetch()
+    except Exception as e:
+        log.exception("per_cell_tracker fetch failed")
+        cell_activity = {"status": "error", "error": str(e), "cells": [], "summary": {}}
+
     sections: dict[str, dict] = {}
     with ThreadPoolExecutor(max_workers=len(SECTIONS)) as pool:
         futures = {pool.submit(_run_section, k, lbl, mod, use_llm): k
@@ -167,6 +174,7 @@ def build(use_llm: bool = True) -> dict:
     brief["trade_guard"] = trade_guard
     brief["trade_tracker"] = trade_tracker
     brief["backtest_stats"] = backtest_stats
+    brief["cell_activity"] = cell_activity
     return brief
 
 
