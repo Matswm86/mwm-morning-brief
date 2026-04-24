@@ -1,4 +1,4 @@
-"""System health fetcher — docker + systemd user units + CIP + diff-review tail."""
+"""System health fetcher — docker + systemd user units + CIP + diff-review tail + 24h git commit rollup."""
 from __future__ import annotations
 import logging
 import re
@@ -8,6 +8,22 @@ from pathlib import Path
 
 from config import MWM_ROOT, CIP_DIR, INBOX_DIR
 from http_util import get_text
+
+# Repos scanned for the "commits last 24h" tracker. Each is either an
+# absolute path or relative to MWM_ROOT. Non-existent paths are skipped
+# silently so adding/removing a project doesn't break the builder.
+GIT_REPOS: list[tuple[str, Path]] = [
+    ("mwm-trading",     MWM_ROOT / "projects" / "mwm-trading"),
+    ("mwm-creative",    MWM_ROOT / "projects" / "mwm-creative"),
+    ("mwm-saas",        MWM_ROOT / "projects" / "mwm-saas"),
+    ("mwm-sentinel",    MWM_ROOT / "projects" / "mwm-sentinel"),
+    ("mwm-lab",         MWM_ROOT / "projects" / "mwm-lab"),
+    ("mwm-infra",       MWM_ROOT / "mwm-infrastructure"),
+    ("morning-brief",   Path.home() / "services" / "morning-brief"),
+    ("oso-sync",        MWM_ROOT / "projects" / "oso-sync"),
+    ("vibeos",          MWM_ROOT / "projects" / "vibeos"),
+    ("knowledge-viz",   MWM_ROOT / "projects" / "knowledge-viz"),
+]
 
 log = logging.getLogger("morning-brief.system")
 
@@ -108,7 +124,48 @@ def _cip_tail() -> list[dict]:
     return out
 
 
-def _diff_review_tail(cap: int = 2) -> list[dict]:
+def _github_commits_24h() -> dict | None:
+    """Rollup of commits landed in the last 24h across known mwm-* repos.
+
+    Uses local git log (not GitHub API) — every repo is checked out
+    locally and nightly sync pushes to origin, so the local count is
+    the authoritative commit count. Repos not on disk are skipped.
+    """
+    totals: list[tuple[str, int]] = []
+    grand = 0
+    for name, path in GIT_REPOS:
+        if not (path / ".git").exists():
+            continue
+        try:
+            out = subprocess.check_output(
+                ["git", "-C", str(path), "log", "--since=24 hours ago",
+                 "--pretty=format:%h"],
+                text=True, timeout=5, stderr=subprocess.DEVNULL,
+            )
+        except Exception as e:
+            log.debug("git log %s failed: %s", name, e)
+            continue
+        n = sum(1 for ln in out.splitlines() if ln.strip())
+        if n > 0:
+            totals.append((name, n))
+            grand += n
+    if not totals and grand == 0:
+        return {
+            "headline": "GitHub 24h: 0 commits",
+            "body": "no repo activity in the last 24h",
+            "source": "git",
+        }
+    # Sort busiest first, cap body length
+    totals.sort(key=lambda x: -x[1])
+    repo_list = ", ".join(f"{n} {c}" for n, c in totals)
+    return {
+        "headline": f"GitHub 24h: {grand} commits across {len(totals)} repos",
+        "body": repo_list[:260],
+        "source": "git",
+    }
+
+
+def _diff_review_tail(cap: int = 1) -> list[dict]:
     """Pick up the latest daily-diff-review note(s) — nightly codebase audit."""
     if not INBOX_DIR.exists():
         return []
@@ -150,11 +207,15 @@ def _summarise_items(items: list[dict], label: str) -> dict:
 
 
 def fetch() -> dict:
-    # Ordered so the first 5 bullets (raw mode) always carry the signal the
-    # user cares about most: nightly diff review, then CIP, then rollups.
+    # Ordered so the first 5 bullets (raw-mode cap) carry the signals the
+    # user cares about most: github activity, latest diff review, CIP tail,
+    # then infra rollups.
     items: list[dict] = []
-    items.extend(_diff_review_tail())
-    items.extend(_cip_tail()[:2])
+    gh = _github_commits_24h()
+    if gh:
+        items.append(gh)
+    items.extend(_diff_review_tail())  # cap=1 default
+    items.extend(_cip_tail()[:1])
     docker = _docker_ps()
     if docker:
         items.append(_summarise_items(docker, "Containers"))

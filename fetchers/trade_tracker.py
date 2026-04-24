@@ -1,108 +1,55 @@
-"""trade_tracker — Live trade count from TopstepX practice account.
+"""trade_tracker — Live trade count, sourced from engine event logs.
 
-Fetches today's and this week's completed trades.
-Cached on disk (4h TTL) — brief builds hourly-ish, no need to hammer the API.
+Aligns with cell_activity by counting the SAME events per_cell_tracker
+counts: entry_market_placed + entry_limit_placed emitted by the live
+practice runners, mirrored to ~/MWM-AI/data/vps_logs/<svc>/ via the
+mwm-brief-vps-logs-sync.timer (5 min cadence).
+
+Previously this hit TopstepX /api/Trade/search for *closed* trades,
+which caused misalignment: cell_activity would show '2 entries today'
+while Live Trades showed 0 because the positions were still open. Now
+both panels share a single source of truth.
+
+Wins/losses are not derived here — SDK position_closed.pnl is null in
+the mirrored events, so win rate lives in the backtest_stats card
+(reference numbers) not on the live tracker.
 """
 from __future__ import annotations
 
 import json
 import logging
-import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-
-import requests
 
 from config import MWM_ROOT
 
 log = logging.getLogger("morning-brief.trade_tracker")
 
-API_BASE = "https://api.topstepx.com"
+VPS_LOGS = MWM_ROOT / "data" / "vps_logs"
 
-# Credentials loaded from trading project .env (rotated regularly)
-_TRADING_ENV = MWM_ROOT / "projects" / "mwm-trading" / ".env"
-
-
-def _load_trading_env() -> dict[str, str]:
-    env: dict[str, str] = {}
-    if not _TRADING_ENV.exists():
-        return env
-    for line in _TRADING_ENV.read_text().splitlines():
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            k, _, v = line.partition("=")
-            env[k.strip()] = v.strip()
-    return env
+# Must match fetchers/per_cell_tracker.ENTRY_TYPES for alignment.
+ENTRY_TYPES = {"entry_market_placed", "entry_limit_placed"}
 
 
-_TRADING_ENV_CACHE: dict[str, str] = {}
-
-
-def _creds() -> tuple[str, str, int]:
-    global _TRADING_ENV_CACHE
-    if not _TRADING_ENV_CACHE:
-        _TRADING_ENV_CACHE = _load_trading_env()
-    env = _TRADING_ENV_CACHE
-    api_key = env.get("PROJECT_X_API_KEY", "")
-    username = env.get("PROJECT_X_USERNAME", "matswm86")
-    account_id = int(env.get("PROJECT_X_ACCOUNT_ID", "19907662"))
-    return api_key, username, account_id
-
-CACHE_DIR = MWM_ROOT / "data" / "trade_tracker_cache"
-CACHE_TTL_SEC = 4 * 3600
-
-_session: dict = {"token": None, "expires": 0.0}
-
-
-def _authenticate() -> str | None:
-    if _session["token"] and time.time() < _session["expires"]:
-        return _session["token"]
-    api_key, username, _ = _creds()
-    if not api_key:
-        log.warning("PROJECT_X_API_KEY not found in trading .env")
-        return None
+def _read_jsonl(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    out: list[dict] = []
     try:
-        r = requests.post(
-            f"{API_BASE}/api/Auth/loginKey",
-            json={"userName": username, "apiKey": api_key},
-            headers={"Content-Type": "application/json"},
-            timeout=15,
-        )
-        r.raise_for_status()
-        data = r.json()
-        if not data.get("success", True) is False and data.get("token"):
-            pass
-        token = data.get("token")
-        if not token:
-            log.warning("Auth returned no token: errorCode=%s", data.get("errorCode"))
-            return None
-        _session["token"] = token
-        _session["expires"] = time.time() + 3500
-        return token
+        for line in path.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                out.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
     except Exception as exc:
-        log.warning("TopstepX auth failed: %s", exc)
-        return None
+        log.warning("read failed %s: %s", path, exc)
+    return out
 
 
-def _post(endpoint: str, payload: dict) -> dict:
-    token = _authenticate()
-    if not token:
-        return {"error": "auth failed"}
-    try:
-        r = requests.post(
-            f"{API_BASE}{endpoint}",
-            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-            json=payload,
-            timeout=15,
-        )
-        r.raise_for_status()
-        return r.json()
-    except Exception as exc:
-        log.warning("TopstepX %s failed: %s", endpoint, exc)
-        return {"error": str(exc)}
-
-
-def _parse_dt(ts: str | None) -> datetime | None:
+def _parse_utc(ts: str | None) -> datetime | None:
     if not ts:
         return None
     try:
@@ -110,94 +57,56 @@ def _parse_dt(ts: str | None) -> datetime | None:
         dt = datetime.fromisoformat(s)
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
-        return dt
+        return dt.astimezone(timezone.utc)
     except Exception:
         return None
 
 
-def _count(trades: list[dict], start: datetime) -> dict:
-    total = wins = losses = 0
-    for t in trades:
-        ts = _parse_dt(
-            t.get("timestamp") or t.get("closedAt") or t.get("createdAt")
-        )
-        if not ts or ts < start:
-            continue
-        total += 1
-        pnl = 0.0
-        try:
-            pnl = float(t.get("pnl") or t.get("realizedPnl") or 0)
-        except (TypeError, ValueError):
-            pass
-        if pnl >= 0:
-            wins += 1
-        else:
-            losses += 1
-    return {"total": total, "wins": wins, "losses": losses}
+def _count_entries(since_utc: datetime) -> int:
+    if not VPS_LOGS.exists():
+        return 0
+    now = datetime.now(timezone.utc)
+    # Glob today + each day back to since_utc (inclusive) across all services
+    total = 0
+    day = since_utc.date()
+    end_day = now.date()
+    service_dirs = [p for p in VPS_LOGS.iterdir() if p.is_dir()]
+    while day <= end_day:
+        stamp = day.isoformat()
+        for svc in service_dirs:
+            for ev in _read_jsonl(svc / f"events_{stamp}.jsonl"):
+                if ev.get("type") not in ENTRY_TYPES:
+                    continue
+                ts = _parse_utc(ev.get("ts_utc"))
+                if ts is None or ts < since_utc:
+                    continue
+                total += 1
+        day += timedelta(days=1)
+    return total
 
 
-def _build() -> dict:
+def fetch() -> dict:
     now = datetime.now(timezone.utc)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     week_start = today_start - timedelta(days=now.weekday())
 
-    _, _, account_id = _creds()
-    data = _post("/api/Trade/search", {"accountId": account_id})
-    if "error" in data:
-        return {
-            "daily_trades": None, "daily_wins": None, "daily_losses": None,
-            "weekly_trades": None, "weekly_wins": None, "weekly_losses": None,
-            "generated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "status": "error",
-            "error": data["error"],
-        }
-
-    if isinstance(data, dict) and not data.get("success", True):
-        return {
-            "daily_trades": 0, "daily_wins": 0, "daily_losses": 0,
-            "weekly_trades": 0, "weekly_wins": 0, "weekly_losses": 0,
-            "generated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "status": "ok",
-        }
-    trades = data if isinstance(data, list) else data.get("trades", data.get("items", []))
-    trades = [t for t in trades if isinstance(t, dict)]
-
-    daily = _count(trades, today_start)
-    weekly = _count(trades, week_start)
+    daily = _count_entries(today_start)
+    weekly = _count_entries(week_start)
 
     return {
-        "daily_trades": daily["total"],
-        "daily_wins": daily["wins"],
-        "daily_losses": daily["losses"],
-        "weekly_trades": weekly["total"],
-        "weekly_wins": weekly["wins"],
-        "weekly_losses": weekly["losses"],
+        "daily_trades": daily,
+        "daily_wins": None,
+        "daily_losses": None,
+        "weekly_trades": weekly,
+        "weekly_wins": None,
+        "weekly_losses": None,
         "generated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "status": "ok",
+        "source": "engine_events",
     }
-
-
-def fetch() -> dict:
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    cache = CACHE_DIR / "latest.json"
-
-    if cache.exists():
-        try:
-            if time.time() - cache.stat().st_mtime < CACHE_TTL_SEC:
-                return json.loads(cache.read_text())
-        except Exception:
-            pass
-
-    block = _build()
-    try:
-        cache.write_text(json.dumps(block, ensure_ascii=False, indent=2))
-    except Exception as exc:
-        log.warning("trade_tracker cache write failed: %s", exc)
-    return block
 
 
 if __name__ == "__main__":
     import sys
     logging.basicConfig(level=logging.INFO)
-    result = fetch()
-    print(json.dumps(result, indent=2))
+    print(json.dumps(fetch(), indent=2))
