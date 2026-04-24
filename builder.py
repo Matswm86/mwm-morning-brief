@@ -33,6 +33,7 @@ from fetchers import trade_guard_daily as f_trade_guard
 from fetchers import trade_tracker as f_trade_tracker
 from fetchers import backtest_stats as f_backtest_stats
 from fetchers import per_cell_tracker as f_per_cell
+from fetchers import selfcalib as f_selfcalib
 import strategy as strategy_picker
 import llm
 
@@ -155,6 +156,12 @@ def build(use_llm: bool = True) -> dict:
         log.exception("per_cell_tracker fetch failed")
         cell_activity = {"status": "error", "error": str(e), "cells": [], "summary": {}}
 
+    try:
+        selfcalib = f_selfcalib.fetch()
+    except Exception as e:
+        log.exception("selfcalib fetch failed")
+        selfcalib = {"status": f"err:{e.__class__.__name__}", "dimensions": []}
+
     sections: dict[str, dict] = {}
     with ThreadPoolExecutor(max_workers=len(SECTIONS)) as pool:
         futures = {pool.submit(_run_section, k, lbl, mod, use_llm): k
@@ -175,6 +182,7 @@ def build(use_llm: bool = True) -> dict:
     brief["trade_tracker"] = trade_tracker
     brief["backtest_stats"] = backtest_stats
     brief["cell_activity"] = cell_activity
+    brief["_selfcalib"] = selfcalib  # kept on brief for diagnostics; web reads /selfcalib.json
     return brief
 
 
@@ -204,6 +212,17 @@ def main() -> int:
         return 1
 
     log.info("brief written: %s", BRIEF_JSON)
+
+    # Selfcalib bar writes to its own artifact so JS can fetch it
+    # independently of the heavier brief.json.
+    sc = brief.get("_selfcalib") or {}
+    if sc.get("dimensions"):
+        try:
+            atomic_write(WEB_DIR / "selfcalib.json", sc)
+            log.info("selfcalib written: agg=%s  dims=%d",
+                     sc.get("aggregate_pct"), len(sc["dimensions"]))
+        except Exception:
+            log.error("selfcalib atomic_write failed:\n%s", traceback.format_exc())
 
     if VPS_TARGET and not args.no_deploy:
         try:
