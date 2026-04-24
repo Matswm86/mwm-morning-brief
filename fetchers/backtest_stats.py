@@ -1,8 +1,9 @@
 """backtest_stats — Strategy performance from actual backtest JSON files.
 
-Both strategies normalized to a $50k TopstepX account / 2ct MNQ for
-apples-to-apples comparison. ORB backtest was run at 5ct/$1M, so P&L
-and risk figures are scaled down by factor 0.4 (2/5).
+Both strategies normalised to a $50k TopstepX account / 2ct MNQ reference.
+LiqSweep v10 was run directly at 2ct/$50k — no scaling.
+ORBaron locked config was run at 2ct/$1M — dollar amounts are identical since
+contract count is the same; only initial_capital differs (irrelevant for P&L/DD).
 """
 from __future__ import annotations
 
@@ -18,9 +19,15 @@ log = logging.getLogger("morning-brief.backtest_stats")
 LIQSWEEP_FILE = (
     MWM_ROOT / "data/backtest/results/liqsweep_v10/v10_arm12_confirm_summary.json"
 )
-ORB_FILE = (
-    MWM_ROOT
-    / "data/backtest/results/orb_layered/layer3_bucket945_orb110_tueoff_summary.json"
+# ORBaron RTH 1m — locked config (Mon+Tue OFF, bk_dist=1.0, tp=3.0)
+ORB_CONFIG_FILE = (
+    MWM_ROOT / "data/backtest/results/orbaron/locked/config_locked.json"
+)
+ORB_PARITY_FILE = (
+    MWM_ROOT / "data/backtest/results/orbaron/parity_report.json"
+)
+ORB_DETAIL_FILE = (
+    MWM_ROOT / "data/backtest/results/orbaron/locked/summary_1y.json"
 )
 
 REF_CAPITAL = 50_000.0
@@ -84,46 +91,100 @@ def _liqsweep() -> dict:
 
 def _orb() -> dict:
     try:
-        raw = json.loads(ORB_FILE.read_text())
+        cfg = json.loads(ORB_CONFIG_FILE.read_text())
+        parity = json.loads(ORB_PARITY_FILE.read_text())
+        detail = json.loads(ORB_DETAIL_FILE.read_text())
     except Exception as exc:
-        log.warning("ORB file missing: %s", exc)
+        log.warning("ORBaron locked files missing: %s", exc)
         return {"status": "error"}
 
-    bt_contracts = raw.get("contracts", 5)
-    bt_capital = raw.get("initial_capital", 1_000_000.0)
-    start = raw.get("period_start", "2025-02-01")
-    end = raw.get("period_end", "2026-02-01")
+    # _summary_1y_2ct is the canonical locked-config result (106 trades, Mon+Tue OFF)
+    s = cfg["_summary_1y_2ct"]
+    start, end = parity["period"]
     months = _months_between(start, end)
 
-    # Normalize 5ct/$1M → 2ct/$50k
-    scale = REF_CONTRACTS / bt_contracts
-    total_pnl = raw["total_pnl_usd"] * scale
-    avg_loss = abs(raw["avg_loss_usd"]) * scale
-    max_dd = raw["max_drawdown_usd"] * scale
-    trades = raw["trades"]
+    total_pnl = s["total_pnl_usd"]
+    max_dd = s["max_drawdown_usd"]
+    trades = s["trades"]
+    # avg_loss from the 1y detail run (same 2ct setup, negligible config drift)
+    avg_loss = abs(detail.get("avg_loss_usd", -201.0))
 
     monthly_usd = total_pnl / months
-    yearly_usd = total_pnl  # 1-year backtest
 
     return {
         "status": "ok",
-        "label": "ORB",
+        "label": "ORB RT",
         "period": f"{start[:4]}–{end[:4]} (1y)",
         "total_trades": trades,
-        "win_rate_pct": round(raw["win_rate_pct"], 1),
-        "profit_factor": round(raw["profit_factor"], 2),
+        "win_rate_pct": round(s["win_rate_pct"], 1),
+        "profit_factor": round(s["profit_factor"], 2),
         "max_dd_pct": round(max_dd / REF_CAPITAL * 100, 1),
         "risk_per_trade_usd": round(avg_loss),
         "risk_per_trade_pct": round(avg_loss / REF_CAPITAL * 100, 2),
         "monthly_avg_usd": round(monthly_usd),
-        "monthly_avg_pct": round(monthly_usd / REF_CAPITAL * 100, 2),
+        "monthly_avg_pct": round(monthly_usd / REF_CAPITAL * 100, 1),
         "monthly_avg_trades": round(trades / months, 1),
-        "yearly_avg_usd": round(yearly_usd),
-        "yearly_avg_pct": round(yearly_usd / REF_CAPITAL * 100, 1),
+        "yearly_avg_usd": round(total_pnl),
+        "yearly_avg_pct": round(total_pnl / REF_CAPITAL * 100, 1),
         "yearly_avg_trades": trades,
         "ref_capital": int(REF_CAPITAL),
         "ref_contracts": REF_CONTRACTS,
-        "source": f"NQ 1m · 1y regime-filtered · ${int(REF_CAPITAL/1000)}k ref",
+        "source": f"NQ 1m · 1y locked · ${int(REF_CAPITAL/1000)}k ref · Mon+Tue OFF",
+    }
+
+
+# ORB BR (simple-breakout) — MGC Asia 02:00 Oslo, 5m, best cell from the family
+ORB_BR_CONFIG_FILE = (
+    MWM_ROOT / "projects/mwm-trading/deploy/configs/orbaron-mgc-asia-practice.json"
+)
+
+
+def _orb_br() -> dict:
+    try:
+        cfg = json.loads(ORB_BR_CONFIG_FILE.read_text())
+    except Exception as exc:
+        log.warning("ORB BR config missing: %s", exc)
+        return {"status": "error"}
+
+    s = cfg["_summary_1y_2ct"]
+    start, end = "2025-02-17", "2026-02-17"
+    months = _months_between(start, end)
+
+    total_pnl = s["total_pnl_usd"]
+    max_dd = s["max_drawdown_usd"]
+    trades = s["trades"]
+
+    # Derive avg_loss from PF + trade counts (no per-trade file in deploy config)
+    wins = round(trades * s["win_rate_pct"] / 100)
+    losses = trades - wins
+    if losses > 0:
+        # total_loss = total_pnl / (PF - 1) × (1/PF) … simpler: solve PF equation
+        total_loss = total_pnl / (s["profit_factor"] - 1)
+        avg_loss = total_loss / losses
+    else:
+        avg_loss = 0.0
+
+    monthly_usd = total_pnl / months
+
+    return {
+        "status": "ok",
+        "label": "ORB BR",
+        "period": f"{start[:4]}–{end[:4]} (1y)",
+        "total_trades": trades,
+        "win_rate_pct": round(s["win_rate_pct"], 1),
+        "profit_factor": round(s["profit_factor"], 2),
+        "max_dd_pct": round(max_dd / REF_CAPITAL * 100, 1),
+        "risk_per_trade_usd": round(avg_loss),
+        "risk_per_trade_pct": round(avg_loss / REF_CAPITAL * 100, 2),
+        "monthly_avg_usd": round(monthly_usd),
+        "monthly_avg_pct": round(monthly_usd / REF_CAPITAL * 100, 1),
+        "monthly_avg_trades": round(trades / months, 1),
+        "yearly_avg_usd": round(total_pnl),
+        "yearly_avg_pct": round(total_pnl / REF_CAPITAL * 100, 1),
+        "yearly_avg_trades": trades,
+        "ref_capital": int(REF_CAPITAL),
+        "ref_contracts": REF_CONTRACTS,
+        "source": f"MGC 5m · 1y locked · ${int(REF_CAPITAL/1000)}k ref · Asia OR Oslo 02:00",
     }
 
 
@@ -131,6 +192,7 @@ def fetch() -> dict:
     return {
         "liqsweep": _liqsweep(),
         "orb": _orb(),
+        "orb_br": _orb_br(),
         "status": "ok",
     }
 

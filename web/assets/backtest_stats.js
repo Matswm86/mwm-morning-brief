@@ -92,6 +92,7 @@
       if (!bs) return;
       renderCard("liqsweep", bs.liqsweep);
       renderCard("orb", bs.orb);
+      renderCard("orb-br", bs.orb_br);
     } catch (e) {
       console.error("backtest_stats panel load failed", e);
     }

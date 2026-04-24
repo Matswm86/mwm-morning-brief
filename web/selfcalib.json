@@ -1,0 +1,116 @@
+{
+  "as_of": "2026-04-24",
+  "target_state": "Selvkalibrerende forsknings- og handelsorganisme",
+  "target_state_en": "Self-calibrating research-and-trading organism",
+  "subtitle": "Opus as disposable cognition — re-instantiated per cron tick or session",
+  "dimensions": [
+    {
+      "id": "D1",
+      "label": "Closed-loop firing",
+      "weight": 15,
+      "pct": 90,
+      "status_badge": "live",
+      "done": [
+        "CIP weekly Sun 04:00 UTC (first live fire 04-26)",
+        "SIRE W1+W2: episodic -> procedural rules",
+        "Memento judge-loop + score-only on CIP rerank",
+        "Swarm graph + prose scored vs rubrics (04-24)"
+      ],
+      "next": [
+        "OCW pilot re-ingest with structured PDF",
+        "Auto-merge Memento suggestions past score threshold"
+      ],
+      "last_shipped": "2026-04-24"
+    },
+    {
+      "id": "D2",
+      "label": "Outcome-grounded learning",
+      "weight": 25,
+      "pct": 25,
+      "status_badge": "thin",
+      "done": [
+        "Adaptive scorer (Beta-Binomial + Thompson)",
+        "CIP captures applied outcomes",
+        "Trade journal feeds backtest stats"
+      ],
+      "next": [
+        "T1 research: PRM vs ORM synthesis",
+        "Hierarchical priors over scorer arms",
+        "3-6 mo of trade + research outcomes accumulating"
+      ],
+      "last_shipped": "2026-04-21"
+    },
+    {
+      "id": "D3",
+      "label": "Bounded self-modification",
+      "weight": 20,
+      "pct": 30,
+      "status_badge": "shadow",
+      "done": [
+        "Memento judge + score-only mode (no auto-merge)",
+        "Memory drift guard v2 (primary-wins)",
+        "Swarm reviewer rubric live"
+      ],
+      "next": [
+        "T2 safety harness spec",
+        "Auto-PR with diff cap + 24h soak + auto-revert",
+        "Voyager-style skill library"
+      ],
+      "last_shipped": "2026-04-24"
+    },
+    {
+      "id": "D4",
+      "label": "Autonomous prioritization",
+      "weight": 15,
+      "pct": 10,
+      "status_badge": "manual",
+      "done": [
+        "MASTER_TODO curated by hand"
+      ],
+      "next": [
+        "T3 priority-bandit spec",
+        "MDP formulation of project queue",
+        "Replace hand-edit with Thompson over CIP rewards"
+      ],
+      "last_shipped": null
+    },
+    {
+      "id": "D5",
+      "label": "Cost & resource governance",
+      "weight": 10,
+      "pct": 35,
+      "status_badge": "ad-hoc",
+      "done": [
+        "Groq / Ollama / Opus split by task class",
+        "Anthropic prompt cache active",
+        "RTK token-saving proxy live"
+      ],
+      "next": [
+        "T4 cost-governor spec",
+        "Per-task budget envelope",
+        "Hard-cap behaviour + escalation ladder"
+      ],
+      "last_shipped": null
+    },
+    {
+      "id": "D6",
+      "label": "Cross-session continuity",
+      "weight": 15,
+      "pct": 50,
+      "status_badge": "partial",
+      "done": [
+        "MEMORY.md index + handoff convention",
+        "mem0 SQLite world-model (beliefs / loops)",
+        "CIP weekly synthesis as shared working memory",
+        "Dev-digest pipeline bi-daily"
+      ],
+      "next": [
+        "T5 continuity spec",
+        "'Current focus' thread surfaced at session start",
+        "Importance-scored memory stream"
+      ],
+      "last_shipped": "2026-04-24"
+    }
+  ],
+  "aggregate_pct": 38.25
+}
