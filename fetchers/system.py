@@ -28,8 +28,6 @@ GIT_REPOS: list[tuple[str, Path]] = [
 log = logging.getLogger("morning-brief.system")
 
 SYSTEMD_UNITS = [
-    "mwm-webhook-orb.service",
-    "mwm-market-news-webhook-orb.service",
     "mwm-market-news-verify-predictions.timer",
     "mwm-market-detector-ldn.timer",
     "mwm-market-detector-ny.timer",
@@ -40,6 +38,13 @@ VPS_PING_URLS = [
     ("mwmai.no",   "https://mwmai.no/"),
     ("columbus",   "https://columbus.mwmai.no/"),
     ("pytor",      "https://pytor.mwmai.no/"),
+]
+
+# Webhook upstreams reverse-proxied via Caddy. We accept any HTTP response
+# below 500 as healthy because the upstream replies 404/JSON to GET probes
+# (it only accepts POST writes); 502/504 from Caddy means upstream is dead.
+VPS_WEBHOOK_URLS = [
+    ("orb-webhook", "https://mwmai.no/orb-regime"),
 ]
 
 
@@ -100,6 +105,30 @@ def _vps_ping() -> list[dict]:
                 "headline": f"{label} DOWN",
                 "body": str(e)[:140],
                 "source": "vps",
+            })
+    return items
+
+
+def _vps_webhook_ping() -> list[dict]:
+    """Probe webhook upstreams via Caddy. Any < 500 = upstream alive (the
+    process answered with JSON, even if 404 for an unknown method/path).
+    A 502/504 means Caddy could not reach the upstream process."""
+    import requests
+    items = []
+    for label, url in VPS_WEBHOOK_URLS:
+        try:
+            r = requests.get(url, timeout=6, allow_redirects=True)
+            alive = r.status_code < 500
+            items.append({
+                "headline": f"{label} {'active' if alive else 'DOWN'}",
+                "body": f"HTTP {r.status_code} · {url}",
+                "source": "vps-webhook",
+            })
+        except Exception as e:
+            items.append({
+                "headline": f"{label} DOWN",
+                "body": str(e)[:140],
+                "source": "vps-webhook",
             })
     return items
 
@@ -220,8 +249,10 @@ def fetch() -> dict:
     if docker:
         items.append(_summarise_items(docker, "Containers"))
     unit_items = [s for s in (_systemd_status(u) for u in SYSTEMD_UNITS) if s]
-    if unit_items:
-        items.append(_summarise_items(unit_items, "Services"))
+    webhook_items = _vps_webhook_ping()
+    all_services = unit_items + webhook_items
+    if all_services:
+        items.append(_summarise_items(all_services, "Services"))
     vps = _vps_ping()
     if vps:
         items.append(_summarise_items(vps, "Sites"))
