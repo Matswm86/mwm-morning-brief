@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-04-24",
+  "as_of": "2026-04-26",
   "target_state": "Self-calibrating research-and-trading organism",
   "target_state_no": "Selvkalibrerende forsknings- og handelsorganisme",
   "subtitle": "Opus as disposable cognition, re-instantiated per cron tick or session",
@@ -8,55 +8,60 @@
       "id": "D1",
       "label": "Closed-loop firing",
       "weight": 15,
-      "pct": 90,
+      "pct": 95,
       "status_badge": "live",
       "done": [
-        "CIP weekly Sun 04:00 UTC (first live fire 04-26)",
-        "SIRE W1+W2: episodic -> procedural rules",
-        "Memento judge-loop + score-only on CIP rerank",
-        "Swarm graph + prose scored vs rubrics (04-24)"
+        "CIP weekly Sun 04:00 UTC (first live fire 04-26, rc=0)",
+        "SIRE v2 P1-P5 shipped (judge, falsifiable predictions, deferred tiering, gold benchmark, verify-and-repair)",
+        "Sunday automation chain: 02:00 full, 02:30 verify-predictions, 03:00 synthesis, 04:00 CIP",
+        "Swarm 2nd-pass scientific_method judge wired in reviewer.py",
+        "Memento judge-loop + score-only on CIP rerank, first reject row emitted 04-26"
       ],
       "next": [
-        "OCW pilot re-ingest with structured PDF",
-        "Auto-merge Memento suggestions past score threshold"
+        "Auto-merge Memento suggestions past score threshold (currently score-only)",
+        "OCW pilot re-ingest with structured PDF"
       ],
-      "last_shipped": "2026-04-24"
+      "last_shipped": "2026-04-26"
     },
     {
       "id": "D2",
       "label": "Outcome-grounded learning",
       "weight": 25,
-      "pct": 25,
-      "status_badge": "thin",
+      "pct": 30,
+      "status_badge": "shadow",
       "done": [
         "Adaptive scorer (Beta-Binomial + Thompson)",
-        "CIP captures applied outcomes",
-        "Trade journal feeds backtest stats"
+        "Held-out gold benchmark (20q × 4 domains, leakage-guarded)",
+        "Eval retrieval upgrades: hybrid BM25+RRF, weighted RRF, 73 handoff summaries",
+        "Platt scaling fit on 60 (conf, acc) pairs across 4 runs (a=+0.724, b=-1.187, Brier 0.516→0.231)",
+        "Trade journal feeds backtest stats panel"
       ],
       "next": [
-        "T1 research: PRM vs ORM synthesis",
-        "Hierarchical priors over scorer arms",
-        "3-6 mo of trade + research outcomes accumulating"
+        "policy_state logging (notes26 #1: prompt_hash + retrieval_config + rubric_weights + model_tier + regime_label per session — foundational unblock for all 70%+)",
+        "Force confidence variance (model states ≥0.9 on 48/60, base rate 0.367 — calibration starved of signal)",
+        "ADWIN on reward series + Empirical Bernstein gate on CIP commits (notes26 70% threshold)"
       ],
-      "last_shipped": "2026-04-24"
+      "last_shipped": "2026-04-26"
     },
     {
       "id": "D3",
       "label": "Bounded self-modification",
       "weight": 20,
-      "pct": 30,
+      "pct": 40,
       "status_badge": "shadow",
       "done": [
-        "Memento judge + score-only mode (no auto-merge)",
-        "Memory drift guard v2 (primary-wins)",
-        "Swarm reviewer rubric live"
+        "Memento scientific_method rubric live (5 dims × 0-10, thr 35/50)",
+        "CIP rule-proposal 2nd-pass shipped (first reject row 04-26, lacked hypothesis structure)",
+        "Swarm reviewer + graph memento wired",
+        "Memento structured-PDF + cross-encoder reranker behind flags",
+        "Memory drift guard v2 (primary-wins)"
       ],
       "next": [
-        "T2 safety harness spec",
-        "Auto-PR with diff cap + 24h soak + auto-revert",
+        "T2 safety harness spec (auto-PR with diff cap + 24h soak + auto-revert)",
+        "DoWhy 3-node causal DAG: regime → scaffold_config → outcome (gates slow-loop commits)",
         "Voyager-style skill library"
       ],
-      "last_shipped": "2026-04-24"
+      "last_shipped": "2026-04-25"
     },
     {
       "id": "D4",
@@ -68,7 +73,7 @@
         "MASTER_TODO curated by hand"
       ],
       "next": [
-        "T3 priority-bandit spec",
+        "T3 priority-bandit spec (LinUCB context = regime + query_type + recent_drift, blocked on policy_state)",
         "MDP formulation of project queue",
         "Replace hand-edit with Thompson over CIP rewards"
       ],
@@ -88,7 +93,8 @@
       "next": [
         "T4 cost-governor spec",
         "Per-task budget envelope",
-        "Hard-cap behaviour + escalation ladder"
+        "Hard-cap behaviour + escalation ladder",
+        "Backend resilience: retry-with-backoff or hard-fail on Groq fallback (eval A/B contaminated by silent model substitution 04-26)"
       ],
       "last_shipped": null
     },
@@ -96,21 +102,22 @@
       "id": "D6",
       "label": "Cross-session continuity",
       "weight": 15,
-      "pct": 50,
+      "pct": 60,
       "status_badge": "partial",
       "done": [
         "MEMORY.md index + handoff convention",
         "mem0 SQLite world-model (beliefs / loops)",
         "CIP weekly synthesis as shared working memory",
-        "Dev-digest pipeline bi-daily"
+        "Dev-digest pipeline bi-daily",
+        "73 handoff files upserted into book_summaries (two-phase search_knowledge visibility unblocked 04-26)"
       ],
       "next": [
-        "T5 continuity spec",
-        "'Current focus' thread surfaced at session start",
+        "SCCS unification: collapse scattered handoffs into one master queue under plans/selfcalib-organism-research-2026-04-24.md, T-track + phase frontmatter",
+        "T5 continuity spec — 'current focus' thread surfaced at session start",
         "Importance-scored memory stream"
       ],
-      "last_shipped": null
+      "last_shipped": "2026-04-26"
     }
   ],
-  "aggregate_pct": 38.25
+  "aggregate_pct": 43.75
 }
