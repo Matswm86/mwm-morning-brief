@@ -13,10 +13,26 @@ Exit codes:
 from __future__ import annotations
 import argparse
 import logging
+import os
 import subprocess
 import sys
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# SCCS F1 — path-import shim. morning-brief lives outside the MWM-AI
+# workspace (~/services/morning-brief), so we expose MWM-AI/core/ to
+# resolve `from sccs import ...`. Failure is non-fatal — the import
+# block below tolerates a missing sccs install.
+_MWM_CORE = "/home/mats/MWM-AI/core"
+if os.path.isdir(_MWM_CORE) and _MWM_CORE not in sys.path:
+    sys.path.insert(0, _MWM_CORE)
+try:
+    from sccs import PolicyState as _SccsPolicyState, record as _sccs_record  # type: ignore
+    _SCCS_AVAILABLE = True
+except Exception:
+    _SccsPolicyState = None  # type: ignore
+    _sccs_record = None  # type: ignore
+    _SCCS_AVAILABLE = False
 
 # Local
 from config import BRIEF_JSON, LOG_DIR, VPS_TARGET, WEB_DIR
@@ -132,6 +148,12 @@ def build(use_llm: bool = True) -> dict:
         calibration = {"status": "error", "n": 0, "error": str(e)}
     regime["calibration"] = calibration
 
+    # ─── SCCS F1: log policy_state once per build ──────────────────────
+    # entry_point=morning_brief. regime_label = VIX/regime tier from the
+    # fetcher; rubric_weights = strategy picker decision; extra carries
+    # llm/deploy toggles + section list for downstream filtering.
+    _log_morning_brief_policy_state(regime, strategy, use_llm)
+
     try:
         trade_guard = f_trade_guard.fetch()
     except Exception as e:
@@ -184,6 +206,46 @@ def build(use_llm: bool = True) -> dict:
     brief["cell_activity"] = cell_activity
     brief["_selfcalib"] = selfcalib  # kept on brief for diagnostics; web reads /selfcalib.json
     return brief
+
+
+def _log_morning_brief_policy_state(regime: dict, strategy: dict, use_llm: bool) -> None:
+    """Best-effort SCCS F1 logger; missing sccs or DB errors must not break the build."""
+    if not _SCCS_AVAILABLE or os.environ.get("SCCS_OFF", "0") == "1":
+        return
+    try:
+        regime_label = (
+            regime.get("regime")
+            or regime.get("tier_caption")
+            or regime.get("session_label")
+            or "unknown"
+        )
+        if regime.get("volatility") and regime["volatility"] != "—":
+            regime_label = f"{regime_label}|vol:{regime['volatility']}"
+        _sccs_record(_SccsPolicyState(
+            entry_point="morning_brief",
+            retrieval_config={
+                "sections": [k for k, _, _ in SECTIONS],
+                "skip_llm_sections": sorted(SKIP_LLM_SECTIONS),
+                "use_llm": bool(use_llm),
+            },
+            rubric_weights={
+                "strategy_name": strategy.get("name"),
+                "strategy_code": regime.get("strategy_code"),
+                "contracts": strategy.get("contracts"),
+                "symbol": strategy.get("symbol"),
+                "tier": regime.get("tier"),
+                "score": regime.get("score"),
+            },
+            model_tier="groq:summarise" if use_llm else "no_llm",
+            regime_label=str(regime_label)[:120],
+            extra={
+                "direction": regime.get("direction"),
+                "age_hours": regime.get("age_hours"),
+                "calibration_n": (regime.get("calibration") or {}).get("n"),
+            },
+        ))
+    except Exception as e:  # pragma: no cover
+        log.debug(f"sccs policy_state log failed (non-fatal): {type(e).__name__}: {e}")
 
 
 def main() -> int:
