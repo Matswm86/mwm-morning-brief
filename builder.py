@@ -129,7 +129,7 @@ def build(use_llm: bool = True) -> dict:
         log.exception("regime fetch failed")
         regime = {
             "tier": None, "tier_caption": f"error: {e.__class__.__name__}",
-            "session_label": "ORB v2.5", "strategy_code": None, "volatility": "—",
+            "session_label": "Market Detector v3", "strategy_code": None, "volatility": "—",
             "direction": "—", "regime": None, "score": None, "contracts": 0,
             "age_hours": None, "generated_at": "", "raw": {},
         }

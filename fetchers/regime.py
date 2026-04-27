@@ -2,8 +2,11 @@
 
 v3 (2026-04-20): Reads ~/MWM-AI/projects/mwm-trading/data/market_regime/
   latest_ldn.json + latest_ny.json (written by mwm-market-detector-{ldn,ny}
-  systemd timers). Falls back to the legacy orb_regime webhook URL if the
-  v3 files are missing.
+  systemd timers).
+
+2026-04-27: Legacy ORB v2.5 webhook fallback removed. TradingView is
+decommissioned and the VPS receiver no longer fed. Local v3 files are
+the sole source.
 """
 from __future__ import annotations
 import json
@@ -12,8 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-from config import ORB_REGIME_URL
-from http_util import get_json
+from http_util import get_json  # kept import for forward compat (unused since v2.5 removal)
 
 log = logging.getLogger("morning-brief.regime")
 
@@ -149,13 +151,8 @@ def fetch() -> dict:
         primary["sessions"] = sessions
         return primary
 
-    # v3 local files missing → fall back to legacy webhook
-    data: dict[str, Any] | None = get_json(ORB_REGIME_URL)
-    if not isinstance(data, dict) or data.get("status") == "empty":
-        return _empty("no local v3 state and legacy webhook empty")
-    out = _shape_v3(data)
-    out["sessions"] = sessions
-    return out
+    # v3 local files missing — TradingView v2.5 fallback removed 2026-04-27.
+    return _empty("no local v3 state (Market Detector v3 has not run yet today)")
 
 
 def _empty(reason: str) -> dict:

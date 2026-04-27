@@ -43,9 +43,12 @@ VPS_PING_URLS = [
 # Webhook upstreams reverse-proxied via Caddy. We accept any HTTP response
 # below 500 as healthy because the upstream replies 404/JSON to GET probes
 # (it only accepts POST writes); 502/504 from Caddy means upstream is dead.
-VPS_WEBHOOK_URLS = [
-    ("orb-webhook", "https://mwmai.no/orb-regime"),
-]
+#
+# 2026-04-27: orb-webhook removed — TradingView v2.5 producer decommissioned;
+# Python Market Detector v3 writes the regime file locally instead, so the
+# VPS receiver no longer needs to be alive. Add new VPS-side webhooks here
+# as they come online.
+VPS_WEBHOOK_URLS: list[tuple[str, str]] = []
 
 
 def _docker_ps() -> list[dict]:
