@@ -7,8 +7,8 @@
       "id": "D1",
       "label": "Closed-loop firing",
       "weight": 15,
-      "pct": 97,
-      "keywords": ["cip", "sire", "memento", "sccs", "closed-loop", "swarm-graph", "swarm-reviewer", "swarm-synthesis"],
+      "pct": 98,
+      "keywords": ["cip", "sire", "memento", "sccs", "closed-loop", "swarm-graph", "swarm-reviewer", "swarm-synthesis", "f6", "bocpd"],
       "done": [
         "CIP weekly Sun 04:00 UTC (first live fire 04-26, rc=0)",
         "SIRE v2 P1-P5 shipped (judge, falsifiable predictions, deferred tiering, gold benchmark, verify-and-repair)",
@@ -16,11 +16,13 @@
         "SCCS M0 closed 04-26 night: F1 policy_state on all 5 entry points (eval / cip_fire / memento_judge / swarm_scout / morning_brief)",
         "SCCS M1 closed 04-27: F2 ADWIN drift detector live + CIP signal #14 wired into combined_health_score",
         "F4 Empirical Bernstein gate wired into CIP commit path 04-27 (gates slow-loop rubric weight updates)",
+        "F6 BOCPD shipped 04-27 as CIP signal #16 — vendored Adams-MacKay detector replays commit-deltas every _log_rerank_deltas fire, persists is_changepoint=1 rows to data/sccs/bocpd_state.db",
         "Memento judge-loop + score-only on CIP rerank, first reject row emitted 04-26"
       ],
       "next": [
         "Auto-merge Memento suggestions past score threshold (currently score-only)",
-        "First live Bernstein gate fire — Sun 2026-05-03 06:11 CEST CIP fire (block D)"
+        "First live Bernstein gate fire — Sun 2026-05-03 06:11 CEST CIP fire (block D)",
+        "First production bocpd_state.db materialisation on Sun 2026-05-03 fire (block D)"
       ]
     },
     {
@@ -50,8 +52,8 @@
       "id": "D3",
       "label": "Bounded self-modification",
       "weight": 20,
-      "pct": 60,
-      "keywords": ["memento", "drift", "guard", "harness", "auto-pr", "reviewer-memento", "graph-memento", "cip-rule-proposal", "scientific_method", "sccs", "bernstein", "conformal", "bounds", "f4", "f4-5", "dowhy"],
+      "pct": 62,
+      "keywords": ["memento", "drift", "guard", "harness", "auto-pr", "reviewer-memento", "graph-memento", "cip-rule-proposal", "scientific_method", "sccs", "bernstein", "conformal", "bounds", "f4", "f4-5", "f6", "bocpd", "dowhy"],
       "done": [
         "Memento scientific_method rubric live (5 dims × 0-10, thr 35/50)",
         "CIP rule-proposal 2nd-pass shipped (first reject row 04-26, lacked hypothesis structure)",
@@ -60,9 +62,11 @@
         "Memory drift guard v2 (primary-wins)",
         "F4 Empirical Bernstein gate (Maurer-Pontil 2009) sits in CIP commit path — statistical bound on slow-loop weight updates",
         "F4.5 Conformal Phase 1: split conformal + DtACI ACI + wrap_metric public API + cal-data logger (27 new tests)",
+        "F6 BOCPD instrumentation (Adams-MacKay 2007) on commit-deltas — substrate for Phase 1 'widen exploration / suspend slow-loop' actuator",
         "F3 DoWhy design locked in plans/sccs-f3-dowhy-design.md (build deferred ~2-3 months until ≥50 eval rows × ≥3 distinct regimes)"
       ],
       "next": [
+        "F6 Phase 1 actuation: dispatcher reads bocpd_changepoints.last_changepoint_age_days and short-circuits auto-apply on fresh changepoint (mirrors F4 Bernstein-rejection short-circuit)",
         "T2 safety harness spec (auto-PR with diff cap + 24h soak + auto-revert)",
         "F3 DoWhy 3-node causal DAG build (regime → scaffold_config → outcome) — blocked on policy_state cell diversity",
         "Voyager-style skill library"
@@ -106,15 +110,16 @@
       "id": "D6",
       "label": "Cross-session continuity",
       "weight": 15,
-      "pct": 65,
-      "keywords": ["memory", "mem0", "continuity", "focus", "dev-digest", "session", "handoff", "summaries", "two-phase", "sccs-master-queue", "sccs-kickoff"],
+      "pct": 66,
+      "keywords": ["memory", "mem0", "continuity", "focus", "dev-digest", "session", "handoff", "summaries", "two-phase", "sccs-master-queue", "sccs-kickoff", "f6", "bocpd"],
       "done": [
         "MEMORY.md index + handoff convention",
         "mem0 SQLite world-model (beliefs / loops)",
         "CIP weekly synthesis as shared working memory",
         "Dev-digest pipeline bi-daily",
         "73 handoff files upserted into book_summaries (two-phase search_knowledge visibility unblocked 04-26)",
-        "SCCS master queue unified: plans/sccs-master-queue.md (F1-F17 + T1-T7 + R1-R13 single ordered queue, foundation track milestones M0/M1 closed)"
+        "SCCS master queue unified: plans/sccs-master-queue.md (F1-F17 + T1-T7 + R1-R13 single ordered queue, foundation track milestones M0/M1 closed)",
+        "BOCPD posterior persisted across CIP fires in data/sccs/bocpd_state.db — regime-shift memory survives Opus session boundaries"
       ],
       "next": [
         "T5 continuity spec — 'current focus' thread surfaced at session start",
