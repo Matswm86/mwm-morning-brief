@@ -53,8 +53,8 @@
       "id": "D3",
       "label": "Bounded self-modification",
       "weight": 20,
-      "pct": 65,
-      "keywords": ["memento", "drift", "guard", "harness", "auto-pr", "reviewer-memento", "graph-memento", "cip-rule-proposal", "scientific_method", "sccs", "bernstein", "conformal", "bounds", "f4", "f4-5", "f6", "bocpd", "dowhy", "f9", "forward_sufficiency"],
+      "pct": 68,
+      "keywords": ["memento", "drift", "guard", "harness", "auto-pr", "reviewer-memento", "graph-memento", "cip-rule-proposal", "scientific_method", "sccs", "bernstein", "conformal", "bounds", "f4", "f4-5", "f6", "bocpd", "dowhy", "f9", "forward_sufficiency", "f3", "causal-gate"],
       "done": [
         "Memento scientific_method rubric live (6 dims × 0-10, thr 42/60 — F9 forward_sufficiency added 04-28, original 5-dim 35/50 preserved 70% pass ratio)",
         "CIP rule-proposal 2nd-pass shipped (first reject row 04-26, lacked hypothesis structure)",
@@ -65,11 +65,11 @@
         "F4.5 Conformal Phase 1: split conformal + DtACI ACI + wrap_metric public API + cal-data logger (27 new tests)",
         "F6 BOCPD instrumentation (Adams-MacKay 2007) on commit-deltas — substrate for Phase 1 'widen exploration / suspend slow-loop' actuator",
         "F6 Phase 1 actuation shipped 04-28 — dispatcher short-circuits auto-apply with rejected_bocpd_gate when last_changepoint_age_days < 3 (dormant until first real changepoint ~late May)",
-        "F3 DoWhy design locked in plans/sccs-f3-dowhy-design.md (build deferred ~2-3 months until ≥50 eval rows × ≥3 distinct regimes)"
+        "F3 DoWhy 3-node causal DAG SHIPPED dry-mode 05-01 — core/sccs/causal_gate.py + dual outcomes (eval_gold_accuracy primary, memento_accept_rate secondary, >10pp ATE disagreement flag) + CIP main + dispatcher wiring (bernstein → dowhy → bocpd ordering, bernstein-precedence preserved) + 30 new tests (264/264 SCCS+CIP green). DoWhy 0.14 installed for python3.11 CIP runtime. Real-DB dry-run = both_accept/insufficient_data; first decision-impacting fire awaits M3 regime_label forward-logging fix"
       ],
       "next": [
         "T2 safety harness spec (auto-PR with diff cap + 24h soak + auto-revert)",
-        "F3 DoWhy 3-node causal DAG build (regime → scaffold_config → outcome) — blocked on policy_state cell diversity",
+        "M3 forward-fix regime_label logging in memento_judge writer + eval_run_id linkage in scripts/eval_research_gold.py (~30 LOC) — unblocks F3 from insufficient_data fail-open",
         "Voyager-style skill library"
       ]
     },
