@@ -138,15 +138,17 @@
   ],
   "aggregate_pct": 56.4,
   "judge_score_ci": {
-    "status": "dark",
     "value": 0.9968,
-    "lower": 0.9968,
-    "upper": 0.9968,
-    "method": "disabled",
+    "lower": 0.0,
+    "upper": 1.0,
+    "coverage": 0.9,
+    "method": "aci",
+    "n_cal": 35,
+    "alpha_t": 0.1,
     "rubric": "scientific_method",
     "window_days": 30,
-    "n_cal": 35,
     "min_n_cal": 30,
-    "n_predictions": 35
+    "n_predictions": 35,
+    "status": "live"
   }
 }
