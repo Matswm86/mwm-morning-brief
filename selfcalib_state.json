@@ -112,7 +112,7 @@
       "label": "Cross-session continuity",
       "weight": 15,
       "pct": 66,
-      "keywords": ["memory", "mem0", "continuity", "focus", "dev-digest", "session", "handoff", "summaries", "two-phase", "sccs-master-queue", "sccs-kickoff", "f6", "bocpd"],
+      "keywords": ["mem0", "continuity", "focus", "dev-digest", "summaries", "two-phase", "sccs-master-queue", "sccs-kickoff", "memory-drift", "f6", "bocpd"],
       "done": [
         "MEMORY.md index + handoff convention",
         "mem0 SQLite world-model (beliefs / loops)",

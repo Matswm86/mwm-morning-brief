@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-05-01",
+  "as_of": "2026-05-03",
   "target_state": "Self-calibrating research-and-trading organism",
   "target_state_no": "Selvkalibrerende forsknings- og handelsorganisme",
   "subtitle": "Opus as disposable cognition, re-instantiated per cron tick or session",
@@ -25,7 +25,7 @@
         "First live Bernstein gate fire — Sun 2026-05-03 06:11 CEST CIP fire (block D)",
         "First production bocpd_state.db materialisation on Sun 2026-05-03 fire (block D)"
       ],
-      "last_shipped": "2026-05-01"
+      "last_shipped": "2026-05-02"
     },
     {
       "id": "D2",
@@ -50,7 +50,7 @@
         "Wire wrap_metric into brief render once N≥30 cal residuals (~5 days from 04-27)",
         "Cell diversity in policy_state — only 7 distinct (regime, tier) cells, dominated by 40-row monocell. ≥3 distinct regimes is F3 prerequisite (~2-3 months)"
       ],
-      "last_shipped": "2026-04-27"
+      "last_shipped": "2026-04-22"
     },
     {
       "id": "D3",
@@ -75,7 +75,7 @@
         "M3 forward-fix regime_label logging in memento_judge writer + eval_run_id linkage in scripts/eval_research_gold.py (~30 LOC) — unblocks F3 from insufficient_data fail-open",
         "Voyager-style skill library"
       ],
-      "last_shipped": "2026-05-01"
+      "last_shipped": "2026-05-02"
     },
     {
       "id": "D4",
@@ -133,20 +133,20 @@
         "Importance-scored memory stream",
         "Auto-link next-session handoff pointer into the brief 'organism progress' panel"
       ],
-      "last_shipped": "2026-05-08"
+      "last_shipped": null
     }
   ],
   "aggregate_pct": 56.4,
   "judge_score_ci": {
     "status": "dark",
-    "value": 0.9962,
-    "lower": 0.9962,
-    "upper": 0.9962,
+    "value": 0.9968,
+    "lower": 0.9968,
+    "upper": 0.9968,
     "method": "disabled",
     "rubric": "scientific_method",
     "window_days": 30,
-    "n_cal": 29,
+    "n_cal": 35,
     "min_n_cal": 30,
-    "n_predictions": 29
+    "n_predictions": 35
   }
 }

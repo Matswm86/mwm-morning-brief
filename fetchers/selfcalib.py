@@ -86,8 +86,18 @@ def _collect_handoffs() -> list[tuple[str, str]]:
 
 
 def _last_shipped_for(keywords: list[str], handoffs: list[tuple[str, str]]) -> str | None:
+    """Return most recent date a matching handoff was filed, capped at today.
+
+    Date in filename can be a planned/interview/deadline date in the future
+    (e.g. handoff-columbus-interview-prep-2026-05-08.md). Such dates must NOT
+    be reported as last_shipped — that field semantically means "actually
+    shipped on or before today".
+    """
+    today = date.today().isoformat()
     best: str | None = None
     for name, d in handoffs:
+        if d > today:
+            continue
         if any(k in name for k in keywords):
             if best is None or d > best:
                 best = d
