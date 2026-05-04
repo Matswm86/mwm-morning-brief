@@ -23,6 +23,7 @@ import json
 import logging
 import math
 import statistics
+import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any
@@ -46,7 +47,8 @@ STRATEGY_ERA_START = "2018-03-01"  # iFVG+LiqSweep validated era
 
 # ----- FRED --------------------------------------------------------
 
-def _fred_series(sid: str, start: str | None = None) -> list[tuple[str, float]]:
+def _fred_series(sid: str, start: str | None = None,
+                 retries: int = 3) -> list[tuple[str, float]]:
     if not FRED_API_KEY:
         log.warning("FRED_API_KEY missing — skipping %s", sid)
         return []
@@ -57,7 +59,16 @@ def _fred_series(sid: str, start: str | None = None) -> list[tuple[str, float]]:
     }
     if start:
         params["observation_start"] = start
-    data = get_json(FRED_BASE, params=params, timeout=20)
+    # FRED returns transient 5xx during midnight UTC maintenance windows.
+    # Retry with backoff before giving up — see 2026-04-30 incident where
+    # VIXCLS+HYOAS both 500'd at 22:00 UTC and emptied the regime panel.
+    data = None
+    for attempt in range(retries):
+        data = get_json(FRED_BASE, params=params, timeout=20)
+        if data and "observations" in data:
+            break
+        if attempt < retries - 1:
+            time.sleep(2 ** attempt)
     if not data or "observations" not in data:
         return []
     out: list[tuple[str, float]] = []
@@ -364,6 +375,67 @@ def _iso_to_epoch(date_str: str) -> int:
                .replace(tzinfo=timezone.utc).timestamp())
 
 
+def _load_prior(path: Path) -> dict | None:
+    try:
+        return json.loads(path.read_text())
+    except Exception:
+        return None
+
+
+def _merge_with_prior(payload: dict, prior: dict | None) -> dict:
+    """If the live FRED fetch dropped VIX (transient 5xx), keep the prior
+    regime.json's vix_history / vix_spot / credit blocks rather than
+    overwriting brief.mwmai.no with empties. Trend (Yahoo SPX) and
+    Yahoo VIX3M term-structure remain authoritative because Yahoo
+    didn't fail — only FRED did.
+    """
+    if not prior:
+        return payload
+    new_vix = payload.get("vix_history") or []
+    if not new_vix and prior.get("vix_history"):
+        payload["vix_history"] = prior["vix_history"]
+        log.warning("regime_monitor: VIXCLS empty — preserved prior vix_history (%d bars)",
+                    len(prior["vix_history"]))
+    # If vol.vix_spot is None but prior has one, splice prior vol back in.
+    vol = payload.get("vol") or {}
+    if vol.get("vix_spot") is None and (prior.get("vol") or {}).get("vix_spot") is not None:
+        # Keep the live RV20/term-structure from Yahoo, but restore VIX spot
+        # + tone + ratio from the last-good FRED snapshot.
+        prior_vol = prior["vol"]
+        for k in ("vix_spot", "ratio", "tone", "vix_days_above_25"):
+            if vol.get(k) in (None, "—") and prior_vol.get(k) is not None:
+                vol[k] = prior_vol[k]
+        # Patch term_structure.vix (FRED-derived) if missing.
+        ts = vol.get("term_structure") or {}
+        prior_ts = prior_vol.get("term_structure") or {}
+        if ts.get("vix") is None and prior_ts.get("vix") is not None:
+            ts["vix"] = prior_ts["vix"]
+            # Recompute ratio/state if vix3m is present in current payload.
+            if ts.get("vix3m"):
+                ts_ratio = ts["vix"] / ts["vix3m"]
+                ts["ratio"] = round(ts_ratio, 3)
+                ts["state"] = "backwardation" if ts_ratio > 1.0 else "contango"
+        vol["term_structure"] = ts
+        payload["vol"] = vol
+        log.warning("regime_monitor: VIX spot missing — preserved prior vol block")
+    # If credit (HY OAS) failed, splice prior credit.
+    credit = payload.get("credit") or {}
+    if credit.get("hy_oas") is None and (prior.get("credit") or {}).get("hy_oas") is not None:
+        # Keep curve fields from current; restore HY fields from prior.
+        prior_credit = prior["credit"]
+        for k in ("hy_oas", "hy_oas_1mo_ago", "delta_1mo", "direction"):
+            if credit.get(k) in (None, "—") and prior_credit.get(k) is not None:
+                credit[k] = prior_credit[k]
+        payload["credit"] = credit
+        log.warning("regime_monitor: HY OAS missing — preserved prior credit block")
+    # Recompute tripwires + verdict from the merged blocks so the panel
+    # stays consistent.
+    payload["tripwires"] = _tripwires(payload["trend"], payload["vol"], payload["credit"])
+    payload["verdict"] = _verdict(payload["trend"], payload["vol"], payload["credit"],
+                                   payload["tripwires"])
+    return payload
+
+
 def _write(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
@@ -380,6 +452,8 @@ def main() -> int:
     args = ap.parse_args()
 
     payload = fetch()
+    prior = _load_prior(args.write)
+    payload = _merge_with_prior(payload, prior)
     if args.stdout:
         print(json.dumps(payload, indent=2))
         return 0
