@@ -1,0 +1,181 @@
+# Selfcalib Bar v2 — Signals→Pct Rubric
+# Spec: ~/MWM-AI/plans/selfcalib-bar-v2-rubric-2026-05-05.md
+# Each dim's pct = sum(signal_score × signal_weight). Signal weights per dim sum to 1.0.
+# Signal scores are 0-100. Signal returns None → frozen (use prior pct, mark frozen_reason).
+
+schema_version: 1
+generated_by: recompute_selfcalib.py
+canonical_source: ~/MWM-AI/plans/selfcalib-bar-v2-rubric-2026-05-05.md
+
+dimensions:
+  - id: D1
+    label: Closed-loop firing
+    weight: 15
+    signals:
+      - name: cip_fires_landed
+        weight: 0.35
+        params: {window_days: 30, target: 4}
+      - name: automation_chain_active
+        weight: 0.25
+        params:
+          # Oneshot services triggered by timers — check last-Result + timer freshness
+          services:
+            - mwm-cip.service
+            - mwm-research-swarm.service
+            - mwm-swarm-synthesis.service
+          fresh_days: 8
+      - name: bocpd_subsystem_health
+        weight: 0.15
+        params: {db_relpath: data/sccs/bocpd_state.db, fresh_days: 8}
+      - name: synthesis_freshness
+        weight: 0.15
+        params: {fresh_days: 8}
+      - name: memento_judge_active
+        weight: 0.10
+        params: {fresh_days: 8, window_days: 30}
+
+  - id: D2
+    label: Outcome-grounded learning
+    weight: 25
+    signals:
+      - name: policy_state_rows
+        weight: 0.25
+        params: {db_relpath: data/sccs/policy_state.db, table: policy_state, floor: 30, ceiling: 100}
+      - name: conformal_cal_rows
+        weight: 0.25
+        params: {jsonl_relpath: data/sccs/judge_calibration.jsonl, target: 30}
+      - name: eval_gold_runs
+        weight: 0.20
+        params: {window_days: 30, target_runs: 4}
+      - name: bernstein_gate_fires
+        weight: 0.15
+        params: {window_days: 30, target_fires: 5}
+      - name: forward_sufficiency_active
+        weight: 0.15
+        params: {rubric_relpath: core/memento/rubrics/scientific_method.json, min_dims: 6, min_threshold: 42}
+
+  - id: D3
+    label: Bounded self-modification
+    weight: 20
+    signals:
+      - name: memento_acceptance_curve
+        weight: 0.20
+        params: {window_days: 30}
+      - name: file_grep_present
+        weight: 0.15
+        signal_id: f4_bernstein_in_dispatcher
+        params:
+          path_relpath: core/cip/dispatcher.py
+          patterns: [bernstein]
+      - name: file_grep_present
+        weight: 0.15
+        signal_id: f4_5_conformal_wired
+        params:
+          path_relpath: core/sccs/__init__.py
+          patterns: [wrap_metric, MIN_N_CAL]
+      - name: file_grep_present
+        weight: 0.15
+        signal_id: f6_bocpd_actuation
+        params:
+          path_relpath: core/cip/dispatcher.py
+          patterns: [rejected_bocpd_gate]
+      - name: f3_dowhy_status
+        weight: 0.15
+        params: {path_relpath: core/sccs/causal_gate.py}
+      - name: file_grep_present
+        weight: 0.10
+        signal_id: c2_invariant_test
+        params:
+          path_relpath: core/skills/tests/test_optimizer.py
+          patterns: [test_optimizer_invariant_C2, invariant_C2]
+      - name: f18_dry_run_active
+        weight: 0.10
+        params: {env_var: SCCS_F18_DRY_RUN, expected: "1"}
+
+  - id: D4
+    label: Autonomous prioritization
+    weight: 15
+    frozen_reason: "T3 priority-bandit blocked on policy_state cell diversity (~2-3 months ETA)"
+    # Q2 ratified 05-05: keep flat-low until T3 ships. Rubric REDESIGNED 05-05 after dry-run
+    # exposed cell_diversity bias: prior version scored 80 because data was ready;
+    # intent is "automation has shipped" not "data is ready." T3 code dominates.
+    signals:
+      - name: file_fresh
+        weight: 0.30
+        signal_id: master_todo_curated
+        params: {path_relpath: MASTER_TODO.md, fresh_days: 14}
+      - name: file_present
+        weight: 0.60
+        signal_id: t3_code_landed
+        params: {candidate_paths: [core/adaptive-scorer/linucb.py, core/sccs/linucb.py, core/sccs/priority_bandit.py]}
+      - name: file_grep_present
+        weight: 0.10
+        signal_id: t3_design_doc
+        params:
+          path_relpath: notes/inbox/sccs-r1-r13-deep-research-2026-04-26.md
+          patterns: [LinUCB]
+
+  - id: D5
+    label: Cost & resource governance
+    weight: 10
+    signals:
+      - name: any_file_grep
+        weight: 0.15
+        signal_id: groq_ollama_split
+        params:
+          candidate_paths:
+            - projects/mwm-saas/core/llm/router.py
+            - projects/mwm-sentinel/services/llm/router.py
+            - core/llm-backend/router.py
+          patterns: [groq, ollama]
+          require_all: true
+      - name: prompt_cache_active
+        weight: 0.15
+        params: {root_relpath: core, pattern: cache_control}
+      - name: rtk_proxy_live
+        weight: 0.15
+      - name: file_grep_present
+        weight: 0.20
+        signal_id: f18_soft_rate_cap
+        params:
+          path_relpath: core/skills/optimizer.py
+          patterns: ["0.15"]
+      - name: file_grep_present
+        weight: 0.20
+        signal_id: f18_hard_day_cap
+        params:
+          path_relpath: core/skills/optimizer.py
+          patterns: ["5.0", "$5"]
+      - name: file_present
+        weight: 0.15
+        signal_id: t4_governor_doc
+        params: {glob_relpath: "plans/t4-cost-governor-*.md"}
+
+  - id: D6
+    label: Cross-session continuity
+    weight: 15
+    signals:
+      - name: file_fresh
+        weight: 0.20
+        signal_id: memory_md_index
+        params: {path_relpath: memory/MEMORY.md, fresh_days: 7}
+      - name: handoff_files_count
+        weight: 0.15
+        params: {target: 30}
+      - name: file_present
+        weight: 0.15
+        signal_id: mem0_sqlite
+        params: {candidate_paths: [data/db/.mem0/world_model.db, data/db/mem0/world_model.db]}
+      - name: cip_synthesis_writeback
+        weight: 0.15
+        params: {fresh_days: 8, stale_days: 15}
+      - name: dev_digest_freshness
+        weight: 0.10
+        params: {fresh_days: 3, stale_days: 7}
+      - name: file_fresh
+        weight: 0.15
+        signal_id: master_queue_unified
+        params: {path_relpath: plans/sccs-master-queue.md, fresh_days: 14}
+      - name: book_summaries_handoff_indexed
+        weight: 0.10
+        params: {target_count: 70}
