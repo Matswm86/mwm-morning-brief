@@ -34,6 +34,13 @@ except Exception:
     _sccs_record = None  # type: ignore
     _SCCS_AVAILABLE = False
 
+try:
+    from sccs.conformal import wrap_metric as _sccs_wrap_metric  # type: ignore
+    _SCCS_CONFORMAL_AVAILABLE = True
+except Exception:
+    _sccs_wrap_metric = None  # type: ignore
+    _SCCS_CONFORMAL_AVAILABLE = False
+
 # Local
 from config import BRIEF_JSON, LOG_DIR, VPS_TARGET, WEB_DIR
 from schema import build_brief, atomic_write, empty_section, now_utc_iso
@@ -205,7 +212,69 @@ def build(use_llm: bool = True) -> dict:
     brief["backtest_stats"] = backtest_stats
     brief["cell_activity"] = cell_activity
     brief["_selfcalib"] = selfcalib  # kept on brief for diagnostics; web reads /selfcalib.json
+    brief["_sccs"] = _sccs_brief_block()
     return brief
+
+
+def _sccs_brief_block() -> dict:
+    """SCCS F4.5 — emit conformal-wrapped judge accept-rate on brief.json.
+
+    Reads ``data/sccs/judge_calibration.jsonl`` (memento second-pass
+    residuals; both passes LLM-based so residuals are correlated and
+    ACI's empirical-coverage tracker is the kill criterion). Point
+    estimate = 1 − mean(residual) over the most recent rows; wrap with
+    DtACI to get a 90%-coverage half-width. Tagged ``method="point"``
+    when N < MIN_N_CAL (currently 30).
+
+    SCCS_F45_CONFORMAL_LIVE=0 disables the metric (returns
+    {"method": "off"}); the default is on once the cal-log has cleared
+    MIN_N_CAL, which it has as of 2026-05-05 (N=35).
+
+    Best-effort, never raises — brief.json must build even if the
+    cal-log is missing.
+    """
+    if os.environ.get("SCCS_F45_CONFORMAL_LIVE", "1") == "0":
+        return {"judge_score_ci": {"method": "off"}}
+    if not _SCCS_CONFORMAL_AVAILABLE:
+        return {"judge_score_ci": {"method": "unavailable"}}
+    try:
+        cal_path = "/home/mats/MWM-AI/data/sccs/judge_calibration.jsonl"
+        if not os.path.isfile(cal_path):
+            return {"judge_score_ci": {"method": "no_cal_log"}}
+        residuals: list[float] = []
+        import json as _json
+        with open(cal_path) as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = _json.loads(line)
+                except _json.JSONDecodeError:
+                    continue
+                r = row.get("residual")
+                if r is None:
+                    continue
+                residuals.append(float(r))
+        # First-cycle miscoverage_history is empty on purpose: ACI's
+        # online α update needs past wrapped-interval coverage events
+        # (did the realized residual fall outside the previous interval),
+        # which only exist after the first wrap is rendered. Future
+        # cycles will append to data/sccs/conformal_coverage.jsonl and
+        # feed it back here; for now ACI collapses to split conformal at
+        # the nominal α.
+        wrapped = _sccs_wrap_metric(
+            point=1.0 - (sum(residuals) / len(residuals)) if residuals else 0.0,
+            cal_residuals=residuals,
+            method="aci",
+            miscoverage_history=[],
+            clip_to=(0.0, 1.0),
+        )
+        wrapped["source_jsonl"] = "data/sccs/judge_calibration.jsonl"
+        return {"judge_score_ci": wrapped}
+    except Exception as e:  # pragma: no cover
+        log.debug("sccs conformal wrap failed (non-fatal): %s", e)
+        return {"judge_score_ci": {"method": "error", "error": str(e)[:200]}}
 
 
 def _log_morning_brief_policy_state(regime: dict, strategy: dict, use_llm: bool) -> None:
