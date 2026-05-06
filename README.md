@@ -75,10 +75,10 @@ Pcts are **not auto-bumped** — they're revised manually after CIP weekly revie
 when a master-queue milestone closes. See [`handoff-brief-selfcalib-shipped-2026-04-24.md`](https://github.com/Matswm86/mwm-infrastructure/blob/master/memory/handoff-brief-selfcalib-shipped-2026-04-24.md)
 for the design rationale (38.25% honest baseline beats 70% vibes).
 
-**Current aggregate (2026-04-27): 54.25%** — D1 Closed-loop 97 · D2 Outcome-grounded 50 · D3 Bounded self-mod 60 · D4 Autonomous prio 13 · D5 Cost gov 35 · D6 Continuity 65.
-SCCS Foundation track milestones M0 (F1 policy_state on all 5 entry points) and
-M1 (F2 ADWIN + CIP signal #14) closed 04-26→04-27; F4 Empirical Bernstein gate
-wired into CIP commit path; F4.5 Conformal Phase 1 cal-data logger live.
+**Current aggregate (manual, 2026-05-05): 56.40%** — bumped from 43.75 → 55.80% (2026-04-28) after M0/M1/F4/F4.5/F6/F9 shipped, then to 56.40 after F18 scaffold + C2 invariant test (2026-05-05).
+SCCS Foundation track: M0/M1 closed 04-26..27, M2 closed 05-01, M3 opened (regime_label landed 05-05). F3 DoWhy 3-node causal gate SHIPPED 2026-05-01..02 (dry-mode); F4 Bernstein + F6 BOCPD gates wired between decide+dispatch (04-27..28); **F4.5 Conformal LIVE 2026-05-04** (`SCCS_CONFORMAL_ENABLED=true`); F9 forward-sufficiency 6th rubric dim shipped 04-28; F18 skill self-optimizer scaffold dry-run since 04-28 with **C2 reward-immutability invariant test mechanically gated 2026-05-05** before production flip (post 2026-05-18); F19 boundary-flux conservation monitor queued post-F18.
+
+**Brief selfcalib v2 rubric in dry-run since 2026-05-05** — `selfcalib_rubric.yaml` + `recompute_selfcalib.py` live; first dry-run AGG=65.90 vs manual 56.40 (+9.5pp). 2-fire ratification window 2026-05-11 + 2026-05-18 replaces the original 4-week dry-run. See [`plans/selfcalib-bar-v2-rubric-2026-05-05.md`](https://github.com/Matswm86/mwm-infrastructure/blob/master/plans/selfcalib-bar-v2-rubric-2026-05-05.md).
 
 ## SCCS F1 — policy_state logging
 
