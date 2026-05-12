@@ -37,15 +37,20 @@ dimensions:
   - id: D2
     label: Outcome-grounded learning
     weight: 25
+    # F23 ratification 2026-05-06: honeypot_abstain_rate added (weight 0.10).
+    # Rebalance: policy_state_rows 0.25 → 0.20, eval_gold_runs 0.20 → 0.15.
+    # Floor/ceiling on the new signal: 0.20 → 0, 0.80 → 100 (matches the
+    # F23 acceptance gate, which is the load-bearing test for the entire
+    # hallucination-control track).
     signals:
       - name: policy_state_rows
-        weight: 0.25
+        weight: 0.20
         params: {db_relpath: data/sccs/policy_state.db, table: policy_state, floor: 30, ceiling: 100}
       - name: conformal_cal_rows
         weight: 0.25
         params: {jsonl_relpath: data/sccs/judge_calibration.jsonl, target: 30}
       - name: eval_gold_runs
-        weight: 0.20
+        weight: 0.15
         params: {window_days: 30, target_runs: 4}
       - name: bernstein_gate_fires
         weight: 0.15
@@ -53,6 +58,9 @@ dimensions:
       - name: forward_sufficiency_active
         weight: 0.15
         params: {rubric_relpath: core/memento/rubrics/scientific_method.json, min_dims: 6, min_threshold: 42}
+      - name: honeypot_abstain_rate
+        weight: 0.10
+        params: {jsonl_relpath: data/sccs/honeypot_results.jsonl, floor: 0.20, ceiling: 0.80}
 
   - id: D3
     label: Bounded self-modification

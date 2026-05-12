@@ -22,6 +22,7 @@ a dim, the rubric output is computed and logged but the override wins. Bar
 uses override visually; tooltip surfaces (override, rubric, gap); gap is logged
 to selfcalib_calibration.jsonl per build.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -59,7 +60,7 @@ CALIBRATION_LOG = MWM_ROOT / "data" / "sccs" / "selfcalib_calibration.jsonl"
 def _file_age_days(p: Path) -> float | None:
     if not p.exists():
         return None
-    age_sec = (datetime.now(timezone.utc).timestamp() - p.stat().st_mtime)
+    age_sec = datetime.now(timezone.utc).timestamp() - p.stat().st_mtime
     return age_sec / 86_400
 
 
@@ -79,8 +80,18 @@ def _ramp_fresh(age_days: float | None, fresh: int, stale: int = 0) -> int:
 def _journalctl_lines(unit: str, since_days: int) -> list[str] | None:
     try:
         out = subprocess.run(
-            ["journalctl", "--user", "-u", unit, "--since", f"{since_days} days ago", "--no-pager"],
-            capture_output=True, text=True, timeout=15,
+            [
+                "journalctl",
+                "--user",
+                "-u",
+                unit,
+                "--since",
+                f"{since_days} days ago",
+                "--no-pager",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=15,
         )
         if out.returncode != 0:
             return None
@@ -94,7 +105,9 @@ def _systemd_active(unit: str) -> bool | None:
     try:
         out = subprocess.run(
             ["systemctl", "--user", "is-active", unit],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         return out.stdout.strip() == "active"
     except Exception:
@@ -114,6 +127,7 @@ def _sqlite_count(db: Path, sql: str) -> int | None:
 
 
 # ----- D1 signals -----
+
 
 def signal_cip_fires_landed(p: dict, ctx: dict) -> int | None:
     lines = _journalctl_lines("mwm-cip.service", p.get("window_days", 30))
@@ -139,8 +153,19 @@ def signal_automation_chain_active(p: dict, ctx: dict) -> int | None:
         try:
             # last result of the service unit
             res = subprocess.run(
-                ["systemctl", "--user", "show", unit, "-p", "Result", "-p", "ActiveState"],
-                capture_output=True, text=True, timeout=5,
+                [
+                    "systemctl",
+                    "--user",
+                    "show",
+                    unit,
+                    "-p",
+                    "Result",
+                    "-p",
+                    "ActiveState",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=5,
             ).stdout
             result_ok = "Result=success" in res
             active_now = "ActiveState=active" in res
@@ -149,7 +174,9 @@ def signal_automation_chain_active(p: dict, ctx: dict) -> int | None:
             timer = unit.replace(".service", ".timer")
             tres = subprocess.run(
                 ["systemctl", "--user", "show", timer, "-p", "LastTriggerUSec"],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
             ).stdout
             timer_fresh = False
             for line in tres.splitlines():
@@ -161,9 +188,15 @@ def signal_automation_chain_active(p: dict, ctx: dict) -> int | None:
                             # rough parse — strip weekday + tz, take "YYYY-MM-DD"
                             m = re.search(r"(\d{4})-(\d{2})-(\d{2})", val)
                             if m:
-                                trig = datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)),
-                                                tzinfo=timezone.utc)
-                                age_days = (datetime.now(timezone.utc) - trig).total_seconds() / 86_400
+                                trig = datetime(
+                                    int(m.group(1)),
+                                    int(m.group(2)),
+                                    int(m.group(3)),
+                                    tzinfo=timezone.utc,
+                                )
+                                age_days = (
+                                    datetime.now(timezone.utc) - trig
+                                ).total_seconds() / 86_400
                                 if age_days <= fresh_days:
                                     timer_fresh = True
                         except Exception:
@@ -267,6 +300,7 @@ def signal_memento_judge_active(p: dict, ctx: dict) -> int | None:
 
 # ----- D2 signals -----
 
+
 def signal_policy_state_rows(p: dict, ctx: dict) -> int | None:
     db = MWM_ROOT / p["db_relpath"]
     rows = _sqlite_count(db, f"SELECT COUNT(*) FROM {p.get('table', 'policy_state')}")
@@ -324,7 +358,57 @@ def signal_forward_sufficiency_active(p: dict, ctx: dict) -> int | None:
     return 0
 
 
+def signal_honeypot_abstain_rate(p: dict, ctx: dict) -> int | None:
+    """F23: load-bearing falsifiability test for hallucination-control track.
+
+    Reads the latest run summary from honeypot_results.jsonl (one record per
+    run, appended). Returns 0 at floor (default 0.20), 100 at ceiling
+    (default 0.80, the F23 acceptance gate). Linear ramp between.
+
+    None when the results file is missing — selfcalib treats None as frozen
+    (use prior pct + flag frozen_reason). This is intentional: pre-baseline
+    we don't want a fake 0 score dragging D2 down.
+    """
+    f = MWM_ROOT / p["jsonl_relpath"]
+    if not f.exists():
+        return None
+    last = None
+    try:
+        with f.open() as fh:
+            for ln in fh:
+                ln = ln.strip()
+                if not ln:
+                    continue
+                try:
+                    last = json.loads(ln)
+                except json.JSONDecodeError:
+                    continue
+    except Exception:
+        return None
+    if last is None:
+        return None
+    rates = last.get("rates") or {}
+    rate = rates.get("abstain")
+    if rate is None:
+        return None
+    try:
+        rate_f = float(rate)
+    except (TypeError, ValueError):
+        return None
+    floor = float(p.get("floor", 0.20))
+    ceiling = float(p.get("ceiling", 0.80))
+    if rate_f <= floor:
+        return 0
+    if rate_f >= ceiling:
+        return 100
+    span = ceiling - floor
+    if span <= 0:
+        return 100
+    return int((rate_f - floor) / span * 100)
+
+
 # ----- D3 signals -----
+
 
 def signal_memento_acceptance_curve(p: dict, ctx: dict) -> int | None:
     mdir = MWM_ROOT / "data" / "memento"
@@ -397,6 +481,7 @@ def signal_f18_dry_run_active(p: dict, ctx: dict) -> int | None:
 
 # ----- D4 signals -----
 
+
 def signal_file_fresh(p: dict, ctx: dict) -> int | None:
     path = MWM_ROOT / p["path_relpath"]
     age = _file_age_days(path)
@@ -451,6 +536,7 @@ def signal_file_present(p: dict, ctx: dict) -> int | None:
 
 # ----- D5 signals -----
 
+
 def signal_prompt_cache_active(p: dict, ctx: dict) -> int | None:
     """Search just .py files under core/, skip .venv/__pycache__/.git."""
     root = MWM_ROOT / p.get("root_relpath", "core")
@@ -474,16 +560,21 @@ def signal_prompt_cache_active(p: dict, ctx: dict) -> int | None:
 
 def signal_rtk_proxy_live(p: dict, ctx: dict) -> int | None:
     try:
-        which = subprocess.run(["which", "rtk"], capture_output=True, text=True, timeout=5)
+        which = subprocess.run(
+            ["which", "rtk"], capture_output=True, text=True, timeout=5
+        )
         if which.returncode != 0 or not which.stdout.strip():
             return 0
-        gain = subprocess.run(["rtk", "gain"], capture_output=True, text=True, timeout=10)
+        gain = subprocess.run(
+            ["rtk", "gain"], capture_output=True, text=True, timeout=10
+        )
         return 100 if gain.returncode == 0 else 50
     except Exception:
         return None
 
 
 # ----- D6 signals -----
+
 
 def signal_handoff_files_count(p: dict, ctx: dict) -> int | None:
     mdir = MWM_ROOT / "memory"
@@ -509,7 +600,9 @@ def signal_dev_digest_freshness(p: dict, ctx: dict) -> int | None:
     inbox = MWM_ROOT / "notes" / "inbox"
     if not inbox.exists():
         return 0
-    candidates = list(inbox.glob("*dev-digest*.md")) + list(inbox.glob("*dev_digest*.md"))
+    candidates = list(inbox.glob("*dev-digest*.md")) + list(
+        inbox.glob("*dev_digest*.md")
+    )
     if not candidates:
         return 0
     newest = max(candidates, key=lambda f: f.stat().st_mtime)
@@ -521,7 +614,9 @@ def signal_book_summaries_handoff_indexed(p: dict, ctx: dict) -> int | None:
     # proxy via local file count since Qdrant query is heavier
     mdir = MWM_ROOT / "memory"
     archive = mdir / "archive"
-    count = sum(1 for _ in mdir.glob("handoff-*.md")) + sum(1 for _ in archive.glob("handoff-*.md"))
+    count = sum(1 for _ in mdir.glob("handoff-*.md")) + sum(
+        1 for _ in archive.glob("handoff-*.md")
+    )
     target = p.get("target_count", 70)
     return min(100, int(count / max(1, target) * 100))
 
@@ -543,6 +638,7 @@ SIGNAL_REGISTRY = {
     "eval_gold_runs": signal_eval_gold_runs,
     "bernstein_gate_fires": signal_bernstein_gate_fires,
     "forward_sufficiency_active": signal_forward_sufficiency_active,
+    "honeypot_abstain_rate": signal_honeypot_abstain_rate,
     # D3
     "memento_acceptance_curve": signal_memento_acceptance_curve,
     "file_grep_present": signal_file_grep_present,
@@ -577,7 +673,14 @@ def evaluate_dimension(dim: dict, ctx: dict) -> tuple[int | None, list[dict]]:
         sig_id = sig.get("signal_id", name)
         fn = SIGNAL_REGISTRY.get(name)
         if fn is None:
-            trace.append({"id": sig_id, "weight": weight, "score": None, "reason": "unknown_signal"})
+            trace.append(
+                {
+                    "id": sig_id,
+                    "weight": weight,
+                    "score": None,
+                    "reason": "unknown_signal",
+                }
+            )
             frozen_signals.append(sig_id)
             continue
         try:
@@ -587,7 +690,9 @@ def evaluate_dimension(dim: dict, ctx: dict) -> tuple[int | None, list[dict]]:
             score = None
         if score is None:
             frozen_signals.append(sig_id)
-            trace.append({"id": sig_id, "weight": weight, "score": None, "reason": "frozen"})
+            trace.append(
+                {"id": sig_id, "weight": weight, "score": None, "reason": "frozen"}
+            )
             continue
         score = max(0, min(100, int(score)))
         weighted_sum += score * weight
@@ -605,15 +710,19 @@ def evaluate_dimension(dim: dict, ctx: dict) -> tuple[int | None, list[dict]]:
 
 def main():
     parser = argparse.ArgumentParser(description="Recompute selfcalib bar from rubric.")
-    parser.add_argument("--write", action="store_true", help="Write proposed JSON + calibration log.")
+    parser.add_argument(
+        "--write", action="store_true", help="Write proposed JSON + calibration log."
+    )
     parser.add_argument("--rubric", default=str(RUBRIC_FILE))
     parser.add_argument("--state", default=str(STATE_FILE))
     parser.add_argument("--out", default=str(PROPOSED_FILE))
     parser.add_argument("-q", "--quiet", action="store_true")
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.WARNING if args.quiet else logging.INFO,
-                        format="%(levelname)s %(name)s: %(message)s")
+    logging.basicConfig(
+        level=logging.WARNING if args.quiet else logging.INFO,
+        format="%(levelname)s %(name)s: %(message)s",
+    )
 
     with open(args.rubric) as f:
         rubric = yaml.safe_load(f)
@@ -629,7 +738,9 @@ def main():
     out_dims = []
     calibration_rows = []
 
-    print(f"\n{'Dim':4} {'Manual':>7} {'Rubric':>7} {'Override':>9} {'Final':>7}  Frozen-or-Notes")
+    print(
+        f"\n{'Dim':4} {'Manual':>7} {'Rubric':>7} {'Override':>9} {'Final':>7}  Frozen-or-Notes"
+    )
     print("-" * 78)
 
     for dim in rubric.get("dimensions", []):
@@ -647,13 +758,15 @@ def main():
             final_pct = int(override)
             gap = final_pct - rubric_pct
             note = f"override active, gap={gap:+d}pp"
-            calibration_rows.append({
-                "ts": datetime.now(timezone.utc).isoformat(),
-                "dim": did,
-                "override": final_pct,
-                "rubric": rubric_pct,
-                "gap": gap,
-            })
+            calibration_rows.append(
+                {
+                    "ts": datetime.now(timezone.utc).isoformat(),
+                    "dim": did,
+                    "override": final_pct,
+                    "rubric": rubric_pct,
+                    "gap": gap,
+                }
+            )
         else:
             final_pct = rubric_pct
             note = ""
@@ -661,27 +774,40 @@ def main():
             note = frozen_reason
 
         out_dim = dict(cur)
-        out_dim.update({
-            "id": did,
-            "label": dim.get("label", cur.get("label", did)),
-            "weight": dim.get("weight", cur.get("weight", 0)),
-            "rubric_pct": rubric_pct,
-            "pct": final_pct,
-            "pct_override": override,
-            "frozen_reason": frozen_reason if (rubric_pct is None or override is not None) else None,
-            "signal_trace": trace,
-        })
+        out_dim.update(
+            {
+                "id": did,
+                "label": dim.get("label", cur.get("label", did)),
+                "weight": dim.get("weight", cur.get("weight", 0)),
+                "rubric_pct": rubric_pct,
+                "pct": final_pct,
+                "pct_override": override,
+                "frozen_reason": frozen_reason
+                if (rubric_pct is None or override is not None)
+                else None,
+                "signal_trace": trace,
+            }
+        )
         out_dims.append(out_dim)
 
         rubric_disp = f"{rubric_pct}" if rubric_pct is not None else "FROZ"
         ovr_disp = f"{int(override)}" if override is not None else "-"
-        print(f"{did:4} {manual_pct:>7} {rubric_disp:>7} {ovr_disp:>9} {final_pct:>7}  {note}")
+        print(
+            f"{did:4} {manual_pct:>7} {rubric_disp:>7} {ovr_disp:>9} {final_pct:>7}  {note}"
+        )
 
     total_w = sum(d["weight"] for d in out_dims) or 1
     rubric_agg = sum(d["weight"] * d["pct"] for d in out_dims) / total_w
-    manual_agg = sum(d["weight"] * current_by_id.get(d["id"], {}).get("pct", 0) for d in out_dims) / total_w
+    manual_agg = (
+        sum(
+            d["weight"] * current_by_id.get(d["id"], {}).get("pct", 0) for d in out_dims
+        )
+        / total_w
+    )
     print("-" * 78)
-    print(f"AGG  {manual_agg:>7.2f} {rubric_agg:>7.2f}  Δ={rubric_agg - manual_agg:+.2f}pp")
+    print(
+        f"AGG  {manual_agg:>7.2f} {rubric_agg:>7.2f}  Δ={rubric_agg - manual_agg:+.2f}pp"
+    )
 
     if not args.write:
         print("\n(diff-only mode; pass --write to emit selfcalib_state_proposed.json)")
