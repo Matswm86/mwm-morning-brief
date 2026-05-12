@@ -31,7 +31,7 @@
       "id": "D2",
       "label": "Outcome-grounded learning",
       "weight": 25,
-      "pct": 51,
+      "pct": 62,
       "status_badge": "partial",
       "done": [
         "Adaptive scorer (Beta-Binomial + Thompson)",
@@ -43,14 +43,21 @@
         "F4.5 Conformal Phase 1 cal-data log accumulating into data/sccs/judge_calibration.jsonl",
         "F3 outcome-variable locked: eval_gold_accuracy (anti-gameability load-bearing)",
         "F9 forward_sufficiency 6th dim shipped 04-28 in scientific_method rubric (threshold 35→42 preserves 70% pass ratio) — outputs now scored on whether the next reasoning step has enough context to act without re-fetching source",
-        "R1-R13 deep research ingested into selfcalib_research Qdrant collection (34 chunks)"
+        "R1-R13 deep research ingested into selfcalib_research Qdrant collection (34 chunks)",
+        "F20-F23 hallucination-control track SHIPPED 05-06..09 — rubric v3 honest_abstention 7th dim + singleton flag + calibration analyzer + reliability diagram + adversarial honeypot eval set",
+        "Rubric v4 STABLE LOCK 05-09 — abstain=0.860, wrong=0.040, malformed=0.000 on 120b strong-compressor A/B; load-bearing for hallucination-control track",
+        "Brain corpus 5-pass repair 05-09: 130,894 → 236,532 chunks (+117,112); OCR Hull 11→1,024 chunks",
+        "F24 atomic claim decomposition acceptance CLOSED 05-12 (commit 06ff6c3) — n=50 fire wrong=0.00 vs baseline 0.04, safe_rate=0.86 (parity); gate recalibrated to count refuted toward safe-handling; MWM_CLAIM_DECOMP=1 default-on since 05-10",
+        "P3.22 Phase A.1 SHIPPED 05-12 (commit b6b043e) — 8 drift_anchor IDs baked into gold_set_v1.json with B2/C1 forward-compat invariant per sccs-augmentation §1.5; held-out from utility_tracker.update_beta to prevent retrieval-quality drift",
+        "F23 honeypot_abstain_rate signal wired into v2 rubric (dry-run, weight 0.10, floor 0.20 / ceiling 0.80); current abstain=0.72 on latest honeypot run",
+        "Math/DL adversarial-review duo SHIPPED 05-11 — Napolitano gauge-theory paper: 26 claims (8 SURVIVES / 5 KILLED / 3 KILLED-AR / 10 ABSTAIN); Two-Channel readout pattern borrowable, gauge/Casimir vocab DO NOT IMPORT"
       ],
       "next": [
         "Force confidence variance (model still states ≥0.9 on 48/60, base rate 0.367 — calibration starved of signal)",
         "Wire wrap_metric into brief render once N≥30 cal residuals (~5 days from 04-27)",
         "Cell diversity in policy_state — only 7 distinct (regime, tier) cells, dominated by 40-row monocell. ≥3 distinct regimes is F3 prerequisite (~2-3 months)"
       ],
-      "last_shipped": null
+      "last_shipped": "2026-05-12"
     },
     {
       "id": "D3",
@@ -81,11 +88,14 @@
       "id": "D4",
       "label": "Autonomous prioritization",
       "weight": 15,
-      "pct": 13,
+      "pct": 22,
       "status_badge": "thin",
       "done": [
         "MASTER_TODO curated by hand",
-        "R1-R13 deep research informs T3 priority-bandit design (LinUCB context = regime + query_type + recent_drift)"
+        "R1-R13 deep research informs T3 priority-bandit design (LinUCB context = regime + query_type + recent_drift)",
+        "Agent system audit + expansion 05-11..12 — 14 workspace agents got explicit `model:` frontmatter (9 sonnet + 5 haiku); mats-voice split into sonnet everyday + opus craft; 3 new agents (backtest-auditor, security-reviewer, prompt-engineer); subagent env-override removed; routing rules sharper",
+        "leverage-hunt-duo SHIPPED 05-11 — hunter+skeptic agent pair scouts frameworks/papers/architectures for the MWM-AI stack on a 2×/week cron schedule; structured candidate-per-fire format with falsifiable kill-test",
+        "Math/DL adversarial-review duo wired into routing — math-research-scientist + applied-dl-engineer + 2-judge synthesis; first audit (Napolitano) shipped 05-11 with 30.8% judge disagreement"
       ],
       "next": [
         "T3 priority-bandit code (still blocked on policy_state cell diversity)",
@@ -117,7 +127,7 @@
       "id": "D6",
       "label": "Cross-session continuity",
       "weight": 15,
-      "pct": 66,
+      "pct": 78,
       "status_badge": "partial",
       "done": [
         "MEMORY.md index + handoff convention",
@@ -125,8 +135,12 @@
         "CIP weekly synthesis as shared working memory",
         "Dev-digest pipeline bi-daily",
         "73 handoff files upserted into book_summaries (two-phase search_knowledge visibility unblocked 04-26)",
-        "SCCS master queue unified: plans/sccs-master-queue.md (F1-F17 + T1-T7 + R1-R13 single ordered queue, foundation track milestones M0/M1 closed)",
-        "BOCPD posterior persisted across CIP fires in data/sccs/bocpd_state.db — regime-shift memory survives Opus session boundaries"
+        "SCCS master queue unified: plans/sccs-master-queue.md (F1-F24 + T1-T7 + R1-R13 single ordered queue, M0/M1/M2 closed, M3 open)",
+        "BOCPD posterior persisted across CIP fires in data/sccs/bocpd_state.db — regime-shift memory survives Opus session boundaries",
+        "claim-verifier subagent automated 05-12 — Haiku, ≤60s/fire, $0.05/fire, $2/day cap, 60s debounce; Stop hook (claim-verifier-gate.py) + UserPromptSubmit marker (claim-verifier-marker.py) surface VERIFIED/UNVERIFIED/CONTRADICTED verdicts inline before user reads draft (built after FastMCP-on-claude.ai burn)",
+        "mats-voice corpus 33k→730k words 05-12 — 1,555 ChatGPT conversations + 6,836 user messages filtered for code/log/quote pollution; extractor tracked, .txt gitignored; voice subagent corpus depth jumps ~22×",
+        "F18 flip-day handoff ready 05-12 — drift-monitor systemd timer LIVE, M5 ≥24 passed, JSON-parse rate 27%→0% via Haiku, gated checklist for Mon 05-18 flip; F24 closed-handoff committed 06ff6c3",
+        "Memory drift check daily — 0 unindexed in MEMORY.md (16 new files added to feedback_index.md + decisions_index.md + MEMORY.md 05-12)"
       ],
       "next": [
         "T5 continuity spec — 'current focus' thread surfaced at session start",
@@ -136,7 +150,7 @@
       "last_shipped": null
     }
   ],
-  "aggregate_pct": 56.4,
+  "aggregate_pct": 62.3,
   "judge_score_ci": {
     "status": "sccs_unavailable",
     "method": "disabled",
