@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-05-12",
+  "as_of": "2026-05-19",
   "target_state": "Self-calibrating research-and-trading organism",
   "target_state_no": "Selvkalibrerende forsknings- og handelsorganisme",
   "subtitle": "Opus as disposable cognition, re-instantiated per cron tick or session",
@@ -8,7 +8,7 @@
       "id": "D1",
       "label": "Closed-loop firing",
       "weight": 15,
-      "pct": 98,
+      "pct": 99,
       "status_badge": "live",
       "done": [
         "CIP weekly Sun 04:00 UTC (first live fire 04-26, rc=0)",
@@ -17,85 +17,100 @@
         "SCCS M0 closed 04-26 night: F1 policy_state on all 5 entry points (eval / cip_fire / memento_judge / swarm_scout / morning_brief)",
         "SCCS M1 closed 04-27: F2 ADWIN drift detector live + CIP signal #14 wired into combined_health_score",
         "F4 Empirical Bernstein gate wired into CIP commit path 04-27 (gates slow-loop rubric weight updates)",
-        "F6 BOCPD shipped 04-27 as CIP signal #16 — vendored Adams-MacKay detector replays commit-deltas every _log_rerank_deltas fire, persists is_changepoint=1 rows to data/sccs/bocpd_state.db",
-        "Memento judge-loop + score-only on CIP rerank, first reject row emitted 04-26"
+        "F6 BOCPD shipped 04-27 as CIP signal #16 \u2014 vendored Adams-MacKay detector replays commit-deltas every _log_rerank_deltas fire, persists is_changepoint=1 rows to data/sccs/bocpd_state.db",
+        "Memento judge-loop + score-only on CIP rerank, first reject row emitted 04-26",
+        "Scorer-defense Phase B LIVE 2026-05-19 (commits 4cc85d7+66f50ec+b0b4b1b+96e4c85+5aef138) \u2014 3-judge minority-veto substrate (Llama-3.3-70B + Qwen3-32B + GPT-OSS-120B) wrapping research-swarm reviewer + CIP weekly synthesis; verdicts emit to data/runners/anomalies.jsonl source='judge_ensemble' observationally (text/obj NEVER mutated); CIP signals #28/#29 registered; first fire Sun 2026-05-24 03:01 + 06:07 CEST; gate-flip ~Sun 2026-06-21 after \u226525 verdicts",
+        "SCCS-aug B1 weekly scheduler wired 2026-05-18 (commit cca8cbf) \u2014 `audit/utility_tracker.py --weekly` + systemd .service + .timer Sun 03:30 Oslo (post-A.3 03:00); sudo install on box pending; closed-loop counterfactual credit `D_i` updates weekly"
       ],
       "next": [
         "Auto-merge Memento suggestions past score threshold (currently score-only)",
-        "First live Bernstein gate fire — Sun 2026-05-03 06:11 CEST CIP fire (block D)",
-        "First production bocpd_state.db materialisation on Sun 2026-05-03 fire (block D)"
+        "B1 sudo install on box (cca8cbf timer not yet active)",
+        "Phase B gate-flip from observational to passed=False after \u226525 verdicts (~Sun 2026-06-21)"
       ],
-      "last_shipped": "2026-05-10"
+      "last_shipped": "2026-05-18"
     },
     {
       "id": "D2",
       "label": "Outcome-grounded learning",
       "weight": 25,
-      "pct": 62,
+      "pct": 67,
       "status_badge": "partial",
       "done": [
         "Adaptive scorer (Beta-Binomial + Thompson)",
-        "Held-out gold benchmark (20q × 4 domains, leakage-guarded)",
+        "Held-out gold benchmark (20q \u00d7 4 domains, leakage-guarded)",
         "Eval retrieval upgrades: hybrid BM25+RRF, weighted RRF, 73 handoff summaries",
-        "Platt scaling fit on 60 (conf, acc) pairs across 4 runs (a=+0.724, b=-1.187, Brier 0.516→0.231)",
-        "policy_state.db logging from all 5 entry points 04-26 night (the foundational unblock — ~47 rows total)",
+        "Platt scaling fit on 60 (conf, acc) pairs across 4 runs (a=+0.724, b=-1.187, Brier 0.516\u21920.231)",
+        "policy_state.db logging from all 5 entry points 04-26 night (the foundational unblock \u2014 ~47 rows total)",
         "F2 ADWIN on reward series + F4 Empirical Bernstein gate in CIP commit path (both shipped 04-27)",
         "F4.5 Conformal Phase 1 cal-data log accumulating into data/sccs/judge_calibration.jsonl",
         "F3 outcome-variable locked: eval_gold_accuracy (anti-gameability load-bearing)",
-        "F9 forward_sufficiency 6th dim shipped 04-28 in scientific_method rubric (threshold 35→42 preserves 70% pass ratio) — outputs now scored on whether the next reasoning step has enough context to act without re-fetching source",
+        "F9 forward_sufficiency 6th dim shipped 04-28 in scientific_method rubric (threshold 35\u219242 preserves 70% pass ratio) \u2014 outputs now scored on whether the next reasoning step has enough context to act without re-fetching source",
         "R1-R13 deep research ingested into selfcalib_research Qdrant collection (34 chunks)",
-        "F20-F23 hallucination-control track SHIPPED 05-06..09 — rubric v3 honest_abstention 7th dim + singleton flag + calibration analyzer + reliability diagram + adversarial honeypot eval set",
-        "Rubric v4 STABLE LOCK 05-09 — abstain=0.860, wrong=0.040, malformed=0.000 on 120b strong-compressor A/B; load-bearing for hallucination-control track",
-        "Brain corpus 5-pass repair 05-09: 130,894 → 236,532 chunks (+117,112); OCR Hull 11→1,024 chunks",
-        "F24 atomic claim decomposition acceptance CLOSED 05-12 (commit 06ff6c3) — n=50 fire wrong=0.00 vs baseline 0.04, safe_rate=0.86 (parity); gate recalibrated to count refuted toward safe-handling; MWM_CLAIM_DECOMP=1 default-on since 05-10",
-        "P3.22 Phase A.1 SHIPPED 05-12 (commit b6b043e) — 8 drift_anchor IDs baked into gold_set_v1.json with B2/C1 forward-compat invariant per sccs-augmentation §1.5; held-out from utility_tracker.update_beta to prevent retrieval-quality drift",
+        "F20-F23 hallucination-control track SHIPPED 05-06..09 \u2014 rubric v3 honest_abstention 7th dim + singleton flag + calibration analyzer + reliability diagram + adversarial honeypot eval set",
+        "Rubric v4 STABLE LOCK 05-09 \u2014 abstain=0.860, wrong=0.040, malformed=0.000 on 120b strong-compressor A/B; load-bearing for hallucination-control track",
+        "Brain corpus 5-pass repair 05-09: 130,894 \u2192 236,532 chunks (+117,112); OCR Hull 11\u21921,024 chunks",
+        "F24 atomic claim decomposition acceptance CLOSED 05-12 (commit 06ff6c3) \u2014 n=50 fire wrong=0.00 vs baseline 0.04, safe_rate=0.86 (parity); gate recalibrated to count refuted toward safe-handling; MWM_CLAIM_DECOMP=1 default-on since 05-10",
+        "P3.22 Phase A.1 SHIPPED 05-12 (commit b6b043e) \u2014 8 drift_anchor IDs baked into gold_set_v1.json with B2/C1 forward-compat invariant per sccs-augmentation \u00a71.5; held-out from utility_tracker.update_beta to prevent retrieval-quality drift",
         "F23 honeypot_abstain_rate signal wired into v2 rubric (dry-run, weight 0.10, floor 0.20 / ceiling 0.80); current abstain=0.72 on latest honeypot run",
-        "Math/DL adversarial-review duo SHIPPED 05-11 — Napolitano gauge-theory paper: 26 claims (8 SURVIVES / 5 KILLED / 3 KILLED-AR / 10 ABSTAIN); Two-Channel readout pattern borrowable, gauge/Casimir vocab DO NOT IMPORT"
+        "Math/DL adversarial-review duo SHIPPED 05-11 \u2014 Napolitano gauge-theory paper: 26 claims (8 SURVIVES / 5 KILLED / 3 KILLED-AR / 10 ABSTAIN); Two-Channel readout pattern borrowable, gauge/Casimir vocab DO NOT IMPORT",
+        "Scorer-defense Phase A.6 + A.7 SHIPPED 2026-05-18 (commits 5831f17 + 672a963) \u2014 topology drift metrics module (\u03c1_compression = |convergence_core|/|retrieved_context|, \u03c1_fisher = \u03bb_max(F)/mean(\u03bb(F)), \u03c7_euler = V\u2212E+F on Neo4j; ~400 LOC + 18 tests) + CIP signals #25/#26/#27 + 12 tests",
+        "Retrieval_gold regression ROOT-CAUSED, PATCHED, kill-test PASSED 2026-05-18 (commits a2d1d77 + a511687) \u2014 hit@5 0.533\u21920.227 in 04-26\u219205-03 window root-caused as `_detect_source_type` still keying on legacy `/nontrading books/` while workspace moved to `projects/mwm-creative/books/...`; 55 of 169 queries silently lost; classifier patched for new layout + drift sentinel emits `source_type_fallback_under_creative_tree` WARN; 350 files re-ingested (15,303 chunks, 0 errors); hit@5 restored to 0.560 (above 0.5 floor, exceeds 04-26 baseline of 0.533); hit@1 0.427 matches 04-26 baseline exactly; 47/47 topic-detector tests pass (13 new regression cases)",
+        "SCCS-aug B1 counterfactual scout credit SHIPPED 2026-05-18 (commit 222b843) \u2014 `D_i = G(z) - G(z_{-s})` per (scout, domain) in utility_tracker; persistence table + 16 tests; smoke-tested against live swarm.db over 60-day window \u2014 30 (scout, domain) pairs all D_i \u2208 [-1, 1]",
+        "Trading: Ironclad Hardened r2 closeout 2026-05-17 \u2192 2026-05-18 \u2014 r2 protocol upgrade (Step 4 expectancy_R replaces win_rate, Step 6 \u03c3_sharpe ceiling scales with N, Step 9 native_risk_override decoupled, per-cell combine_pass_applicable flag, trade-log persistence + replay path); 5 SHIP-WITH-WATCH + 1 boundary FAIL_step4 (sb_mgc_rth exp_R 0.2998 deployed at 2ct, P(daily_breach) 99.87%\u219263.23%) + 1 KILLED (sb_mym_pm Step 3 OOS was noise); 6 of 7 cells on 50K Combine `22484767`",
+        "Scorer-defense Phase B observational layer LIVE 2026-05-19 \u2014 3-judge minority-veto wraps research-swarm reviewer + CIP weekly synthesis as outcome telemetry (verdicts to anomalies.jsonl `source=judge_ensemble`); supports the F18 production-run review loop without mutating outputs"
       ],
       "next": [
-        "Force confidence variance (model still states ≥0.9 on 48/60, base rate 0.367 — calibration starved of signal)",
-        "Wire wrap_metric into brief render once N≥30 cal residuals (~5 days from 04-27)",
-        "Cell diversity in policy_state — only 7 distinct (regime, tier) cells, dominated by 40-row monocell. ≥3 distinct regimes is F3 prerequisite (~2-3 months)"
+        "Force confidence variance (model still states \u22650.9 on 48/60, base rate 0.367 \u2014 calibration starved of signal)",
+        "Wire wrap_metric into brief render once N\u226530 cal residuals (~5 days from 04-27)",
+        "Cell diversity in policy_state \u2014 only 7 distinct (regime, tier) cells, dominated by 40-row monocell. \u22653 distinct regimes is F3 prerequisite (~2-3 months)",
+        "B1 falsification check (Scope C) \u2014 wire `compute_counterfactual_credit` LOO math to F4.5 conformal residuals so scout-disable replay shim becomes evaluable on 3 weekly D_i ticks starting Sun 2026-05-24"
       ],
-      "last_shipped": "2026-05-12"
+      "last_shipped": "2026-05-19"
     },
     {
       "id": "D3",
       "label": "Bounded self-modification",
       "weight": 20,
-      "pct": 68,
+      "pct": 75,
       "status_badge": "partial",
       "done": [
-        "Memento scientific_method rubric live (6 dims × 0-10, thr 42/60 — F9 forward_sufficiency added 04-28, original 5-dim 35/50 preserved 70% pass ratio)",
+        "Memento scientific_method rubric live (6 dims \u00d7 0-10, thr 42/60 \u2014 F9 forward_sufficiency added 04-28, original 5-dim 35/50 preserved 70% pass ratio)",
         "CIP rule-proposal 2nd-pass shipped (first reject row 04-26, lacked hypothesis structure)",
         "Swarm reviewer + graph memento wired",
         "Memento structured-PDF + cross-encoder reranker behind flags",
         "Memory drift guard v2 (primary-wins)",
-        "F4 Empirical Bernstein gate (Maurer-Pontil 2009) sits in CIP commit path — statistical bound on slow-loop weight updates",
+        "F4 Empirical Bernstein gate (Maurer-Pontil 2009) sits in CIP commit path \u2014 statistical bound on slow-loop weight updates",
         "F4.5 Conformal Phase 1: split conformal + DtACI ACI + wrap_metric public API + cal-data logger (27 new tests)",
-        "F6 BOCPD instrumentation (Adams-MacKay 2007) on commit-deltas — substrate for Phase 1 'widen exploration / suspend slow-loop' actuator",
-        "F6 Phase 1 actuation shipped 04-28 — dispatcher short-circuits auto-apply with rejected_bocpd_gate when last_changepoint_age_days < 3 (dormant until first real changepoint ~late May)",
-        "F3 DoWhy 3-node causal DAG SHIPPED dry-mode 05-01 — core/sccs/causal_gate.py + dual outcomes (eval_gold_accuracy primary, memento_accept_rate secondary, >10pp ATE disagreement flag) + CIP main + dispatcher wiring (bernstein → dowhy → bocpd ordering, bernstein-precedence preserved) + 30 new tests (264/264 SCCS+CIP green). DoWhy 0.14 installed for python3.11 CIP runtime. Real-DB dry-run = both_accept/insufficient_data; first decision-impacting fire awaits M3 regime_label forward-logging fix"
+        "F6 BOCPD instrumentation (Adams-MacKay 2007) on commit-deltas \u2014 substrate for Phase 1 'widen exploration / suspend slow-loop' actuator",
+        "F6 Phase 1 actuation shipped 04-28 \u2014 dispatcher short-circuits auto-apply with rejected_bocpd_gate when last_changepoint_age_days < 3 (dormant until first real changepoint ~late May)",
+        "F3 DoWhy 3-node causal DAG SHIPPED dry-mode 05-01 \u2014 core/sccs/causal_gate.py + dual outcomes (eval_gold_accuracy primary, memento_accept_rate secondary, >10pp ATE disagreement flag) + CIP main + dispatcher wiring (bernstein \u2192 dowhy \u2192 bocpd ordering, bernstein-precedence preserved) + 30 new tests (264/264 SCCS+CIP green). DoWhy 0.14 installed for python3.11 CIP runtime. Real-DB dry-run = both_accept/insufficient_data; first decision-impacting fire awaits M3 regime_label forward-logging fix",
+        "F18 skill self-optimizer FLIPPED LIVE 2026-05-18 \u2014 `SCCS_F18_DRY_RUN=0` flipped after 4 gates passed (M5 \u226524, drift-monitor timer LIVE, JSON-parse rate 27%\u21920% via Haiku, diff-guard validation); first post-flip cycle was a clean dry-run self-cancel (no mutation_decision row yet); C2 reward-immutability invariant gated (F18 may NEVER mutate own reward/gates/rubric/eval). 4 gates locked the bounded-modification envelope before the live mutation channel opened.",
+        "F19 boundary-flux conservation monitor BUILD SHIPPED 2026-05-18 (commit ced3779) \u2014 `core/sccs/boundary_flux.py` (310 LOC) + 12-test acceptance suite + CIP signal collector #20 wired (weight 0.03) + 3-axis kill criterion (rollout / intervention / asymmetric constraint); acceptance (b) synthetic-violation PASS; orchestrator wire-in gated on first 3 Bernstein-confirmed F18 production runs (cheap insurance against double-counted or lost signals corrupting the controller after F18 starts mutating skill prompts).",
+        "SCCS-aug Phase 1 A1+A2 SHIPPED 2026-05-18 (commit 27939c0) \u2014 A1 Action-Reason Trace columns on `policy_state` (expected_observation_json / actual_observation_json / rollback_pointer per AGI ALPHA p.9; reuses `core/observability/log_event.py` typed-schema); A2 S_swarm Shannon entropy diagnostic across 9 scouts (~60 LOC, no control loop \u2014 surfaces entropy as observability before the C2 control-loop discussion).",
+        "SCCS-aug D1 paired-ablation methodology codified 2026-05-18 Scope B (commit e219ea8) \u2014 1-page methodology doc + commit-msg pre-commit lint catching PRs adding new SCCS eval gates without baseline coverage + canonical YAML wire-up in both defensive-hooks installer (for the 8 project repos) and mwm-infrastructure pre-commit; 14/14 bash scenario tests pass; Scope A 200-LOC harness deliberately NOT built per \u00a71.5 alignment (methodology already in active use per Phase 1.5 RAG KILL, F18 flip gates, ironclad-hardened r2).",
+        "Phase 0 freeze dissolved 2026-05-18 \u2014 SCCS is general substrate per [[sccs_is_general_substrate]], no longer trading-account-pass gated."
       ],
       "next": [
         "T2 safety harness spec (auto-PR with diff cap + 24h soak + auto-revert)",
-        "M3 forward-fix regime_label logging in memento_judge writer + eval_run_id linkage in scripts/eval_research_gold.py (~30 LOC) — unblocks F3 from insufficient_data fail-open",
+        "M3 forward-fix regime_label logging in memento_judge writer + eval_run_id linkage in scripts/eval_research_gold.py (~30 LOC) \u2014 unblocks F3 from insufficient_data fail-open",
+        "F19 orchestrator wire-in gated on first 3 Bernstein-confirmed F18 production runs",
         "Voyager-style skill library"
       ],
-      "last_shipped": "2026-05-12"
+      "last_shipped": "2026-05-18"
     },
     {
       "id": "D4",
       "label": "Autonomous prioritization",
       "weight": 15,
-      "pct": 22,
+      "pct": 25,
       "status_badge": "thin",
       "done": [
         "MASTER_TODO curated by hand",
         "R1-R13 deep research informs T3 priority-bandit design (LinUCB context = regime + query_type + recent_drift)",
-        "Agent system audit + expansion 05-11..12 — 14 workspace agents got explicit `model:` frontmatter (9 sonnet + 5 haiku); mats-voice split into sonnet everyday + opus craft; 3 new agents (backtest-auditor, security-reviewer, prompt-engineer); subagent env-override removed; routing rules sharper",
-        "leverage-hunt-duo SHIPPED 05-11 — hunter+skeptic agent pair scouts frameworks/papers/architectures for the MWM-AI stack on a 2×/week cron schedule; structured candidate-per-fire format with falsifiable kill-test",
-        "Math/DL adversarial-review duo wired into routing — math-research-scientist + applied-dl-engineer + 2-judge synthesis; first audit (Napolitano) shipped 05-11 with 30.8% judge disagreement"
+        "Agent system audit + expansion 05-11..12 \u2014 14 workspace agents got explicit `model:` frontmatter (9 sonnet + 5 haiku); mats-voice split into sonnet everyday + opus craft; 3 new agents (backtest-auditor, security-reviewer, prompt-engineer); subagent env-override removed; routing rules sharper",
+        "leverage-hunt-duo SHIPPED 05-11 \u2014 hunter+skeptic agent pair scouts frameworks/papers/architectures for the MWM-AI stack on a 2\u00d7/week cron schedule; structured candidate-per-fire format with falsifiable kill-test",
+        "Math/DL adversarial-review duo wired into routing \u2014 math-research-scientist + applied-dl-engineer + 2-judge synthesis; first audit (Napolitano) shipped 05-11 with 30.8% judge disagreement",
+        "D1 paired-ablation methodology codified + commit-msg lint LIVE 2026-05-18 (commit e219ea8) \u2014 first machine-enforced discipline on the prioritization side: PRs adding new SCCS eval gates without baseline coverage are now blocked at commit-msg pre-commit (canonical YAML wired into 8 project repos + mwm-infra). 14/14 bash scenario tests pass. Lints the priority queue without yet picking from it."
       ],
       "next": [
         "T3 priority-bandit code (still blocked on policy_state cell diversity)",
@@ -127,7 +142,7 @@
       "id": "D6",
       "label": "Cross-session continuity",
       "weight": 15,
-      "pct": 78,
+      "pct": 79,
       "status_badge": "partial",
       "done": [
         "MEMORY.md index + handoff convention",
@@ -136,21 +151,22 @@
         "Dev-digest pipeline bi-daily",
         "73 handoff files upserted into book_summaries (two-phase search_knowledge visibility unblocked 04-26)",
         "SCCS master queue unified: plans/sccs-master-queue.md (F1-F24 + T1-T7 + R1-R13 single ordered queue, M0/M1/M2 closed, M3 open)",
-        "BOCPD posterior persisted across CIP fires in data/sccs/bocpd_state.db — regime-shift memory survives Opus session boundaries",
-        "claim-verifier subagent automated 05-12 — Haiku, ≤60s/fire, $0.05/fire, $2/day cap, 60s debounce; Stop hook (claim-verifier-gate.py) + UserPromptSubmit marker (claim-verifier-marker.py) surface VERIFIED/UNVERIFIED/CONTRADICTED verdicts inline before user reads draft (built after FastMCP-on-claude.ai burn)",
-        "mats-voice corpus 33k→730k words 05-12 — 1,555 ChatGPT conversations + 6,836 user messages filtered for code/log/quote pollution; extractor tracked, .txt gitignored; voice subagent corpus depth jumps ~22×",
-        "F18 flip-day handoff ready 05-12 — drift-monitor systemd timer LIVE, M5 ≥24 passed, JSON-parse rate 27%→0% via Haiku, gated checklist for Mon 05-18 flip; F24 closed-handoff committed 06ff6c3",
-        "Memory drift check daily — 0 unindexed in MEMORY.md (16 new files added to feedback_index.md + decisions_index.md + MEMORY.md 05-12)"
+        "BOCPD posterior persisted across CIP fires in data/sccs/bocpd_state.db \u2014 regime-shift memory survives Opus session boundaries",
+        "claim-verifier subagent automated 05-12 \u2014 Haiku, \u226460s/fire, $0.05/fire, $2/day cap, 60s debounce; Stop hook (claim-verifier-gate.py) + UserPromptSubmit marker (claim-verifier-marker.py) surface VERIFIED/UNVERIFIED/CONTRADICTED verdicts inline before user reads draft (built after FastMCP-on-claude.ai burn)",
+        "mats-voice corpus 33k\u2192730k words 05-12 \u2014 1,555 ChatGPT conversations + 6,836 user messages filtered for code/log/quote pollution; extractor tracked, .txt gitignored; voice subagent corpus depth jumps ~22\u00d7",
+        "F18 flip-day handoff ready 05-12 \u2014 drift-monitor systemd timer LIVE, M5 \u226524 passed, JSON-parse rate 27%\u21920% via Haiku, gated checklist for Mon 05-18 flip; F24 closed-handoff committed 06ff6c3",
+        "Memory drift check daily \u2014 0 unindexed in MEMORY.md (16 new files added to feedback_index.md + decisions_index.md + MEMORY.md 05-12)",
+        "F18 flip-day + F19 + retrieval-regression-fix handoffs landed 2026-05-18 / Phase B handoff 2026-05-19 \u2014 every load-bearing 05-18+05-19 ship has a written handoff in `memory/handoff-*.md` with a self-contained next-pickup section, so a fresh Opus session can resume without rebuilding context"
       ],
       "next": [
-        "T5 continuity spec — 'current focus' thread surfaced at session start",
+        "T5 continuity spec \u2014 'current focus' thread surfaced at session start",
         "Importance-scored memory stream",
         "Auto-link next-session handoff pointer into the brief 'organism progress' panel"
       ],
       "last_shipped": null
     }
   ],
-  "aggregate_pct": 62.3,
+  "aggregate_pct": 65.7,
   "judge_score_ci": {
     "status": "sccs_unavailable",
     "method": "disabled",
