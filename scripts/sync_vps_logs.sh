@@ -11,6 +11,7 @@ LOCAL_ROOT="$HOME/MWM-AI/data/vps_logs"
 
 SERVICES=(
   liqsweep-v10-practice
+  liqsweep-v10-mgc-combine
   orbaron-practice
   orbaron-pm-practice
   orbaron-rth-15m-practice
