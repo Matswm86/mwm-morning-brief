@@ -10,14 +10,14 @@ VPS="mats@204.168.244.173"
 LOCAL_ROOT="$HOME/MWM-AI/data/vps_logs"
 
 SERVICES=(
-  liqsweep-v10-practice
+  liqsweep-v10-mnq-combine
   liqsweep-v10-mgc-combine
+  orb-breakout-mnq-combine
   orbaron-practice
   orbaron-pm-practice
   orbaron-rth-15m-practice
   orbaron-mgc-asia-practice
   orbaron-mgc-rth-practice
-  orbaron-mym-pm-practice
 )
 
 mkdir -p "$LOCAL_ROOT"
