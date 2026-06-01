@@ -19,7 +19,9 @@
         "F6 BOCPD shipped 04-27 as CIP signal #16 — vendored Adams-MacKay detector replays commit-deltas every _log_rerank_deltas fire, persists is_changepoint=1 rows to data/sccs/bocpd_state.db",
         "Memento judge-loop + score-only on CIP rerank, first reject row emitted 04-26",
         "Scorer-defense Phase B LIVE 2026-05-19 (commits 4cc85d7+66f50ec+b0b4b1b+96e4c85+5aef138) — 3-judge minority-veto substrate (Llama-3.3-70B + Qwen3-32B + GPT-OSS-120B) wrapping research-swarm reviewer + CIP weekly synthesis; verdicts emit to data/runners/anomalies.jsonl source='judge_ensemble' observationally (text/obj NEVER mutated); CIP signals #28/#29 registered; first fire Sun 2026-05-24 03:01 + 06:07 CEST; gate-flip ~Sun 2026-06-21 after ≥25 verdicts",
-        "SCCS-aug B1 weekly scheduler wired 2026-05-18 (commit cca8cbf) — `audit/utility_tracker.py --weekly` + systemd .service + .timer Sun 03:30 Oslo (post-A.3 03:00); sudo install on box pending; closed-loop counterfactual credit `D_i` updates weekly"
+        "SCCS-aug B1 weekly scheduler wired 2026-05-18 (commit cca8cbf) — `audit/utility_tracker.py --weekly` + systemd .service + .timer Sun 03:30 Oslo (post-A.3 03:00); sudo install on box pending; closed-loop counterfactual credit `D_i` updates weekly",
+        "Swarm-synthesis arm found silently failing + FIXED & verified 2026-05-31 (selfcalib-gate-starved + CIP-infra handoff) — the CIP weekly synthesis stage was erroring out; closed-loop reliability restored so the slow loop actually consumes its inputs again",
+        "F18 skill-self-optimizer gate fix 2026-05-31 (commit d701cfa) — the self-optimizer loop was being starved by a gate bug; fix unblocks the bounded mutation channel from going dormant"
       ],
       "next": [
         "Auto-merge Memento suggestions past score threshold (currently score-only)",
@@ -55,13 +57,16 @@
         "Retrieval_gold regression ROOT-CAUSED, PATCHED, kill-test PASSED 2026-05-18 (commits a2d1d77 + a511687) — hit@5 0.533→0.227 in 04-26→05-03 window root-caused as `_detect_source_type` still keying on legacy `/nontrading books/` while workspace moved to `projects/mwm-creative/books/...`; 55 of 169 queries silently lost; classifier patched for new layout + drift sentinel emits `source_type_fallback_under_creative_tree` WARN; 350 files re-ingested (15,303 chunks, 0 errors); hit@5 restored to 0.560 (above 0.5 floor, exceeds 04-26 baseline of 0.533); hit@1 0.427 matches 04-26 baseline exactly; 47/47 topic-detector tests pass (13 new regression cases)",
         "SCCS-aug B1 counterfactual scout credit SHIPPED 2026-05-18 (commit 222b843) — `D_i = G(z) - G(z_{-s})` per (scout, domain) in utility_tracker; persistence table + 16 tests; smoke-tested against live swarm.db over 60-day window — 30 (scout, domain) pairs all D_i ∈ [-1, 1]",
         "Trading: Ironclad Hardened r2 closeout 2026-05-17 → 2026-05-18 — r2 protocol upgrade (Step 4 expectancy_R replaces win_rate, Step 6 σ_sharpe ceiling scales with N, Step 9 native_risk_override decoupled, per-cell combine_pass_applicable flag, trade-log persistence + replay path); 5 SHIP-WITH-WATCH + 1 boundary FAIL_step4 (sb_mgc_rth exp_R 0.2998 deployed at 2ct, P(daily_breach) 99.87%→63.23%) + 1 KILLED (sb_mym_pm Step 3 OOS was noise); 6 of 7 cells on 50K Combine `22484767`",
-        "Scorer-defense Phase B observational layer LIVE 2026-05-19 — 3-judge minority-veto wraps research-swarm reviewer + CIP weekly synthesis as outcome telemetry (verdicts to anomalies.jsonl `source=judge_ensemble`); supports the F18 production-run review loop without mutating outputs"
+        "Scorer-defense Phase B observational layer LIVE 2026-05-19 — 3-judge minority-veto wraps research-swarm reviewer + CIP weekly synthesis as outcome telemetry (verdicts to anomalies.jsonl `source=judge_ensemble`); supports the F18 production-run review loop without mutating outputs",
+        "Contextual-retrieval CP-17 SHIPPED 2026-05-31 (commit 7cd4d8e) — per-document contextual prefixing on the RAG corpus lifts the held-out gold benchmark to 82; dense + RRF confirmed as the winning retrieval config; reranker-on-context KILLED 2026-06-01 (hurt multi-hop coverage — `VECTOR_BRAIN_RERANK` stays off). Measurable, leakage-guarded retrieval-quality gain.",
+        "Ricci/geodesic geometric-retrieval track RETIRED 2026-05-30 (P3.43 DONE) — fails head-to-head vs plain cosine; honest negative result rather than a forced win. Contextual retrieval won the bake-off instead.",
+        "Qdrant topic-detector + source-type-classifier regression FIXED & committed 2026-05-31 (commit ffcd132) — keeps the brain's outcome corpus from silently mis-routing chunks"
       ],
       "next": [
+        "selfcalib SCCS gate is STARVED — 11 fires all returned 0 deltas (2026-05-31); the outcome-learning signal is not flowing yet. betting-CS confidence-set arm KILLED; leverage survivor re-queued. The gate must see non-zero outcome deltas before this dim can honestly climb.",
         "Force confidence variance (model still states ≥0.9 on 48/60, base rate 0.367 — calibration starved of signal)",
-        "Wire wrap_metric into brief render once N≥30 cal residuals (~5 days from 04-27)",
-        "Cell diversity in policy_state — only 7 distinct (regime, tier) cells, dominated by 40-row monocell. ≥3 distinct regimes is F3 prerequisite (~2-3 months)",
-        "B1 falsification check (Scope C) — wire `compute_counterfactual_credit` LOO math to F4.5 conformal residuals so scout-disable replay shim becomes evaluable on 3 weekly D_i ticks starting Sun 2026-05-24"
+        "Cell diversity in policy_state — too few distinct (regime, tier) cells; ≥3 distinct regimes is the F3 prerequisite (~2-3 months of live cell data)",
+        "B1 falsification check (Scope C) — wire `compute_counterfactual_credit` LOO math to F4.5 conformal residuals so scout-disable replay becomes evaluable on weekly D_i ticks"
       ]
     },
     {
@@ -85,7 +90,9 @@
         "F19 boundary-flux conservation monitor BUILD SHIPPED 2026-05-18 (commit ced3779) — `core/sccs/boundary_flux.py` (310 LOC) + 12-test acceptance suite + CIP signal collector #20 wired (weight 0.03) + 3-axis kill criterion (rollout / intervention / asymmetric constraint); acceptance (b) synthetic-violation PASS; orchestrator wire-in gated on first 3 Bernstein-confirmed F18 production runs (cheap insurance against double-counted or lost signals corrupting the controller after F18 starts mutating skill prompts).",
         "SCCS-aug Phase 1 A1+A2 SHIPPED 2026-05-18 (commit 27939c0) — A1 Action-Reason Trace columns on `policy_state` (expected_observation_json / actual_observation_json / rollback_pointer per AGI ALPHA p.9; reuses `core/observability/log_event.py` typed-schema); A2 S_swarm Shannon entropy diagnostic across 9 scouts (~60 LOC, no control loop — surfaces entropy as observability before the C2 control-loop discussion).",
         "SCCS-aug D1 paired-ablation methodology codified 2026-05-18 Scope B (commit e219ea8) — 1-page methodology doc + commit-msg pre-commit lint catching PRs adding new SCCS eval gates without baseline coverage + canonical YAML wire-up in both defensive-hooks installer (for the 8 project repos) and mwm-infrastructure pre-commit; 14/14 bash scenario tests pass; Scope A 200-LOC harness deliberately NOT built per §1.5 alignment (methodology already in active use per Phase 1.5 RAG KILL, F18 flip gates, ironclad-hardened r2).",
-        "Phase 0 freeze dissolved 2026-05-18 — SCCS is general substrate per [[sccs_is_general_substrate]], no longer trading-account-pass gated."
+        "Phase 0 freeze dissolved 2026-05-18 — SCCS is general substrate per [[sccs_is_general_substrate]], no longer trading-account-pass gated.",
+        "Autonomous research-agent scope CONCLUDED 2026-05-31 — article-writer capability REJECTED as out-of-bounds; research + inward-verification ACCEPTED. The system declined to expand its own write-surface, which is exactly the bounded-self-modification behaviour the dim measures.",
+        "Geometric-retrieval track retired on evidence 2026-05-30 — a failing track was killed rather than tuned to fit, demonstrating bounded modification under a falsification gate instead of motivated continuation."
       ],
       "next": [
         "T2 safety harness spec (auto-PR with diff cap + 24h soak + auto-revert)",
@@ -150,7 +157,8 @@
         "mats-voice corpus 33k→730k words 05-12 — 1,555 ChatGPT conversations + 6,836 user messages filtered for code/log/quote pollution; extractor tracked, .txt gitignored; voice subagent corpus depth jumps ~22×",
         "F18 flip-day handoff ready 05-12 — drift-monitor systemd timer LIVE, M5 ≥24 passed, JSON-parse rate 27%→0% via Haiku, gated checklist for Mon 05-18 flip; F24 closed-handoff committed 06ff6c3",
         "Memory drift check daily — 0 unindexed in MEMORY.md (16 new files added to feedback_index.md + decisions_index.md + MEMORY.md 05-12)",
-        "F18 flip-day + F19 + retrieval-regression-fix handoffs landed 2026-05-18 / Phase B handoff 2026-05-19 — every load-bearing 05-18+05-19 ship has a written handoff in `memory/handoff-*.md` with a self-contained next-pickup section, so a fresh Opus session can resume without rebuilding context"
+        "F18 flip-day + F19 + retrieval-regression-fix handoffs landed 2026-05-18 / Phase B handoff 2026-05-19 — every load-bearing 05-18+05-19 ship has a written handoff in `memory/handoff-*.md` with a self-contained next-pickup section, so a fresh Opus session can resume without rebuilding context",
+        "05-20→05-31 wave fully handed off — contextual-retrieval CP-17, Ricci/geodesic conclusion, selfcalib-gate-starved + CIP-infra, autonomous-research conclusion, and the Combine re-key deploy each carry a dated handoff with a next-pickup section; continuity held across the whole period with zero unindexed load-bearing ships"
       ],
       "next": [
         "T5 continuity spec — 'current focus' thread surfaced at session start",

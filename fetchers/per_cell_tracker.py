@@ -1,4 +1,4 @@
-"""per_cell_tracker — activity breakdown for the 7 live practice cells.
+"""per_cell_tracker — activity breakdown for the 3 live Combine (50K) cells.
 
 Reads JSONL event logs from ~/MWM-AI/data/vps_logs/<svc>/ (populated by the
 mwm-brief-vps-logs-sync.timer which rsyncs from VPS every 5 min).
@@ -31,60 +31,44 @@ VPS_LOGS = MWM_ROOT / "data" / "vps_logs"
 
 # Display metadata per service. `window` is a short human label; `tz` is used
 # for DOW evaluation when the config omits it (MNQ orbaron services).
+# Live fleet = the 3 cells on the 50K Combine account 22484767. The orbaron
+# practice cells + the killed MYM/MES cells are intentionally excluded — this
+# panel mirrors the real-money fleet only. Both liqsweep combine cells run
+# without a config_locked.json (schema hardcoded below); the ORB-Breakout cell
+# carries one and its values override these defaults.
 CELLS: list[dict[str, Any]] = [
     {
-        "service": "liqsweep-v10-practice",
-        "label": "LiqSweep v10",
+        "service": "liqsweep-v10-mnq-combine",
+        "label": "LiqSweep MNQ",
         "engine": "liqsweep-v10",
         "window": "24/5",
         "tz": "America/New_York",
         # liqsweep has no DOW filter and no config_locked.json; hardcode.
         "default_symbol": "MNQ",
-        "default_contracts": 1,
+        "default_contracts": 4,
         "default_timeframe": "1min",
         "trade_dow": [True] * 7,
     },
     {
-        "service": "orbaron-practice",
-        "label": "Orbaron RTH 1m",
-        "engine": "break-and-retest",
+        "service": "liqsweep-v10-mgc-combine",
+        "label": "LiqSweep MGC",
+        "engine": "liqsweep-v10",
+        "window": "24/5",
+        "tz": "America/New_York",
+        "default_symbol": "MGC",
+        "default_contracts": 4,
+        "default_timeframe": "1min",
+        "trade_dow": [True] * 7,
+    },
+    {
+        "service": "orb-breakout-mnq-combine",
+        "label": "ORB Breakout MNQ",
+        "engine": "orb-breakout",
         "window": "09:30–09:45 ET",
         "tz": "America/New_York",
-    },
-    {
-        "service": "orbaron-pm-practice",
-        "label": "Orbaron PM 5m",
-        "engine": "break-and-retest",
-        "window": "08:00–08:15 ET",
-        "tz": "America/New_York",
-    },
-    {
-        "service": "orbaron-rth-15m-practice",
-        "label": "Orbaron RTH 15m",
-        "engine": "break-and-retest",
-        "window": "09:30–09:45 ET",
-        "tz": "America/New_York",
-    },
-    {
-        "service": "orbaron-mgc-asia-practice",
-        "label": "MGC Asia",
-        "engine": "simple-breakout",
-        "window": "02:00–02:05 Oslo",
-        "tz": "Europe/Oslo",
-    },
-    {
-        "service": "orbaron-mgc-rth-practice",
-        "label": "MGC RTH",
-        "engine": "simple-breakout",
-        "window": "09:30–09:45 ET",
-        "tz": "America/New_York",
-    },
-    {
-        "service": "orbaron-mym-pm-practice",
-        "label": "MYM PM",
-        "engine": "simple-breakout",
-        "window": "08:00–08:15 ET",
-        "tz": "America/New_York",
+        "default_symbol": "MNQ",
+        "default_contracts": 2,
+        "default_timeframe": "5min",
     },
 ]
 
@@ -385,5 +369,4 @@ def fetch() -> dict:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    import sys
     print(json.dumps(fetch(), indent=2, default=str))

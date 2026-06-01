@@ -75,7 +75,7 @@ Pcts are **not auto-bumped** — they're revised manually after CIP weekly revie
 when a master-queue milestone closes. See [`handoff-brief-selfcalib-shipped-2026-04-24.md`](https://github.com/Matswm86/mwm-infrastructure/blob/master/memory/handoff-brief-selfcalib-shipped-2026-04-24.md)
 for the design rationale (38.25% honest baseline beats 70% vibes).
 
-**Current aggregate (manual, 2026-05-19): 65.70%** — bumped from 62.30% (2026-05-12) after the 2026-05-18 + 2026-05-19 wave: D1 98→99 (Phase B 3-judge minority-veto LIVE + B1 weekly scheduler), D2 62→67 (Phase A.6/A.7 topology drift metrics + retrieval-regression FIX with kill-test PASS + B1 counterfactual scout credit `D_i` + Ironclad Hardened r2 closeout), D3 68→75 (F18 FLIPPED LIVE + F19 boundary-flux build shipped + A1 Action-Reason Trace + Phase 0 freeze dissolved), D4 22→25 (D1 paired-ablation methodology codified + commit-msg lint), D6 78→79 (handoffs landed). Prior progression: 43.75 → 55.80 (2026-04-28 after M0/M1/F4/F4.5/F6/F9) → 56.40 (2026-05-05 after F18 scaffold + C2 invariant) → 62.30 (2026-05-12 after F20-F23 + brain repair + F24 + agent audit + claim-verifier + voice corpus).
+**Current aggregate (2026-06-01 re-review): 65.70%** — re-reviewed 2026-06-01: rubric recompute = 65.10%, manual = 65.70%, **flat since 05-19**. The 05-20→05-31 period was consolidation — one measurable retrieval win (contextual-retrieval CP-17, gold→82) offset by three honestly-killed tracks (Ricci/geodesic, betting-CS, reranker-on-context) and a starved selfcalib gate (n=11 all-0 deltas). Bullets refreshed per dim; pcts deliberately not inflated. Held at 65.70% from the 2026-05-19 wave: D1 98→99 (Phase B 3-judge minority-veto LIVE + B1 weekly scheduler), D2 62→67 (Phase A.6/A.7 topology drift metrics + retrieval-regression FIX with kill-test PASS + B1 counterfactual scout credit `D_i` + Ironclad Hardened r2 closeout), D3 68→75 (F18 FLIPPED LIVE + F19 boundary-flux build shipped + A1 Action-Reason Trace + Phase 0 freeze dissolved), D4 22→25 (D1 paired-ablation methodology codified + commit-msg lint), D6 78→79 (handoffs landed). Earlier 2026-05-19 progression was itself a bump from 62.30% (2026-05-12) after the 2026-05-18 + 2026-05-19 wave: D1 98→99 (Phase B 3-judge minority-veto LIVE + B1 weekly scheduler), D2 62→67 (Phase A.6/A.7 topology drift metrics + retrieval-regression FIX with kill-test PASS + B1 counterfactual scout credit `D_i` + Ironclad Hardened r2 closeout), D3 68→75 (F18 FLIPPED LIVE + F19 boundary-flux build shipped + A1 Action-Reason Trace + Phase 0 freeze dissolved), D4 22→25 (D1 paired-ablation methodology codified + commit-msg lint), D6 78→79 (handoffs landed). Prior progression: 43.75 → 55.80 (2026-04-28 after M0/M1/F4/F4.5/F6/F9) → 56.40 (2026-05-05 after F18 scaffold + C2 invariant) → 62.30 (2026-05-12 after F20-F23 + brain repair + F24 + agent audit + claim-verifier + voice corpus).
 
 SCCS Foundation track: M0/M1 closed 04-26..27, M2 closed 05-01, M3 opened (regime_label landed 05-05). F3 DoWhy 3-node causal gate flipped from dry-mode to **LIVE-consuming 2026-05-11**; F4 Bernstein + F6 BOCPD gates wired between decide+dispatch (04-27..28); **F4.5 Conformal LIVE 2026-05-04** (`SCCS_CONFORMAL_ENABLED=true`); F9 forward-sufficiency 6th rubric dim shipped 04-28; **F18 skill self-optimizer FLIPPED LIVE 2026-05-18** after 4 gates passed (first post-flip cycle was a clean dry-run self-cancel; C2 reward-immutability invariant gated); **F19 boundary-flux conservation monitor BUILD SHIPPED 2026-05-18** (`core/sccs/boundary_flux.py` 310 LOC + 12-test acceptance + CIP signal #20 with weight 0.03 + 3-axis kill criterion; orchestrator wire-in gated on first 3 Bernstein-confirmed F18 runs). **Scorer-defense Phase A (drift tripwire + topology metrics) + Phase B (3-judge minority-veto, observational) + Phase C (triangular consistency) all LIVE 2026-05-19**; first Phase B verdicts Sun 2026-05-24, gate-flip ~Sun 2026-06-21 after ≥25 verdicts.
 
@@ -108,14 +108,15 @@ Env (from `~/MWM-AI/.env`):
   via `fetchers/regime_monitor.py` + `fetchers/regime.py`
 - **Trade Environment**: `trade_guard`, `contextualize_macro`, `check_orb_handoff_status`
   (market-news Track B tools) — verdict + risk bars + ORB handoff via `fetchers/trade_guard_daily.py`
-- **Live Trades**: today + this-week trade counts (W/L split) from TopstepX practice account
-  `19907662` via `fetchers/trade_tracker.py` — `/api/Trade/search`, 4h disk cache at
-  `data/trade_tracker_cache/`. Auth reads `PROJECT_X_API_KEY` + `PROJECT_X_USERNAME` from
-  `projects/mwm-trading/.env`.
-- **Strategy Performance**: iFVG LiqSweep v10 (arm=12) + ORB layered backtest stats
-  normalized to $50k / 2ct MNQ reference (ORB scaled 5ct/$1M → 2ct/$50k by factor 0.4) via
-  `fetchers/backtest_stats.py`. Reads
-  `data/backtest/results/liqsweep_v10/v10_arm12_confirm_summary.json` and
-  `data/backtest/results/orb_layered/layer3_bucket945_orb110_tueoff_summary.json`.
+- **Live Trades**: today + this-week trade counts from the **50K Combine account `22484767`**
+  via `fetchers/trade_tracker.py` — counts `entry_market_placed` + `entry_limit_placed`
+  engine events from the 3 Combine service dirs in `~/MWM-AI/data/vps_logs/` (must stay in
+  sync with `per_cell_tracker.COMBINE_SERVICES`). Practice (19907662) cells are excluded.
+- **Strategy Performance**: mirrors the **trading.mwmai.no strategy showcase** (the 2 strategies
+  live on the Combine fleet — Liquidity Sweep MNQ+MGC, ORB Breakout MNQ) via
+  `fetchers/backtest_stats.py`, which parses
+  `projects/mwm-trading/platform/frontend-rr7/app/lib/strategy-showcase.ts` (auto-generated
+  1-year backtest on the live cells). Re-run the platform showcase generator to refresh; the
+  brief picks up new numbers on the next build. No hand-edited stats.
 - **Geopolitics / Tech / Research**: arXiv q-fin + GDELT (Obsidian inbox removed 2026-04-21 — privacy fix)
 - **System**: docker ps · systemd user units · VPS pings · nightly diff review

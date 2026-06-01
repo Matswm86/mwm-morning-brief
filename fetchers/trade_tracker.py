@@ -1,8 +1,12 @@
 """trade_tracker — Live trade count, sourced from engine event logs.
 
+Counts ONLY the 3 cells on the 50K Combine account 22484767 (see
+COMBINE_SERVICES below) — the practice (19907662) orbaron cells are
+excluded so the Live Trades panel reflects real-money activity only.
+
 Aligns with cell_activity by counting the SAME events per_cell_tracker
 counts: entry_market_placed + entry_limit_placed emitted by the live
-practice runners, mirrored to ~/MWM-AI/data/vps_logs/<svc>/ via the
+Combine runners, mirrored to ~/MWM-AI/data/vps_logs/<svc>/ via the
 mwm-brief-vps-logs-sync.timer (5 min cadence).
 
 Previously this hit TopstepX /api/Trade/search for *closed* trades,
@@ -29,6 +33,15 @@ VPS_LOGS = MWM_ROOT / "data" / "vps_logs"
 
 # Must match fetchers/per_cell_tracker.ENTRY_TYPES for alignment.
 ENTRY_TYPES = {"entry_market_placed", "entry_limit_placed"}
+
+# 50K Combine account 22484767 fleet — must stay in sync with the combine
+# services in fetchers/per_cell_tracker.CELLS. Live Trades counts this account
+# only, not the practice (19907662) cells.
+COMBINE_SERVICES = [
+    "liqsweep-v10-mnq-combine",
+    "liqsweep-v10-mgc-combine",
+    "orb-breakout-mnq-combine",
+]
 
 
 def _read_jsonl(path: Path) -> list[dict]:
@@ -70,7 +83,7 @@ def _count_entries(since_utc: datetime) -> int:
     total = 0
     day = since_utc.date()
     end_day = now.date()
-    service_dirs = [p for p in VPS_LOGS.iterdir() if p.is_dir()]
+    service_dirs = [VPS_LOGS / s for s in COMBINE_SERVICES]
     while day <= end_day:
         stamp = day.isoformat()
         for svc in service_dirs:
@@ -107,6 +120,5 @@ def fetch() -> dict:
 
 
 if __name__ == "__main__":
-    import sys
     logging.basicConfig(level=logging.INFO)
     print(json.dumps(fetch(), indent=2))

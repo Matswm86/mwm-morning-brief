@@ -1,6 +1,6 @@
 /*! Strategy Performance panel
- *  Reads brief.json `.backtest_stats` block. All figures normalised to
- *  $50k TopstepX account / 2ct MNQ reference.
+ *  Reads brief.json `.backtest_stats` block. Numbers mirror the
+ *  trading.mwmai.no strategy showcase (1-year backtest, live Combine cells).
  */
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -90,9 +90,9 @@
       const brief = await res.json();
       const bs = brief.backtest_stats;
       if (!bs) return;
-      renderCard("liqsweep", bs.liqsweep);
-      renderCard("orb", bs.orb);
-      renderCard("orb-br", bs.orb_br);
+      renderCard("liqsweep", bs.liqsweep);   // LiqSweep MNQ
+      renderCard("orb-br", bs.orb_br);       // LiqSweep MGC (own card)
+      renderCard("orb", bs.orb);             // ORB Breakout
     } catch (e) {
       console.error("backtest_stats panel load failed", e);
     }

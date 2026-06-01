@@ -155,7 +155,7 @@
     <div class="tracker-head">
       <div class="tracker-title">
         <span class="eyebrow">Live Trades</span>
-        <span class="eyebrow-soft">practice account · MNQ</span>
+        <span class="eyebrow-soft">50K Combine · acct 22484767</span>
       </div>
       <span class="eyebrow-soft" id="tracker-updated">—</span>
     </div>
@@ -189,7 +189,7 @@
     </div>
   </section>
 
-  <!-- Cell Activity (per-cell breakdown of the 7 live practice services) -->
+  <!-- Cell Activity (per-cell breakdown of the 3 live Combine 50K cells) -->
   <section class="cell-section" id="cell-section" hidden>
     <div class="cell-head">
       <div class="cell-title">
@@ -270,16 +270,16 @@
     <div class="ss-head">
       <div class="ss-title">
         <span class="eyebrow">Strategy Performance</span>
-        <span class="eyebrow-soft">backtesting · $50k / 2ct reference</span>
+        <span class="eyebrow-soft">1-year backtest · live Combine cells · trading.mwmai.no</span>
       </div>
     </div>
     <div class="ss-grid">
 
-      <!-- iFVG LiqSweep card -->
+      <!-- Liquidity Sweep — MNQ card -->
       <article class="ss-card ss-card-liqsweep" id="ss-card-liqsweep">
         <div class="ss-card-head">
           <div>
-            <div class="ss-name" id="ss-label-liqsweep">iFVG LiqSweep</div>
+            <div class="ss-name" id="ss-label-liqsweep">LiqSweep MNQ</div>
             <div class="ss-period" id="ss-period-liqsweep">—</div>
           </div>
           <span class="ss-dot ss-dot-liqsweep"></span>
@@ -319,55 +319,11 @@
         <div class="ss-source" id="ss-ref-liqsweep">—</div>
       </article>
 
-      <!-- ORB RT card (Break-and-Retest) -->
-      <article class="ss-card ss-card-orb" id="ss-card-orb">
-        <div class="ss-card-head">
-          <div>
-            <div class="ss-name" id="ss-label-orb">ORB RT</div>
-            <div class="ss-period" id="ss-period-orb">—</div>
-          </div>
-          <span class="ss-dot ss-dot-orb"></span>
-        </div>
-        <div class="ss-metrics">
-          <div class="ss-metric">
-            <span class="ss-key">Win Rate</span>
-            <span class="ss-val" id="ss-wr-orb">—</span>
-          </div>
-          <div class="ss-metric">
-            <span class="ss-key">Profit Factor</span>
-            <span class="ss-val" id="ss-pf-orb">—</span>
-          </div>
-          <div class="ss-metric">
-            <span class="ss-key">Max Drawdown</span>
-            <span class="ss-val" id="ss-dd-orb">—</span>
-          </div>
-          <div class="ss-metric">
-            <span class="ss-key">Risk / Trade</span>
-            <span class="ss-val ss-risk" id="ss-risk-orb">—</span>
-          </div>
-        </div>
-        <div class="ss-avgs">
-          <div class="ss-avg-row">
-            <span class="ss-avg-label">Monthly</span>
-            <span class="ss-avg-usd" id="ss-mo-usd-orb">—</span>
-            <span class="ss-avg-pct" id="ss-mo-pct-orb">—</span>
-            <span class="ss-avg-tr" id="ss-mo-tr-orb">—</span>
-          </div>
-          <div class="ss-avg-row">
-            <span class="ss-avg-label">Yearly</span>
-            <span class="ss-avg-usd" id="ss-yr-usd-orb">—</span>
-            <span class="ss-avg-pct" id="ss-yr-pct-orb">—</span>
-            <span class="ss-avg-tr" id="ss-yr-tr-orb">—</span>
-          </div>
-        </div>
-        <div class="ss-source" id="ss-ref-orb">—</div>
-      </article>
-
-      <!-- ORB BR card (Simple Breakout — MGC Asia best cell) -->
+      <!-- Liquidity Sweep — MGC card (same strategy, gold; uses orb-br slot IDs) -->
       <article class="ss-card ss-card-orb-br" id="ss-card-orb-br">
         <div class="ss-card-head">
           <div>
-            <div class="ss-name" id="ss-label-orb-br">ORB BR</div>
+            <div class="ss-name" id="ss-label-orb-br">LiqSweep MGC</div>
             <div class="ss-period" id="ss-period-orb-br">—</div>
           </div>
           <span class="ss-dot ss-dot-orb-br"></span>
@@ -405,6 +361,50 @@
           </div>
         </div>
         <div class="ss-source" id="ss-ref-orb-br">—</div>
+      </article>
+
+      <!-- ORB Breakout card (opening-range break, MNQ RTH) -->
+      <article class="ss-card ss-card-orb" id="ss-card-orb">
+        <div class="ss-card-head">
+          <div>
+            <div class="ss-name" id="ss-label-orb">ORB Breakout</div>
+            <div class="ss-period" id="ss-period-orb">—</div>
+          </div>
+          <span class="ss-dot ss-dot-orb"></span>
+        </div>
+        <div class="ss-metrics">
+          <div class="ss-metric">
+            <span class="ss-key">Win Rate</span>
+            <span class="ss-val" id="ss-wr-orb">—</span>
+          </div>
+          <div class="ss-metric">
+            <span class="ss-key">Profit Factor</span>
+            <span class="ss-val" id="ss-pf-orb">—</span>
+          </div>
+          <div class="ss-metric">
+            <span class="ss-key">Max Drawdown</span>
+            <span class="ss-val" id="ss-dd-orb">—</span>
+          </div>
+          <div class="ss-metric">
+            <span class="ss-key">Risk / Trade</span>
+            <span class="ss-val ss-risk" id="ss-risk-orb">—</span>
+          </div>
+        </div>
+        <div class="ss-avgs">
+          <div class="ss-avg-row">
+            <span class="ss-avg-label">Monthly</span>
+            <span class="ss-avg-usd" id="ss-mo-usd-orb">—</span>
+            <span class="ss-avg-pct" id="ss-mo-pct-orb">—</span>
+            <span class="ss-avg-tr" id="ss-mo-tr-orb">—</span>
+          </div>
+          <div class="ss-avg-row">
+            <span class="ss-avg-label">Yearly</span>
+            <span class="ss-avg-usd" id="ss-yr-usd-orb">—</span>
+            <span class="ss-avg-pct" id="ss-yr-pct-orb">—</span>
+            <span class="ss-avg-tr" id="ss-yr-tr-orb">—</span>
+          </div>
+        </div>
+        <div class="ss-source" id="ss-ref-orb">—</div>
       </article>
 
     </div>
