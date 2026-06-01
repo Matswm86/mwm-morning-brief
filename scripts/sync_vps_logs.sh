@@ -18,6 +18,9 @@ SERVICES=(
   orbaron-rth-15m-practice
   orbaron-mgc-asia-practice
   orbaron-mgc-rth-practice
+  ovb-mnq-prac
+  ovb-mgc-prac
+  ovb-m2k-prac
 )
 
 mkdir -p "$LOCAL_ROOT"
