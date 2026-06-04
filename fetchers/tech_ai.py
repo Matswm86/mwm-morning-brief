@@ -1,17 +1,29 @@
 """Tech + AI + Claude + LLM fetcher — HN Algolia + Reddit + arXiv."""
+
 from __future__ import annotations
 import logging
-from datetime import datetime, timezone
+import re
+from datetime import datetime, timedelta, timezone
 
 from http_util import get_json
 
 log = logging.getLogger("morning-brief.tech_ai")
 
+# Reddit recency cutoff — drop anything older than this so evergreen
+# megathreads / pinned posts can't make the section look stale (the "40-day
+# post" bug, 2026-06-04). The .rss "hot" feed surfaces sticky/old items first.
+REDDIT_MAX_AGE_DAYS = 14
+_REDDIT_SKIP_TITLE = re.compile(
+    r"megathread|ongoing|read before posting|rules|weekly|monthly|discord"
+    r"|self.?promotion|sticky|pinned",
+    re.IGNORECASE,
+)
+
 HN_URL = "https://hn.algolia.com/api/v1/search_by_date"
 HN_QUERIES = [
     ("claude OR anthropic", 4),
-    ("LLM OR \"large language model\" OR \"open weights\"", 3),
-    ("\"MCP\" OR \"Model Context Protocol\"", 2),
+    ('LLM OR "large language model" OR "open weights"', 3),
+    ('"MCP" OR "Model Context Protocol"', 2),
 ]
 
 REDDIT_SUBS = [
@@ -25,10 +37,15 @@ REDDIT_UA = "mwm-morning-brief/0.1 (by /u/matswm86)"
 
 
 def _hn(query: str, cap: int) -> list[dict]:
-    data = get_json(HN_URL, params={
-        "query": query, "tags": "story", "hitsPerPage": cap * 3,
-        "numericFilters": "points>40",
-    })
+    data = get_json(
+        HN_URL,
+        params={
+            "query": query,
+            "tags": "story",
+            "hitsPerPage": cap * 3,
+            "numericFilters": "points>40",
+        },
+    )
     try:
         hits = data.get("hits", [])
     except Exception:
@@ -38,43 +55,70 @@ def _hn(query: str, cap: int) -> list[dict]:
         title = h.get("title")
         if not title:
             continue
-        url = h.get("url") or f"https://news.ycombinator.com/item?id={h.get('objectID')}"
-        out.append({
-            "headline": title[:180],
-            "body": f"{h.get('points', 0)} pts · {h.get('num_comments', 0)} comments",
-            "url": url,
-            "source": "hn",
-        })
+        url = (
+            h.get("url") or f"https://news.ycombinator.com/item?id={h.get('objectID')}"
+        )
+        out.append(
+            {
+                "headline": title[:180],
+                "body": f"{h.get('points', 0)} pts · {h.get('num_comments', 0)} comments",
+                "url": url,
+                "source": "hn",
+            }
+        )
         if len(out) >= cap:
             break
     return out
 
 
 def _reddit(sub: str, cap: int) -> list[dict]:
-    url = f"https://www.reddit.com/r/{sub}/hot.json"
+    # Reddit blocks /hot.json (403). The .rss "hot" feed works with the
+    # mwm-trading UA — see feedback_reddit_fetch_via_curl_json. RSS carries no
+    # ups/comments, so we filter by recency + skip pinned/evergreen titles
+    # instead, and label with the post age.
     import requests
+
+    url = f"https://www.reddit.com/r/{sub}/hot/.rss"
     try:
-        r = requests.get(url, headers={"User-Agent": REDDIT_UA}, timeout=15, params={"limit": cap * 3})
+        r = requests.get(url, headers={"User-Agent": REDDIT_UA}, timeout=15)
         r.raise_for_status()
-        data = r.json()
+        text = r.text
     except Exception as e:
         log.warning("reddit %s fail: %s", sub, e)
         return []
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=REDDIT_MAX_AGE_DAYS)
     out = []
-    for child in data.get("data", {}).get("children", [])[: cap * 3]:
-        p = child.get("data", {})
-        if p.get("stickied"):
+    for entry in re.findall(r"<entry>(.*?)</entry>", text, re.DOTALL):
+        title_m = re.search(r"<title>(.*?)</title>", entry, re.DOTALL)
+        link_m = re.search(r'<link[^>]*href="([^"]+)"', entry)
+        date_m = re.search(
+            r"<(?:updated|published)>(.*?)</(?:updated|published)>", entry
+        )
+        if not (title_m and link_m):
             continue
-        title = p.get("title", "")[:180]
-        ups = int(p.get("ups", 0) or 0)
-        if ups < 30:
+        title = re.sub(r"\s+", " ", title_m.group(1)).strip()[:180]
+        if not title or _REDDIT_SKIP_TITLE.search(title):
             continue
-        out.append({
-            "headline": title,
-            "body": f"r/{sub} · {ups} ↑ · {p.get('num_comments', 0)} comments",
-            "url": "https://www.reddit.com" + p.get("permalink", ""),
-            "source": f"reddit:{sub}",
-        })
+        posted = None
+        if date_m:
+            try:
+                posted = datetime.fromisoformat(date_m.group(1).strip())
+                if posted.tzinfo is None:
+                    posted = posted.replace(tzinfo=timezone.utc)
+            except ValueError:
+                posted = None
+        if posted is not None and posted < cutoff:
+            continue  # evergreen / stale — the 40-day-post guard
+        age = f"{(now - posted).days}d ago" if posted else "recent"
+        out.append(
+            {
+                "headline": title,
+                "body": f"r/{sub} · {age}",
+                "url": link_m.group(1).strip(),
+                "source": f"reddit:{sub}",
+            }
+        )
         if len(out) >= cap:
             break
     return out
@@ -84,11 +128,13 @@ def _arxiv_ai(cap: int = 3) -> list[dict]:
     """arXiv cs.AI + cs.CL new submissions (pseudo-Atom -> plain text)."""
     import re
     from http_util import get_text
+
     text = get_text(
         "http://export.arxiv.org/api/query",
         params={
             "search_query": "cat:cs.AI OR cat:cs.CL",
-            "sortBy": "submittedDate", "sortOrder": "descending",
+            "sortBy": "submittedDate",
+            "sortOrder": "descending",
             "max_results": str(cap * 2),
         },
         timeout=30,
@@ -105,12 +151,14 @@ def _arxiv_ai(cap: int = 3) -> list[dict]:
             continue
         t = re.sub(r"\s+", " ", title_m.group(1)).strip()
         s = re.sub(r"\s+", " ", (summary_m.group(1) if summary_m else ""))[:240].strip()
-        out.append({
-            "headline": t[:180],
-            "body": s,
-            "url": link_m.group(1).strip(),
-            "source": "arxiv",
-        })
+        out.append(
+            {
+                "headline": t[:180],
+                "body": s,
+                "url": link_m.group(1).strip(),
+                "source": "arxiv",
+            }
+        )
         if len(out) >= cap:
             break
     return out
