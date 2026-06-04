@@ -1,4 +1,4 @@
-"""per_cell_tracker — activity breakdown for the 3 live Combine (50K) cells.
+"""per_cell_tracker — activity breakdown for the 2 live Combine (50K) cells.
 
 Reads JSONL event logs from ~/MWM-AI/data/vps_logs/<svc>/ (populated by the
 mwm-brief-vps-logs-sync.timer which rsyncs from VPS every 5 min).
@@ -14,6 +14,7 @@ Known limitations:
     aggregate trade count for that (fetchers/trade_tracker.py).
   - liqsweep-v10 has no config_locked.json — schema hardcoded below.
 """
+
 from __future__ import annotations
 
 import json
@@ -31,11 +32,11 @@ VPS_LOGS = MWM_ROOT / "data" / "vps_logs"
 
 # Display metadata per service. `window` is a short human label; `tz` is used
 # for DOW evaluation when the config omits it (MNQ orbaron services).
-# Live fleet = the 3 cells on the 50K Combine account 22484767. The orbaron
-# practice cells + the killed MYM/MES cells are intentionally excluded — this
-# panel mirrors the real-money fleet only. Both liqsweep combine cells run
-# without a config_locked.json (schema hardcoded below); the ORB-Breakout cell
-# carries one and its values override these defaults.
+# Live fleet = the 2 LiqSweep cells on the 50K Combine account 22484767 (MNQ
+# 4ct + MGC 2ct). The orbaron practice cells, the ORB-Breakout cell (pulled off
+# Combine onto PRAC 2026-06-02), and the killed MYM/MES cells are intentionally
+# excluded — this panel mirrors the real-money fleet only. Both liqsweep combine
+# cells run without a config_locked.json (schema hardcoded below).
 CELLS: list[dict[str, Any]] = [
     {
         "service": "liqsweep-v10-mnq-combine",
@@ -56,19 +57,9 @@ CELLS: list[dict[str, Any]] = [
         "window": "24/5",
         "tz": "America/New_York",
         "default_symbol": "MGC",
-        "default_contracts": 4,
+        "default_contracts": 2,  # 4->2ct 2026-06-03 (MC p95 DD $1,451 < $2k gate)
         "default_timeframe": "1min",
         "trade_dow": [True] * 7,
-    },
-    {
-        "service": "orb-breakout-mnq-combine",
-        "label": "ORB Breakout MNQ",
-        "engine": "orb-breakout",
-        "window": "09:30–09:45 ET",
-        "tz": "America/New_York",
-        "default_symbol": "MNQ",
-        "default_contracts": 2,
-        "default_timeframe": "5min",
     },
 ]
 
@@ -176,7 +167,9 @@ def _count_today(events: list[dict], now_utc: datetime, predicate) -> int:
     return n
 
 
-def _last_trade_info(events: list[dict], now_utc: datetime) -> tuple[float | None, str | None]:
+def _last_trade_info(
+    events: list[dict], now_utc: datetime
+) -> tuple[float | None, str | None]:
     """Return (engine_entry_price, ts_utc_iso) of most recent entry today."""
     today = now_utc.date()
     for ev in reversed(events):
@@ -245,12 +238,22 @@ def _cell_payload(meta: dict, now_utc: datetime) -> dict:
 
     # Symbol/contracts/timeframe: config wins, fallback to latest startup, fallback to defaults.
     latest_startup = _latest(events, "startup")
-    symbol = cfg.get("live_contract") or cfg.get("symbol") \
-        or (latest_startup or {}).get("contract") or meta.get("default_symbol", "—")
-    contracts = cfg.get("contracts") or (latest_startup or {}).get("size") \
+    symbol = (
+        cfg.get("live_contract")
+        or cfg.get("symbol")
+        or (latest_startup or {}).get("contract")
+        or meta.get("default_symbol", "—")
+    )
+    contracts = (
+        cfg.get("contracts")
+        or (latest_startup or {}).get("size")
         or meta.get("default_contracts", 1)
-    timeframe = cfg.get("timeframe") or (latest_startup or {}).get("timeframe") \
+    )
+    timeframe = (
+        cfg.get("timeframe")
+        or (latest_startup or {}).get("timeframe")
         or meta.get("default_timeframe", "—")
+    )
 
     trade_dow = cfg.get("trade_dow") or meta.get("trade_dow") or [True] * 7
     # For orbaron MNQ services the trade_dow is only in startup.engine_cfg
@@ -267,9 +270,15 @@ def _cell_payload(meta: dict, now_utc: datetime) -> dict:
 
     bars_today = _count_today(events, now_utc, lambda e: e.get("type") == "bar")
     # entries_today: count distinct entry_* events on TODAY UTC
-    entries_today = _count_today(events, now_utc, lambda e: e.get("type") in ENTRY_TYPES)
-    fills_today = _count_today(events, now_utc, lambda e: e.get("type") == "order_filled")
-    closes_today = _count_today(events, now_utc, lambda e: e.get("type") == "position_closed")
+    entries_today = _count_today(
+        events, now_utc, lambda e: e.get("type") in ENTRY_TYPES
+    )
+    fills_today = _count_today(
+        events, now_utc, lambda e: e.get("type") == "order_filled"
+    )
+    closes_today = _count_today(
+        events, now_utc, lambda e: e.get("type") == "position_closed"
+    )
 
     # signals_today: prefer the engine counter from the most recent heartbeat
     # (runner tracks this); fallback to entries_today.
@@ -320,8 +329,12 @@ def _cell_payload(meta: dict, now_utc: datetime) -> dict:
 
 def _summary(cells: list[dict]) -> dict:
     counts = {
-        "active": 0, "in_position": 0, "armed": 0,
-        "off_day": 0, "stale": 0, "error": 0,
+        "active": 0,
+        "in_position": 0,
+        "armed": 0,
+        "off_day": 0,
+        "stale": 0,
+        "error": 0,
     }
     for c in cells:
         counts[c["status"]] = counts.get(c["status"], 0) + 1
@@ -351,12 +364,14 @@ def fetch() -> dict:
             cells.append(_cell_payload(meta, now_utc))
         except Exception as exc:
             log.exception("cell %s failed", meta["service"])
-            cells.append({
-                "service": meta["service"],
-                "label": meta["label"],
-                "status": "error",
-                "status_detail": f"fetch raised: {type(exc).__name__}",
-            })
+            cells.append(
+                {
+                    "service": meta["service"],
+                    "label": meta["label"],
+                    "status": "error",
+                    "status_detail": f"fetch raised: {type(exc).__name__}",
+                }
+            )
 
     return {
         "status": "ok",

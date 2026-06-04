@@ -7,37 +7,33 @@ Do not hand-edit those numbers here — re-run the platform showcase generator
 and this fetcher picks the new values up on the next build.
 
 Surfaces only the strategies running on the 50K Combine account 22484767:
-  - Liquidity Sweep  (cell liqsweep_mnq — runs on MNQ 4ct + MGC 4ct)
-  - ORB Breakout     (cell orb_breakout_mnq_rth — MNQ 2ct)
+  - LiqSweep MNQ  (cell liqsweep-v10-mnq-combine — MNQ 4ct)
+  - LiqSweep MGC  (cell liqsweep-v10-mgc-combine — MGC 2ct)
 
-The MGC LiqSweep cell runs the same strategy as the MNQ one; the platform
-showcases LiqSweep on its MNQ cell, so it appears once here (covering both).
+Both are the same iFVG-reversion engine on different contracts. The ORB-Breakout
+cell was pulled off Combine onto PRAC 2026-06-02, so it is no longer surfaced
+here (this panel mirrors the real-money Combine fleet only).
 """
+
 from __future__ import annotations
 
 import json
 import logging
 
-from config import MWM_ROOT, SERVICE_ROOT
+from config import MWM_ROOT
 
 log = logging.getLogger("morning-brief.backtest_stats")
 
 SHOWCASE_TS = (
-    MWM_ROOT
-    / "projects/mwm-trading/platform/frontend-rr7/app/lib/strategy-showcase.ts"
+    MWM_ROOT / "projects/mwm-trading/platform/frontend-rr7/app/lib/strategy-showcase.ts"
 )
-# MGC LiqSweep is NOT in the platform site's showcase (it only showcases the
-# MNQ cell). This file holds the MGC numbers computed via the platform's own
-# harness (run_cell / dry_run_backtest) over the identical showcase window
-# (2025-05-22..2026-05-22, $50k, gross pnl_usd). Regenerate with the same
-# dry_run_backtest call if the MGC cell params change.
-MGC_SHOWCASE = SERVICE_ROOT / "data" / "liqsweep_mgc_showcase.json"
 
 REF_CAPITAL = 50_000.0
 
-# showcase key -> brief card slot + display metadata for the platform-site
-# strategies. `contracts` = the live cell's native size. The brief slot ids
-# come from the card markup: liqsweep (MNQ), orb-br (MGC), orb (ORB Breakout).
+# showcase key -> brief card slot + display metadata for the two live-Combine
+# LiqSweep cells. `contracts` = the live cell's native size. The brief slot ids
+# come from the card markup: liqsweep (MNQ), orb-br (MGC). Both cards now pull
+# straight from the platform showcase (which carries a dedicated MGC entry).
 _CARDS = {
     "liqsweep": {
         "slot": "liqsweep",
@@ -45,20 +41,12 @@ _CARDS = {
         "contracts": 4,
         "source": "MNQ · Globex · 1y · trading.mwmai.no",
     },
-    "orb_breakout": {
-        "slot": "orb",
-        "label": "ORB Breakout",
+    "liqsweep_mgc": {
+        "slot": "orb_br",
+        "label": "LiqSweep MGC",
         "contracts": 2,
-        "source": "MNQ · RTH · 1y · trading.mwmai.no",
+        "source": "MGC · Globex · 1y · trading.mwmai.no",
     },
-}
-
-# MGC LiqSweep — own card (slot orb_br), sourced from MGC_SHOWCASE.
-_MGC_META = {
-    "slot": "orb_br",
-    "label": "LiqSweep MGC",
-    "contracts": 4,
-    "source": "MGC · Globex · 1y · platform engine",
 }
 
 
@@ -102,19 +90,10 @@ def _card(entry: dict, meta: dict) -> dict:
     }
 
 
-def _load_mgc() -> dict | None:
-    """Load the harness-computed MGC LiqSweep showcase entry (or None)."""
-    try:
-        return json.loads(MGC_SHOWCASE.read_text())
-    except Exception as exc:
-        log.warning("MGC showcase read failed: %s", exc)
-        return None
-
-
 def fetch() -> dict:
     out: dict = {"status": "ok"}
 
-    # MNQ LiqSweep + ORB Breakout — straight from the platform site showcase.
+    # Both LiqSweep Combine cells (MNQ + MGC) straight from the platform showcase.
     try:
         sc = _load_showcase()
         for key, meta in _CARDS.items():
@@ -123,12 +102,8 @@ def fetch() -> dict:
     except Exception as exc:
         log.warning("strategy-showcase parse failed: %s", exc)
         out["liqsweep"] = {"status": "error"}
-        out["orb"] = {"status": "error"}
+        out["orb_br"] = {"status": "error"}
         out["status"] = "error"
-
-    # MGC LiqSweep — own card, platform-engine numbers from MGC_SHOWCASE.
-    mgc = _load_mgc()
-    out[_MGC_META["slot"]] = _card(mgc, _MGC_META) if mgc else {"status": "error"}
 
     return out
 

@@ -1,6 +1,6 @@
 """trade_tracker — Live trade count, sourced from engine event logs.
 
-Counts ONLY the 3 cells on the 50K Combine account 22484767 (see
+Counts ONLY the 2 cells on the 50K Combine account 22484767 (see
 COMBINE_SERVICES below) — the practice (19907662) orbaron cells are
 excluded so the Live Trades panel reflects real-money activity only.
 
@@ -18,6 +18,7 @@ Wins/losses are not derived here — SDK position_closed.pnl is null in
 the mirrored events, so win rate lives in the backtest_stats card
 (reference numbers) not on the live tracker.
 """
+
 from __future__ import annotations
 
 import json
@@ -40,7 +41,6 @@ ENTRY_TYPES = {"entry_market_placed", "entry_limit_placed"}
 COMBINE_SERVICES = [
     "liqsweep-v10-mnq-combine",
     "liqsweep-v10-mgc-combine",
-    "orb-breakout-mnq-combine",
 ]
 
 
