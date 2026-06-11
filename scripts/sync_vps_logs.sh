@@ -38,4 +38,11 @@ for svc in "${SERVICES[@]}"; do
     "$LOCAL_ROOT/$svc/config_locked.json" 2>&1 || true
 done
 
+# Regime Lens artifact (written on the VPS by mwm-regime-lens.timer at
+# ~09:26 ET) — mirrored locally so pre_market_report + local tools read it.
+mkdir -p "$HOME/MWM-AI/data/cockpit"
+rsync -az --timeout=20 --ignore-missing-args \
+  "$VPS:~/MWM-AI/data/cockpit/regime_lens.json" \
+  "$HOME/MWM-AI/data/cockpit/regime_lens.json" 2>&1 || echo "WARN: regime_lens sync failed, continuing"
+
 date -u +"%Y-%m-%dT%H:%M:%SZ" > "$LOCAL_ROOT/.last_sync"
