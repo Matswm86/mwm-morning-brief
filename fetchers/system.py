@@ -36,7 +36,9 @@ SYSTEMD_UNITS = [
 
 VPS_PING_URLS = [
     ("mwmai.no",   "https://mwmai.no/"),
-    ("columbus",   "https://columbus.mwmai.no/"),
+    # 2026-06-11: columbus.mwmai.no taken offline (vhost removed, content
+    # archived at VPS /srv/offline-sites/) — replaced by trading platform.
+    ("trading",    "https://trading.mwmai.no/"),
     ("pytor",      "https://pytor.mwmai.no/"),
 ]
 
