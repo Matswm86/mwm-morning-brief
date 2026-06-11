@@ -1,12 +1,12 @@
 """trade_tracker — Live trade count, sourced from engine event logs.
 
-Counts ONLY the 2 cells on the 50K Combine account 22484767 (see
+Counts ONLY the 2 cells on the XFA Funded account 24154823 (see
 COMBINE_SERVICES below) — the practice (19907662) orbaron cells are
 excluded so the Live Trades panel reflects real-money activity only.
 
 Aligns with cell_activity by counting the SAME events per_cell_tracker
 counts: entry_market_placed + entry_limit_placed emitted by the live
-Combine runners, mirrored to ~/MWM-AI/data/vps_logs/<svc>/ via the
+XFA runners, mirrored to ~/MWM-AI/data/vps_logs/<svc>/ via the
 mwm-brief-vps-logs-sync.timer (5 min cadence).
 
 Previously this hit TopstepX /api/Trade/search for *closed* trades,
@@ -35,7 +35,7 @@ VPS_LOGS = MWM_ROOT / "data" / "vps_logs"
 # Must match fetchers/per_cell_tracker.ENTRY_TYPES for alignment.
 ENTRY_TYPES = {"entry_market_placed", "entry_limit_placed"}
 
-# 50K Combine account 22484767 fleet — must stay in sync with the combine
+# XFA Funded account 24154823 fleet — must stay in sync with the live
 # services in fetchers/per_cell_tracker.CELLS. Live Trades counts this account
 # only, not the practice (19907662) cells.
 COMBINE_SERVICES = [

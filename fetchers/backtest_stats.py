@@ -6,13 +6,13 @@ trailing-1-year backtest on the live cells with the canonical platform engine).
 Do not hand-edit those numbers here — re-run the platform showcase generator
 and this fetcher picks the new values up on the next build.
 
-Surfaces only the strategies running on the 50K Combine account 22484767:
+Surfaces only the strategies running on the XFA Funded account 24154823 (ex-Combine 22484767, passed 2026-06-11):
   - LiqSweep MNQ  (cell liqsweep-v10-mnq-combine — MNQ 4ct)
   - LiqSweep MGC  (cell liqsweep-v10-mgc-combine — MGC 2ct)
 
 Both are the same iFVG-reversion engine on different contracts. The ORB-Breakout
 cell was pulled off Combine onto PRAC 2026-06-02, so it is no longer surfaced
-here (this panel mirrors the real-money Combine fleet only).
+here (this panel mirrors the real-money XFA fleet only).
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ SHOWCASE_TS = (
 
 REF_CAPITAL = 50_000.0
 
-# showcase key -> brief card slot + display metadata for the two live-Combine
+# showcase key -> brief card slot + display metadata for the two live-XFA
 # LiqSweep cells. `contracts` = the live cell's native size. The brief slot ids
 # come from the card markup: liqsweep (MNQ), orb-br (MGC). Both cards now pull
 # straight from the platform showcase (which carries a dedicated MGC entry).
@@ -93,7 +93,7 @@ def _card(entry: dict, meta: dict) -> dict:
 def fetch() -> dict:
     out: dict = {"status": "ok"}
 
-    # Both LiqSweep Combine cells (MNQ + MGC) straight from the platform showcase.
+    # Both LiqSweep XFA cells (MNQ + MGC) straight from the platform showcase.
     try:
         sc = _load_showcase()
         for key, meta in _CARDS.items():

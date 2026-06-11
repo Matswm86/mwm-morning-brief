@@ -1,4 +1,4 @@
-"""per_cell_tracker — activity breakdown for the 2 live Combine (50K) cells.
+"""per_cell_tracker — activity breakdown for the 2 live XFA Funded (24154823) cells.
 
 Reads JSONL event logs from ~/MWM-AI/data/vps_logs/<svc>/ (populated by the
 mwm-brief-vps-logs-sync.timer which rsyncs from VPS every 5 min).
@@ -32,7 +32,7 @@ VPS_LOGS = MWM_ROOT / "data" / "vps_logs"
 
 # Display metadata per service. `window` is a short human label; `tz` is used
 # for DOW evaluation when the config omits it (MNQ orbaron services).
-# Live fleet = the 2 LiqSweep cells on the 50K Combine account 22484767 (MNQ
+# Live fleet = the 2 LiqSweep cells on the XFA Funded account 24154823 (MNQ
 # 4ct + MGC 2ct). The orbaron practice cells, the ORB-Breakout cell (pulled off
 # Combine onto PRAC 2026-06-02), and the killed MYM/MES cells are intentionally
 # excluded — this panel mirrors the real-money fleet only. Both liqsweep combine
