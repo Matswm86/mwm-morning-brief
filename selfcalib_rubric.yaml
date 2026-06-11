@@ -157,7 +157,7 @@ dimensions:
       - name: file_present
         weight: 0.15
         signal_id: t4_governor_doc
-        params: {glob_relpath: "plans/t4-cost-governor-*.md"}
+        params: {glob_relpath: "plans/organism-cost-governor-convention-*.md"}
 
   - id: D6
     label: Cross-session continuity
