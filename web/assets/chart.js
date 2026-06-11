@@ -7,20 +7,20 @@
   const container = document.getElementById('mnq-chart');
   if (!container || typeof LightweightCharts === 'undefined') return;
 
-  // Theme aligned with the rest of the morning-brief (warm cream + umber)
+  // Theme aligned with the Morning Sheet newspaper palette (bone paper + ink)
   const chart = LightweightCharts.createChart(container, {
     layout: {
-      background: { type: 'solid', color: '#F9F5EC' },
-      textColor: '#3B2F2F',
-      fontFamily: 'Inter, system-ui, sans-serif',
+      background: { type: 'solid', color: '#f2ecdf' },
+      textColor: '#56503f',
+      fontFamily: '"Spline Sans Mono", ui-monospace, monospace',
     },
     grid: {
-      vertLines: { color: 'rgba(59,47,47,0.08)' },
-      horzLines: { color: 'rgba(59,47,47,0.08)' },
+      vertLines: { color: 'rgba(33,29,20,0.07)' },
+      horzLines: { color: 'rgba(33,29,20,0.07)' },
     },
-    rightPriceScale: { borderColor: 'rgba(59,47,47,0.20)' },
+    rightPriceScale: { borderColor: 'rgba(33,29,20,0.22)' },
     timeScale: {
-      borderColor: 'rgba(59,47,47,0.20)',
+      borderColor: 'rgba(33,29,20,0.22)',
       timeVisible: true,
       secondsVisible: false,
     },
@@ -29,15 +29,15 @@
   });
 
   const candles = chart.addCandlestickSeries({
-    upColor: '#2F7D52', downColor: '#C8553D',
+    upColor: '#2c6b4c', downColor: '#a23423',
     borderVisible: false,
-    wickUpColor: '#2F7D52', wickDownColor: '#C8553D',
+    wickUpColor: '#2c6b4c', wickDownColor: '#a23423',
   });
   const volume = chart.addHistogramSeries({
     priceFormat: { type: 'volume' },
     priceScaleId: '',
     scaleMargins: { top: 0.82, bottom: 0 },
-    color: 'rgba(59,47,47,0.30)',
+    color: 'rgba(33,29,20,0.28)',
   });
 
   // Legend element
@@ -63,7 +63,7 @@
       volume.setData(data.bars.map(b => ({
         time: b.time,
         value: b.volume,
-        color: b.close >= b.open ? 'rgba(47,125,82,0.35)' : 'rgba(200,85,61,0.35)',
+        color: b.close >= b.open ? 'rgba(44,107,76,0.35)' : 'rgba(162,52,35,0.35)',
       })));
       chart.timeScale().fitContent();
 
@@ -74,7 +74,7 @@
       const sign = chg >= 0 ? '+' : '';
       last.textContent =
         `${fmt(lastBar.close)}  (${sign}${fmt(chg)} / ${sign}${pct.toFixed(2)}%)`;
-      last.style.color = chg >= 0 ? '#2F7D52' : '#C8553D';
+      last.style.color = chg >= 0 ? '#2c6b4c' : '#a23423';
 
       if (data.generated_at) {
         const d = new Date(data.generated_at);

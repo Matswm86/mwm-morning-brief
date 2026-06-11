@@ -89,17 +89,17 @@
 
     const chart = LightweightCharts.createChart(container, {
       layout: {
-        background: { type: "solid", color: "#F9F5EC" },
-        textColor: "#3B2F2F",
-        fontFamily: "Inter, system-ui, sans-serif",
+        background: { type: "solid", color: "#f2ecdf" },
+        textColor: "#56503f",
+        fontFamily: '"Spline Sans Mono", ui-monospace, monospace',
       },
       grid: {
-        vertLines: { color: "rgba(59,47,47,0.08)" },
-        horzLines: { color: "rgba(59,47,47,0.08)" },
+        vertLines: { color: "rgba(33,29,20,0.07)" },
+        horzLines: { color: "rgba(33,29,20,0.07)" },
       },
-      rightPriceScale: { borderColor: "rgba(59,47,47,0.20)" },
+      rightPriceScale: { borderColor: "rgba(33,29,20,0.22)" },
       timeScale: {
-        borderColor: "rgba(59,47,47,0.20)",
+        borderColor: "rgba(33,29,20,0.22)",
         timeVisible: false,
         secondsVisible: false,
       },
@@ -108,7 +108,7 @@
     });
 
     const line = chart.addLineSeries({
-      color: "#6B4423",
+      color: "#9c6d14",
       lineWidth: 2,
       priceLineVisible: false,
     });
@@ -116,10 +116,10 @@
 
     // Reference bands at 12 / 20 / 30 / 50
     [
-      { price: 12, color: "#2F7D52", label: "calm"   },
-      { price: 20, color: "#6B4423", label: "normal" },
-      { price: 30, color: "#A36A1A", label: "elev"   },
-      { price: 50, color: "#B43E28", label: "panic"  },
+      { price: 12, color: "#2c6b4c", label: "calm"   },
+      { price: 20, color: "#8c8470", label: "normal" },
+      { price: 30, color: "#9c6d14", label: "elev"   },
+      { price: 50, color: "#a23423", label: "panic"  },
     ].forEach(b => {
       line.createPriceLine({
         price: b.price,
@@ -142,9 +142,9 @@
       const maxV = bars.reduce((m, b) => Math.max(m, b.value), 0);
       const topY = Math.ceil(maxV / 10) * 10;
       const eraSeries = chart.addAreaSeries({
-        topColor: "rgba(47,125,82,0.08)",
-        bottomColor: "rgba(47,125,82,0.02)",
-        lineColor: "rgba(47,125,82,0)",
+        topColor: "rgba(44,107,76,0.08)",
+        bottomColor: "rgba(44,107,76,0.02)",
+        lineColor: "rgba(44,107,76,0)",
         priceLineVisible: false,
         lastValueVisible: false,
         crosshairMarkerVisible: false,
