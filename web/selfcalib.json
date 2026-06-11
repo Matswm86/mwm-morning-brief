@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-06-01",
+  "as_of": "2026-06-11",
   "target_state": "Self-calibrating research-and-trading organism",
   "target_state_no": "Selvkalibrerende forsknings- og handelsorganisme",
   "subtitle": "Opus as disposable cognition, re-instantiated per cron tick or session",
@@ -29,7 +29,7 @@
         "B1 sudo install on box (cca8cbf timer not yet active)",
         "Phase B gate-flip from observational to passed=False after ≥25 verdicts (~Sun 2026-06-21)"
       ],
-      "last_shipped": "2026-05-31"
+      "last_shipped": "2026-06-10"
     },
     {
       "id": "D2",
@@ -70,7 +70,7 @@
         "Cell diversity in policy_state — too few distinct (regime, tier) cells; ≥3 distinct regimes is the F3 prerequisite (~2-3 months of live cell data)",
         "B1 falsification check (Scope C) — wire `compute_counterfactual_credit` LOO math to F4.5 conformal residuals so scout-disable replay becomes evaluable on weekly D_i ticks"
       ],
-      "last_shipped": "2026-05-31"
+      "last_shipped": "2026-06-05"
     },
     {
       "id": "D3",
@@ -103,7 +103,7 @@
         "F19 orchestrator wire-in gated on first 3 Bernstein-confirmed F18 production runs",
         "Voyager-style skill library"
       ],
-      "last_shipped": "2026-05-31"
+      "last_shipped": "2026-06-10"
     },
     {
       "id": "D4",
@@ -143,7 +143,7 @@
         "Hard-cap behaviour + escalation ladder",
         "Backend resilience: retry-with-backoff or hard-fail on Groq fallback (eval A/B contaminated by silent model substitution 04-26)"
       ],
-      "last_shipped": "2026-05-10"
+      "last_shipped": "2026-06-02"
     },
     {
       "id": "D6",
