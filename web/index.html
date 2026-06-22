@@ -125,8 +125,12 @@
         <span class="tg-risk">Risk</span>
         <span class="tg-concern">Top concern</span>
       </div>
+      <!-- Row label = PDHR (the live funded strategy since 2026-06-22). The
+           underlying risk data still computes under the market-news scorer's
+           "liqsweep" levels/sweep archetype (no PDHR-specific scorer yet); both
+           are prior-day-levels strategies so the day-risk read carries over. -->
       <article class="trade-guard-row" id="tg-row-liqsweep">
-        <span class="tg-strat">LiqSweep</span>
+        <span class="tg-strat">PDHR</span>
         <span class="tg-verdict tg-badge" id="tg-verdict-liqsweep">—</span>
         <span class="tg-risk">
           <span class="tg-risk-num" id="tg-risk-liqsweep">—</span>
@@ -275,11 +279,11 @@
     </div>
     <div class="ss-grid">
 
-      <!-- Liquidity Sweep — MNQ card -->
+      <!-- PDHR — MNQ card (funded fleet; replaced LiqSweep 2026-06-22) -->
       <article class="ss-card ss-card-liqsweep" id="ss-card-liqsweep">
         <div class="ss-card-head">
           <div>
-            <div class="ss-name" id="ss-label-liqsweep">LiqSweep MNQ</div>
+            <div class="ss-name" id="ss-label-liqsweep">PDHR MNQ</div>
             <div class="ss-period" id="ss-period-liqsweep">—</div>
           </div>
           <span class="ss-dot ss-dot-liqsweep"></span>
@@ -319,8 +323,10 @@
         <div class="ss-source" id="ss-ref-liqsweep">—</div>
       </article>
 
-      <!-- Liquidity Sweep — MGC card (same strategy, gold; uses orb-br slot IDs) -->
-      <article class="ss-card ss-card-orb-br" id="ss-card-orb-br">
+      <!-- Second funded strategy card (orb-br slot) — hidden since 2026-06-22:
+           the funded fleet runs one strategy (PDHR MNQ). backtest_stats.js
+           keeps it hidden while brief.json `.backtest_stats.orb_br` is null. -->
+      <article class="ss-card ss-card-orb-br" id="ss-card-orb-br" hidden>
         <div class="ss-card-head">
           <div>
             <div class="ss-name" id="ss-label-orb-br">LiqSweep MGC</div>

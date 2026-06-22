@@ -88,7 +88,9 @@
         renderEmpty("trade_guard block missing");
         return;
       }
-      setVerdict("liqsweep", tg.per_strategy.liqsweep);
+      // DOM slot id stays "liqsweep" (stable anchor); data is now keyed `pdhr`
+      // since PDHR took over the detector's levels slot (2026-06-22).
+      setVerdict("liqsweep", tg.per_strategy.pdhr);
       setVerdict("orb", tg.per_strategy.orb);
       renderHandoff(tg.orb_handoff || {});
       const upd = $("tg-updated");

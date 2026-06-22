@@ -15,7 +15,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-from http_util import get_json  # kept import for forward compat (unused since v2.5 removal)
 
 log = logging.getLogger("morning-brief.regime")
 
@@ -27,12 +26,13 @@ V3_PATHS = {
     "latest": _V3_DIR / "latest.json",
 }
 
-# v3 strategy labels (ORB + LiqSweep only per 2026-04-20 user lock)
+# v3 strategy labels. Code 3 = PDHR since 2026-06-22 (PDHR took over the
+# detector's non-ORB levels slot when LiqSweep was parked fleet-wide).
 STRATEGY_LABELS = {
     0: "FLAT / stand down",
     1: "ORB both sides, full size",
     2: "ORB both sides, reduced",
-    3: "LiqSweep iFVG",
+    3: "PDHR",
     4: "SKIP",
 }
 STRATEGY_DESC = {
@@ -110,7 +110,7 @@ def _shape_v3(data: dict) -> dict:
         "strategy_confidence": data.get("strategy_confidence"),
         "strategy_rationale": data.get("strategy_rationale", ""),
         "orb_affinity": data.get("orb_affinity"),
-        "liqsweep_affinity": data.get("liqsweep_affinity"),
+        "pdhr_affinity": data.get("pdhr_affinity"),
         "volatility": vol,
         "direction": direction,
         "direction_raw": direction_raw,
@@ -166,7 +166,7 @@ def _empty(reason: str) -> dict:
         "strategy_confidence": None,
         "strategy_rationale": "",
         "orb_affinity": None,
-        "liqsweep_affinity": None,
+        "pdhr_affinity": None,
         "volatility": "—",
         "direction": "—",
         "direction_raw": None,

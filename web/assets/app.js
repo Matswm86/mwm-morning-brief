@@ -15,6 +15,19 @@ const SECTION_ORDER = [
 
 const $ = (id) => document.getElementById(id);
 
+// Display name per Market-Detector strategy_code — mirrors strategy.py
+// NAME_BY_CODE. Code 3 was "LiqSweep iFVG"; LiqSweep was parked 2026-06-22 and
+// the funded fleet now runs PDHR, so the detector's legacy code 3 surfaces PDHR.
+const STRAT_NAME_BY_CODE = {
+  0: "Stand down",
+  1: "ORB · full",
+  2: "ORB · reduced",
+  3: "PDHR MNQ",
+  4: "No trade",
+};
+const stratName = (code, fallback) =>
+  STRAT_NAME_BY_CODE[code] || fallback || "—";
+
 function fmtDateline(iso) {
   if (!iso) return "";
   const d = new Date(iso);
@@ -106,7 +119,7 @@ function renderSessionPair(regime) {
     if (tierValid) tile.dataset.tier = tier;
 
     const regimeLabel = s.regime || s.tier_caption || "—";
-    const strat = s.strategy_label || s.strategy || "—";
+    const strat = stratName(s.strategy_code, s.strategy_label || s.strategy);
     const ts = s.generated_at ? fmtTime(s.generated_at) : "—";
 
     tile.innerHTML = `

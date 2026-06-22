@@ -1,8 +1,9 @@
 """trade_tracker — Live trade count, sourced from engine event logs.
 
-Counts ONLY the 2 cells on the XFA Funded account 24154823 (see
-COMBINE_SERVICES below) — the practice (19907662) orbaron cells are
-excluded so the Live Trades panel reflects real-money activity only.
+Counts ONLY the PDHR cell on the XFA Funded account 24154823 (see
+COMBINE_SERVICES below) — the practice (19907662) cells are excluded so the
+Live Trades panel reflects real-money activity only. LiqSweep was retired
+fleet-wide 2026-06-22 and replaced by PDHR MNQ @5ct on the funded fleet.
 
 Aligns with cell_activity by counting the SAME events per_cell_tracker
 counts: entry_market_placed + entry_limit_placed emitted by the live
@@ -37,10 +38,10 @@ ENTRY_TYPES = {"entry_market_placed", "entry_limit_placed"}
 
 # XFA Funded account 24154823 fleet — must stay in sync with the live
 # services in fetchers/per_cell_tracker.CELLS. Live Trades counts this account
-# only, not the practice (19907662) cells.
+# only, not the practice (19907662) cells. (Name kept as COMBINE_SERVICES for
+# back-compat; the account passed off Combine to XFA Funded 2026-06-11.)
 COMBINE_SERVICES = [
-    "liqsweep-v10-mnq-combine",
-    "liqsweep-v10-mgc-combine",
+    "pdhr-mnq-funded-24154823",
 ]
 
 

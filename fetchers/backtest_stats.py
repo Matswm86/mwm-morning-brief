@@ -6,13 +6,15 @@ trailing-1-year backtest on the live cells with the canonical platform engine).
 Do not hand-edit those numbers here — re-run the platform showcase generator
 and this fetcher picks the new values up on the next build.
 
-Surfaces only the strategies running on the XFA Funded account 24154823 (ex-Combine 22484767, passed 2026-06-11):
-  - LiqSweep MNQ  (cell liqsweep-v10-mnq-combine — MNQ 4ct)
-  - LiqSweep MGC  (cell liqsweep-v10-mgc-combine — MGC 2ct)
+Surfaces only the strategy running on the XFA Funded account 24154823 (the
+priority funded; ex-Combine 22484767, passed 2026-06-11):
+  - PDHR MNQ  (cell pdhr-mnq-funded-24154823 — MNQ 5ct)
 
-Both are the same iFVG-reversion engine on different contracts. The ORB-Breakout
-cell was pulled off Combine onto PRAC 2026-06-02, so it is no longer surfaced
-here (this panel mirrors the real-money XFA fleet only).
+LiqSweep was RETIRED fleet-wide 2026-06-22 (overnight loss blew XFA 24154823)
+and PARKED for a future save-attempt; the funded fleet now runs PDHR
+(Prior-Day H/L break-and-retest, RTH-only) on all three funded accounts, so
+this panel mirrors that single real-money strategy. The MGC card slot (orb_br)
+is dropped — there is no second funded strategy.
 """
 
 from __future__ import annotations
@@ -30,22 +32,16 @@ SHOWCASE_TS = (
 
 REF_CAPITAL = 50_000.0
 
-# showcase key -> brief card slot + display metadata for the two live-XFA
-# LiqSweep cells. `contracts` = the live cell's native size. The brief slot ids
-# come from the card markup: liqsweep (MNQ), orb-br (MGC). Both cards now pull
-# straight from the platform showcase (which carries a dedicated MGC entry).
+# showcase key -> brief card slot + display metadata for the live-XFA PDHR cell.
+# `contracts` = the live funded cell's native size (5ct). The surviving brief
+# slot id is `liqsweep` (the primary perf card in the markup); the second slot
+# (orb_br) is no longer populated now that the funded fleet runs one strategy.
 _CARDS = {
-    "liqsweep": {
+    "pdhr": {
         "slot": "liqsweep",
-        "label": "LiqSweep MNQ",
-        "contracts": 4,
+        "label": "PDHR MNQ",
+        "contracts": 5,
         "source": "MNQ · Globex · 1y · trading.mwmai.no",
-    },
-    "liqsweep_mgc": {
-        "slot": "orb_br",
-        "label": "LiqSweep MGC",
-        "contracts": 2,
-        "source": "MGC · Globex · 1y · trading.mwmai.no",
     },
 }
 
@@ -91,9 +87,10 @@ def _card(entry: dict, meta: dict) -> dict:
 
 
 def fetch() -> dict:
-    out: dict = {"status": "ok"}
+    # The single funded strategy (PDHR MNQ) straight from the platform showcase.
+    # orb_br stays absent — the frontend hides the second card when it is unset.
+    out: dict = {"status": "ok", "orb_br": None}
 
-    # Both LiqSweep XFA cells (MNQ + MGC) straight from the platform showcase.
     try:
         sc = _load_showcase()
         for key, meta in _CARDS.items():
@@ -102,7 +99,6 @@ def fetch() -> dict:
     except Exception as exc:
         log.warning("strategy-showcase parse failed: %s", exc)
         out["liqsweep"] = {"status": "error"}
-        out["orb_br"] = {"status": "error"}
         out["status"] = "error"
 
     return out

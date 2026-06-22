@@ -90,8 +90,15 @@
       const brief = await res.json();
       const bs = brief.backtest_stats;
       if (!bs) return;
-      renderCard("liqsweep", bs.liqsweep);   // LiqSweep MNQ (Combine 4ct)
-      renderCard("orb-br", bs.orb_br);       // LiqSweep MGC (Combine 2ct)
+      renderCard("liqsweep", bs.liqsweep);   // PDHR MNQ (XFA Funded 5ct)
+      // Second funded card retired 2026-06-22 — funded fleet runs one strategy.
+      const orbBr = document.getElementById("ss-card-orb-br");
+      if (bs.orb_br) {
+        if (orbBr) orbBr.hidden = false;
+        renderCard("orb-br", bs.orb_br);
+      } else if (orbBr) {
+        orbBr.hidden = true;
+      }
     } catch (e) {
       console.error("backtest_stats panel load failed", e);
     }

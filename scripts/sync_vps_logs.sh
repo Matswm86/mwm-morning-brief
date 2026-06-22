@@ -9,15 +9,21 @@ set -euo pipefail
 VPS="mats@204.168.244.173"
 LOCAL_ROOT="$HOME/MWM-AI/data/vps_logs"
 
+# Current live VPS cells (verified 2026-06-22). LiqSweep retired fleet-wide
+# 2026-06-22 (3 liqsweep services stopped+disabled, removed here — their dirs
+# are no longer rsync'd); the funded fleet now runs the PDHR cell below. 5
+# legacy orbaron ORB cells retired 06-03 were already removed.
 SERVICES=(
-  liqsweep-v10-mnq-combine
-  liqsweep-v10-mgc-combine
+  pdhr-mnq-funded-24154823
   orb-breakout-mnq-combine
-  orbaron-practice
-  orbaron-pm-practice
-  orbaron-rth-15m-practice
-  orbaron-mgc-asia-practice
-  orbaron-mgc-rth-practice
+  orbaron-orbc3-practice
+  orbaron-orbc5-practice
+  orbaron-spot-a-prac
+  orbaron-mgc-asia-bnredge
+  orbaron-mgc-tokyo-bnredge-prac
+  orbaron-mgc-london-bnredge-prac
+  orbaron-mnq-frankfurt-bnredge-prac
+  vp-survivors-practice
   ovb-mnq-prac
   ovb-mgc-prac
   ovb-m2k-prac

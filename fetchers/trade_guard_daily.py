@@ -1,7 +1,7 @@
 """trade_guard_daily — Trade Environment block for the morning brief.
 
 Runs at 05:30 UTC inside builder.py. Synthesizes a "standard setup" for
-each of the two strategies (LiqSweep, ORB), passes it through
+each of the two strategies (PDHR, ORB), passes it through
 the deterministic rule gates + macro scorer (no LLM), and emits a
 panel-ready JSON dict.
 
@@ -13,7 +13,7 @@ Output:
   {
     "date": "2026-04-22",
     "per_strategy": {
-      "liqsweep": {"verdict": "PROCEED|CAUTION|SKIP",
+      "pdhr": {"verdict": "PROCEED|CAUTION|SKIP",
                     "risk_score": int, "severity": "...",
                     "top_concern": "...", "alerts": [...]},
       "orb":      {...},
@@ -33,7 +33,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import sys
 import time
 from datetime import datetime, timezone
@@ -52,7 +51,6 @@ sys.path.insert(0, str(_MN_DIR))
 
 import contextualize_macro as _cm  # type: ignore  # noqa: E402
 import orb_handoff as _oh  # type: ignore  # noqa: E402
-import regime_weights as _rw  # type: ignore  # noqa: E402
 import trade_guard as _tg  # type: ignore  # noqa: E402
 
 
@@ -61,7 +59,7 @@ FRED_BASE = "https://api.stlouisfed.org/fred/series/observations"
 GSCPI_CACHE_PATH = MWM_ROOT / "data" / "gscpi" / "gscpi_data.xlsx"
 SWEEP_STATE_PATH = MWM_ROOT / "data" / "last_sweep.json"
 
-STRATEGIES = ("liqsweep", "orb")
+STRATEGIES = ("pdhr", "orb")
 CACHE_TTL_SEC = 3600  # rebuild at most once per hour during a single brief run
 
 

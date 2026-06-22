@@ -32,32 +32,21 @@ VPS_LOGS = MWM_ROOT / "data" / "vps_logs"
 
 # Display metadata per service. `window` is a short human label; `tz` is used
 # for DOW evaluation when the config omits it (MNQ orbaron services).
-# Live fleet = the 2 LiqSweep cells on the XFA Funded account 24154823 (MNQ
-# 4ct + MGC 2ct). The orbaron practice cells, the ORB-Breakout cell (pulled off
-# Combine onto PRAC 2026-06-02), and the killed MYM/MES cells are intentionally
-# excluded — this panel mirrors the real-money fleet only. Both liqsweep combine
-# cells run without a config_locked.json (schema hardcoded below).
+# Live fleet = the PDHR cell on the XFA Funded account 24154823 (MNQ 5ct,
+# RTH-only). LiqSweep was retired fleet-wide 2026-06-22 (overnight loss blew
+# XFA) and PARKED; PDHR (Prior-Day H/L break-and-retest) replaced it on all
+# three funded accounts. The practice cells are intentionally excluded — this
+# panel mirrors the real-money fleet only.
 CELLS: list[dict[str, Any]] = [
     {
-        "service": "liqsweep-v10-mnq-combine",
-        "label": "LiqSweep MNQ",
-        "engine": "liqsweep-v10",
-        "window": "24/5",
+        "service": "pdhr-mnq-funded-24154823",
+        "label": "PDHR MNQ",
+        "engine": "pdhr",
+        "window": "RTH",
         "tz": "America/New_York",
-        # liqsweep has no DOW filter and no config_locked.json; hardcode.
+        # PDHR runs RTH-only, no DOW filter; hardcode schema.
         "default_symbol": "MNQ",
-        "default_contracts": 4,
-        "default_timeframe": "1min",
-        "trade_dow": [True] * 7,
-    },
-    {
-        "service": "liqsweep-v10-mgc-combine",
-        "label": "LiqSweep MGC",
-        "engine": "liqsweep-v10",
-        "window": "24/5",
-        "tz": "America/New_York",
-        "default_symbol": "MGC",
-        "default_contracts": 2,  # 4->2ct 2026-06-03 (MC p95 DD $1,451 < $2k gate)
+        "default_contracts": 5,
         "default_timeframe": "1min",
         "trade_dow": [True] * 7,
     },
