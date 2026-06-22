@@ -6,15 +6,16 @@ trailing-1-year backtest on the live cells with the canonical platform engine).
 Do not hand-edit those numbers here — re-run the platform showcase generator
 and this fetcher picks the new values up on the next build.
 
-Surfaces only the strategy running on the XFA Funded account 24154823 (the
-priority funded; ex-Combine 22484767, passed 2026-06-11):
-  - PDHR MNQ  (cell pdhr-mnq-funded-24154823 — MNQ 5ct)
+Two showcase cards:
+  - PDHR MNQ  (cell pdhr-mnq-funded-24154823 — MNQ 5ct, the live funded fleet)
+  - ORB c5    (cell orbaron-orbc5-practice — MNQ 2ct, RTH; LOCKED Ironclad)
 
 LiqSweep was RETIRED fleet-wide 2026-06-22 (overnight loss blew XFA 24154823)
 and PARKED for a future save-attempt; the funded fleet now runs PDHR
-(Prior-Day H/L break-and-retest, RTH-only) on all three funded accounts, so
-this panel mirrors that single real-money strategy. The MGC card slot (orb_br)
-is dropped — there is no second funded strategy.
+(Prior-Day H/L break-and-retest, RTH-only) on all three funded accounts. The
+second card (orb_br slot) shows ORB c5 — the best-performing locked ORB
+(PF 4.3, the opening-range break + stop-to-breakeven), a validated backtest
+showcase rather than a second funded strategy.
 """
 
 from __future__ import annotations
@@ -32,16 +33,22 @@ SHOWCASE_TS = (
 
 REF_CAPITAL = 50_000.0
 
-# showcase key -> brief card slot + display metadata for the live-XFA PDHR cell.
-# `contracts` = the live funded cell's native size (5ct). The surviving brief
-# slot id is `liqsweep` (the primary perf card in the markup); the second slot
-# (orb_br) is no longer populated now that the funded fleet runs one strategy.
+# showcase key -> brief card slot + display metadata.
+# `contracts` = each cell's native size. The primary card slot id is `liqsweep`
+# (legacy markup id, now the PDHR funded cell); the second slot (orb_br) carries
+# ORB c5, the best locked ORB showcase.
 _CARDS = {
     "pdhr": {
         "slot": "liqsweep",
         "label": "PDHR MNQ",
         "contracts": 5,
-        "source": "MNQ · Globex · 1y · trading.mwmai.no",
+        "source": "MNQ · RTH · 1y · trading.mwmai.no",
+    },
+    "orb_c5": {
+        "slot": "orb_br",
+        "label": "ORB c5",
+        "contracts": 2,
+        "source": "MNQ · RTH · 1y · trading.mwmai.no",
     },
 }
 
@@ -87,8 +94,9 @@ def _card(entry: dict, meta: dict) -> dict:
 
 
 def fetch() -> dict:
-    # The single funded strategy (PDHR MNQ) straight from the platform showcase.
-    # orb_br stays absent — the frontend hides the second card when it is unset.
+    # Both cards (PDHR MNQ + ORB c5) straight from the platform showcase.
+    # The loop populates each slot; orb_br falls back to None (card hidden)
+    # only if the showcase has no orb_c5 entry.
     out: dict = {"status": "ok", "orb_br": None}
 
     try:
