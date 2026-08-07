@@ -1,0 +1,409 @@
+{
+  "as_of": "2026-05-05",
+  "target_state": "Self-calibrating research-and-trading organism",
+  "target_state_no": "Selvkalibrerende forsknings- og handelsorganisme",
+  "subtitle": "Opus as disposable cognition, re-instantiated per cron tick or session",
+  "dimensions": [
+    {
+      "id": "D1",
+      "label": "Closed-loop firing",
+      "weight": 15,
+      "pct": 86,
+      "keywords": [
+        "cip",
+        "sire",
+        "memento",
+        "sccs",
+        "closed-loop",
+        "swarm-graph",
+        "swarm-reviewer",
+        "swarm-synthesis",
+        "f6",
+        "bocpd"
+      ],
+      "done": [
+        "CIP weekly Sun 04:00 UTC (first live fire 04-26, rc=0)",
+        "SIRE v2 P1-P5 shipped (judge, falsifiable predictions, deferred tiering, gold benchmark, verify-and-repair)",
+        "Sunday automation chain: 02:00 full, 02:30 verify-predictions, 03:00 synthesis, 04:00 CIP",
+        "SCCS M0 closed 04-26 night: F1 policy_state on all 5 entry points (eval / cip_fire / memento_judge / swarm_scout / morning_brief)",
+        "SCCS M1 closed 04-27: F2 ADWIN drift detector live + CIP signal #14 wired into combined_health_score",
+        "F4 Empirical Bernstein gate wired into CIP commit path 04-27 (gates slow-loop rubric weight updates)",
+        "F6 BOCPD shipped 04-27 as CIP signal #16 \u2014 vendored Adams-MacKay detector replays commit-deltas every _log_rerank_deltas fire, persists is_changepoint=1 rows to data/sccs/bocpd_state.db",
+        "Memento judge-loop + score-only on CIP rerank, first reject row emitted 04-26"
+      ],
+      "next": [
+        "Auto-merge Memento suggestions past score threshold (currently score-only)",
+        "First live Bernstein gate fire \u2014 Sun 2026-05-03 06:11 CEST CIP fire (block D)",
+        "First production bocpd_state.db materialisation on Sun 2026-05-03 fire (block D)"
+      ],
+      "rubric_pct": 86,
+      "pct_override": null,
+      "frozen_reason": null,
+      "signal_trace": [
+        {
+          "id": "cip_fires_landed",
+          "weight": 0.35,
+          "score": 75
+        },
+        {
+          "id": "automation_chain_active",
+          "weight": 0.25,
+          "score": 100
+        },
+        {
+          "id": "bocpd_subsystem_health",
+          "weight": 0.15,
+          "score": 100
+        },
+        {
+          "id": "synthesis_freshness",
+          "weight": 0.15,
+          "score": 100
+        },
+        {
+          "id": "memento_judge_active",
+          "weight": 0.1,
+          "score": 50
+        }
+      ]
+    },
+    {
+      "id": "D2",
+      "label": "Outcome-grounded learning",
+      "weight": 25,
+      "pct": 68,
+      "keywords": [
+        "outcome",
+        "scorer",
+        "adaptive",
+        "backtest",
+        "trade-tracker",
+        "backtest-panel",
+        "ironclad",
+        "eval",
+        "platt",
+        "rrf",
+        "bm25",
+        "policy_state",
+        "bernstein",
+        "adwin",
+        "f4",
+        "conformal",
+        "f9",
+        "forward_sufficiency"
+      ],
+      "done": [
+        "Adaptive scorer (Beta-Binomial + Thompson)",
+        "Held-out gold benchmark (20q \u00d7 4 domains, leakage-guarded)",
+        "Eval retrieval upgrades: hybrid BM25+RRF, weighted RRF, 73 handoff summaries",
+        "Platt scaling fit on 60 (conf, acc) pairs across 4 runs (a=+0.724, b=-1.187, Brier 0.516\u21920.231)",
+        "policy_state.db logging from all 5 entry points 04-26 night (the foundational unblock \u2014 ~47 rows total)",
+        "F2 ADWIN on reward series + F4 Empirical Bernstein gate in CIP commit path (both shipped 04-27)",
+        "F4.5 Conformal Phase 1 cal-data log accumulating into data/sccs/judge_calibration.jsonl",
+        "F3 outcome-variable locked: eval_gold_accuracy (anti-gameability load-bearing)",
+        "F9 forward_sufficiency 6th dim shipped 04-28 in scientific_method rubric (threshold 35\u219242 preserves 70% pass ratio) \u2014 outputs now scored on whether the next reasoning step has enough context to act without re-fetching source",
+        "R1-R13 deep research ingested into selfcalib_research Qdrant collection (34 chunks)"
+      ],
+      "next": [
+        "Force confidence variance (model still states \u22650.9 on 48/60, base rate 0.367 \u2014 calibration starved of signal)",
+        "Wire wrap_metric into brief render once N\u226530 cal residuals (~5 days from 04-27)",
+        "Cell diversity in policy_state \u2014 only 7 distinct (regime, tier) cells, dominated by 40-row monocell. \u22653 distinct regimes is F3 prerequisite (~2-3 months)"
+      ],
+      "rubric_pct": 68,
+      "pct_override": null,
+      "frozen_reason": null,
+      "signal_trace": [
+        {
+          "id": "policy_state_rows",
+          "weight": 0.25,
+          "score": 100
+        },
+        {
+          "id": "conformal_cal_rows",
+          "weight": 0.25,
+          "score": 100
+        },
+        {
+          "id": "eval_gold_runs",
+          "weight": 0.2,
+          "score": 0
+        },
+        {
+          "id": "bernstein_gate_fires",
+          "weight": 0.15,
+          "score": 20
+        },
+        {
+          "id": "forward_sufficiency_active",
+          "weight": 0.15,
+          "score": 100
+        }
+      ]
+    },
+    {
+      "id": "D3",
+      "label": "Bounded self-modification",
+      "weight": 20,
+      "pct": 60,
+      "keywords": [
+        "memento",
+        "drift",
+        "guard",
+        "harness",
+        "auto-pr",
+        "reviewer-memento",
+        "graph-memento",
+        "cip-rule-proposal",
+        "scientific_method",
+        "sccs",
+        "bernstein",
+        "conformal",
+        "bounds",
+        "f4",
+        "f4-5",
+        "f6",
+        "bocpd",
+        "dowhy",
+        "f9",
+        "forward_sufficiency",
+        "f3",
+        "causal-gate"
+      ],
+      "done": [
+        "Memento scientific_method rubric live (6 dims \u00d7 0-10, thr 42/60 \u2014 F9 forward_sufficiency added 04-28, original 5-dim 35/50 preserved 70% pass ratio)",
+        "CIP rule-proposal 2nd-pass shipped (first reject row 04-26, lacked hypothesis structure)",
+        "Swarm reviewer + graph memento wired",
+        "Memento structured-PDF + cross-encoder reranker behind flags",
+        "Memory drift guard v2 (primary-wins)",
+        "F4 Empirical Bernstein gate (Maurer-Pontil 2009) sits in CIP commit path \u2014 statistical bound on slow-loop weight updates",
+        "F4.5 Conformal Phase 1: split conformal + DtACI ACI + wrap_metric public API + cal-data logger (27 new tests)",
+        "F6 BOCPD instrumentation (Adams-MacKay 2007) on commit-deltas \u2014 substrate for Phase 1 'widen exploration / suspend slow-loop' actuator",
+        "F6 Phase 1 actuation shipped 04-28 \u2014 dispatcher short-circuits auto-apply with rejected_bocpd_gate when last_changepoint_age_days < 3 (dormant until first real changepoint ~late May)",
+        "F3 DoWhy 3-node causal DAG SHIPPED dry-mode 05-01 \u2014 core/sccs/causal_gate.py + dual outcomes (eval_gold_accuracy primary, memento_accept_rate secondary, >10pp ATE disagreement flag) + CIP main + dispatcher wiring (bernstein \u2192 dowhy \u2192 bocpd ordering, bernstein-precedence preserved) + 30 new tests (264/264 SCCS+CIP green). DoWhy 0.14 installed for python3.11 CIP runtime. Real-DB dry-run = both_accept/insufficient_data; first decision-impacting fire awaits M3 regime_label forward-logging fix"
+      ],
+      "next": [
+        "T2 safety harness spec (auto-PR with diff cap + 24h soak + auto-revert)",
+        "M3 forward-fix regime_label logging in memento_judge writer + eval_run_id linkage in scripts/eval_research_gold.py (~30 LOC) \u2014 unblocks F3 from insufficient_data fail-open",
+        "Voyager-style skill library"
+      ],
+      "rubric_pct": 60,
+      "pct_override": null,
+      "frozen_reason": null,
+      "signal_trace": [
+        {
+          "id": "memento_acceptance_curve",
+          "weight": 0.2,
+          "score": 0
+        },
+        {
+          "id": "f4_bernstein_in_dispatcher",
+          "weight": 0.15,
+          "score": 100
+        },
+        {
+          "id": "f4_5_conformal_wired",
+          "weight": 0.15,
+          "score": 100
+        },
+        {
+          "id": "f6_bocpd_actuation",
+          "weight": 0.15,
+          "score": 100
+        },
+        {
+          "id": "f3_dowhy_status",
+          "weight": 0.15,
+          "score": 100
+        },
+        {
+          "id": "c2_invariant_test",
+          "weight": 0.1,
+          "score": 0
+        },
+        {
+          "id": "f18_dry_run_active",
+          "weight": 0.1,
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "D4",
+      "label": "Autonomous prioritization",
+      "weight": 15,
+      "pct": 40,
+      "keywords": [
+        "master_todo",
+        "bandit",
+        "priority",
+        "queue",
+        "todo-refresh",
+        "master-queue"
+      ],
+      "done": [
+        "MASTER_TODO curated by hand",
+        "R1-R13 deep research informs T3 priority-bandit design (LinUCB context = regime + query_type + recent_drift)"
+      ],
+      "next": [
+        "T3 priority-bandit code (still blocked on policy_state cell diversity)",
+        "MDP formulation of project queue",
+        "Replace hand-edit with Thompson over CIP rewards"
+      ],
+      "rubric_pct": 40,
+      "pct_override": null,
+      "frozen_reason": null,
+      "signal_trace": [
+        {
+          "id": "master_todo_curated",
+          "weight": 0.3,
+          "score": 100
+        },
+        {
+          "id": "t3_code_landed",
+          "weight": 0.6,
+          "score": 0
+        },
+        {
+          "id": "t3_design_doc",
+          "weight": 0.1,
+          "score": 100
+        }
+      ]
+    },
+    {
+      "id": "D5",
+      "label": "Cost & resource governance",
+      "weight": 10,
+      "pct": 30,
+      "keywords": [
+        "cost",
+        "budget",
+        "governor",
+        "rtk",
+        "groq",
+        "llm-backend"
+      ],
+      "done": [
+        "Groq / Ollama / Opus split by task class",
+        "Anthropic prompt cache active",
+        "RTK token-saving proxy live"
+      ],
+      "next": [
+        "T4 cost-governor spec",
+        "Per-task budget envelope",
+        "Hard-cap behaviour + escalation ladder",
+        "Backend resilience: retry-with-backoff or hard-fail on Groq fallback (eval A/B contaminated by silent model substitution 04-26)"
+      ],
+      "rubric_pct": 30,
+      "pct_override": null,
+      "frozen_reason": null,
+      "signal_trace": [
+        {
+          "id": "groq_ollama_split",
+          "weight": 0.15,
+          "score": 0
+        },
+        {
+          "id": "prompt_cache_active",
+          "weight": 0.15,
+          "score": 100
+        },
+        {
+          "id": "rtk_proxy_live",
+          "weight": 0.15,
+          "score": 100
+        },
+        {
+          "id": "f18_soft_rate_cap",
+          "weight": 0.2,
+          "score": 0
+        },
+        {
+          "id": "f18_hard_day_cap",
+          "weight": 0.2,
+          "score": 0
+        },
+        {
+          "id": "t4_governor_doc",
+          "weight": 0.15,
+          "score": 0
+        }
+      ]
+    },
+    {
+      "id": "D6",
+      "label": "Cross-session continuity",
+      "weight": 15,
+      "pct": 100,
+      "keywords": [
+        "mem0",
+        "continuity",
+        "focus",
+        "dev-digest",
+        "summaries",
+        "two-phase",
+        "sccs-master-queue",
+        "sccs-kickoff",
+        "memory-drift",
+        "f6",
+        "bocpd"
+      ],
+      "done": [
+        "MEMORY.md index + handoff convention",
+        "mem0 SQLite world-model (beliefs / loops)",
+        "CIP weekly synthesis as shared working memory",
+        "Dev-digest pipeline bi-daily",
+        "73 handoff files upserted into book_summaries (two-phase search_knowledge visibility unblocked 04-26)",
+        "SCCS master queue unified: plans/sccs-master-queue.md (F1-F17 + T1-T7 + R1-R13 single ordered queue, foundation track milestones M0/M1 closed)",
+        "BOCPD posterior persisted across CIP fires in data/sccs/bocpd_state.db \u2014 regime-shift memory survives Opus session boundaries"
+      ],
+      "next": [
+        "T5 continuity spec \u2014 'current focus' thread surfaced at session start",
+        "Importance-scored memory stream",
+        "Auto-link next-session handoff pointer into the brief 'organism progress' panel"
+      ],
+      "rubric_pct": 100,
+      "pct_override": null,
+      "frozen_reason": null,
+      "signal_trace": [
+        {
+          "id": "memory_md_index",
+          "weight": 0.2,
+          "score": 100
+        },
+        {
+          "id": "handoff_files_count",
+          "weight": 0.15,
+          "score": 100
+        },
+        {
+          "id": "mem0_sqlite",
+          "weight": 0.15,
+          "score": 100
+        },
+        {
+          "id": "cip_synthesis_writeback",
+          "weight": 0.15,
+          "score": 100
+        },
+        {
+          "id": "dev_digest_freshness",
+          "weight": 0.1,
+          "score": 100
+        },
+        {
+          "id": "master_queue_unified",
+          "weight": 0.15,
+          "score": 100
+        },
+        {
+          "id": "book_summaries_handoff_indexed",
+          "weight": 0.1,
+          "score": 100
+        }
+      ]
+    }
+  ],
+  "aggregate_pct": 65.9,
+  "rubric_schema_version": 1
+}

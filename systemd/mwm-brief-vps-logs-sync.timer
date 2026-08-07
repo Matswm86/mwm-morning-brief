@@ -1,9 +1,9 @@
 [Unit]
-Description=MWM brief — rsync VPS practice-service logs every 5 min
+Description=MWM brief — rsync VPS practice-service logs every 12h
 
 [Timer]
 OnBootSec=2min
-OnUnitActiveSec=5min
+OnUnitActiveSec=12h
 Persistent=false
 
 [Install]

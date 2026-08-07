@@ -1,93 +1,75 @@
-/*! Regime monitor + long-term VIX chart
- *  Reads /regime.json (written daily by fetchers.regime_monitor) and
- *  populates the regime panel + renders the VIX timeline.
+/*! Long-term regime monitor — reads regime.json, renders trend/vol/credit/
+ *  tripwire rows + VIX history chart (lightweight-charts area series).
  */
 (function () {
-  const URL = "regime.json";
   const $ = (id) => document.getElementById(id);
 
-  function fmtTime(iso) {
-    if (!iso) return "—";
-    const d = new Date(iso);
-    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) +
-           " " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-  }
+  function pct(n) { return (n >= 0 ? "+" : "") + n.toFixed(2); }
 
-  function tagFlag(active, label) {
-    const cls = active ? "flag-on" : "flag-off";
-    const sym = active ? "●" : "○";
-    return `<span class="${cls}">${sym} ${label}</span>`;
-  }
-
-  function renderPanel(r) {
+  function render(r) {
+    // verdict + edge badge
     const v = r.verdict || {};
-    const edge = v.strategy_edge || "unknown";
     $("regime-verdict").textContent = v.regime || "—";
     const badge = $("edge-badge");
-    badge.textContent = "edge · " + edge;
-    badge.dataset.flag = edge;
-
-    // Trend
-    const t = r.trend || {};
-    $("trend-state").textContent = t.state || "—";
-    const spxParts = [];
-    if (t.spx_last != null) spxParts.push(`SPX ${t.spx_last.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`);
-    if (t.sma50 != null)    spxParts.push(`50d ${t.sma50.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0})}`);
-    if (t.sma200 != null)   spxParts.push(`200d ${t.sma200.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:0})}`);
-    spxParts.push(`slope ${t.sma50_slope || "—"}`);
-    $("trend-body").innerHTML = spxParts.join(" · ");
-
-    // Volatility
-    const vo = r.vol || {};
-    const ts = vo.term_structure || {};
-    const volLabel = vo.vix_spot != null ? `VIX ${vo.vix_spot}` : "—";
-    $("vol-label").textContent = volLabel;
-    const volParts = [];
-    if (vo.rv_20d != null) volParts.push(`RV20 ${vo.rv_20d}`);
-    if (vo.ratio != null)  volParts.push(`V/RV ${vo.ratio}`);
-    volParts.push(`tone ${vo.tone || "—"}`);
-    if (ts.state) volParts.push(`term ${ts.state}${ts.ratio != null ? ` (${ts.ratio})` : ""}`);
-    $("vol-body").innerHTML = volParts.join(" · ");
-
-    // Credit / Curve
-    const c = r.credit || {};
-    const creditLabel = c.hy_oas != null ? `HY OAS ${c.hy_oas}%` : "—";
-    $("credit-label").textContent = creditLabel;
-    const cParts = [];
-    if (c.delta_1mo != null) {
-      const sign = c.delta_1mo >= 0 ? "+" : "";
-      cParts.push(`Δ1mo ${sign}${c.delta_1mo}`);
-    }
-    cParts.push(`HY ${c.direction || "—"}`);
-    if (c.t10y2y != null) cParts.push(`10y-2y ${c.t10y2y}`);
-    cParts.push(c.inverted ? "INVERTED" : "curve ok");
-    $("credit-body").innerHTML = cParts.join(" · ");
-
-    // Tripwires
-    const tw = r.tripwires || {};
-    const active = tw.count_active || 0;
-    $("tripwires-label").textContent = `${active} / 4 active`;
-    const twParts = [
-      tagFlag(tw.vix_25_5d,              "VIX≥25 x5d"),
-      tagFlag(tw.vix_backwardated,       "backwardation"),
-      tagFlag(tw.hy_wide_and_widening,   "HY wide+widening"),
-      tagFlag(tw.curve_inv_below_200sma, "curve inv & SPX<200d"),
-    ];
-    $("tripwires-body").innerHTML = twParts.join(" &nbsp; ");
-
-    // Rationale
+    badge.dataset.flag = v.strategy_edge || "unknown";
+    badge.textContent = "edge " + (v.strategy_edge || "—");
     $("regime-rationale").textContent = v.rationale || "";
 
-    $("regime-updated").textContent = "updated " + fmtTime(r.generated_at);
+    // trend
+    const t = r.trend || {};
+    $("trend-state").textContent = t.state || "—";
+    $("trend-body").textContent =
+      `SPX ${t.spx_last != null ? t.spx_last.toFixed(0) : "—"} · ` +
+      `50d ${t.above_50 ? "above" : "below"} (${t.sma50 != null ? t.sma50.toFixed(0) : "—"}, ${t.sma50_slope || "—"}) · ` +
+      `200d ${t.above_200 ? "above" : "below"} (${t.sma200 != null ? t.sma200.toFixed(0) : "—"})`;
+
+    // volatility
+    const vol = r.vol || {};
+    const ts = vol.term_structure || {};
+    $("vol-label").textContent = vol.tone || "—";
+    $("vol-body").textContent =
+      `VIX ${vol.vix_spot != null ? vol.vix_spot.toFixed(1) : "—"} · ` +
+      `RV20 ${vol.rv_20d != null ? vol.rv_20d.toFixed(1) : "—"} (ratio ${vol.ratio != null ? vol.ratio.toFixed(2) : "—"}) · ` +
+      `${ts.state || "—"} (VIX3M ${ts.vix3m != null ? ts.vix3m.toFixed(1) : "—"})`;
+
+    // credit / curve
+    const c = r.credit || {};
+    $("credit-label").textContent = (c.direction || "—") + (c.inverted ? " · inverted" : "");
+    $("credit-body").textContent =
+      `HY OAS ${c.hy_oas != null ? c.hy_oas.toFixed(2) : "—"}% (${c.delta_1mo != null ? pct(c.delta_1mo) : "—"} 1mo) · ` +
+      `10Y-2Y ${c.t10y2y != null ? pct(c.t10y2y) : "—"}pp`;
+
+    // tripwires
+    const tw = r.tripwires || {};
+    const names = [
+      ["vix_25_5d", "VIX>25 5d"],
+      ["vix_backwardated", "backwardation"],
+      ["hy_wide_and_widening", "HY widening"],
+      ["curve_inv_below_200sma", "inv + <200d"],
+    ];
+    $("tripwires-label").textContent = `${tw.count_active || 0} / 4`;
+    const active = names.filter(([k]) => tw[k]).map(([, l]) => l);
+    $("tripwires-body").textContent = active.length ? "active: " + active.join(", ") : "none active";
+
+    if (r.generated_at) {
+      $("regime-updated").textContent = "updated " +
+        new Date(r.generated_at).toLocaleString("en-GB", {
+          day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+        });
+    }
+
+    renderVix(r);
   }
 
-  function renderVixChart(r) {
+  let vixChart = null;
+  function renderVix(r) {
     const container = $("vix-chart");
     if (!container || typeof LightweightCharts === "undefined") return;
-    const bars = (r.vix_history || []).filter(x => x && x.value != null);
-    if (bars.length === 0) { container.innerHTML = '<p class="mono" style="padding:20px;opacity:0.5">no VIX history</p>'; return; }
+    const hist = r.vix_history || [];
+    if (!hist.length) return;
+    if (vixChart) { vixChart.remove(); vixChart = null; }
 
-    const chart = LightweightCharts.createChart(container, {
+    vixChart = LightweightCharts.createChart(container, {
       layout: {
         background: { type: "solid", color: "#f2ecdf" },
         textColor: "#56503f",
@@ -98,89 +80,65 @@
         horzLines: { color: "rgba(33,29,20,0.07)" },
       },
       rightPriceScale: { borderColor: "rgba(33,29,20,0.22)" },
-      timeScale: {
-        borderColor: "rgba(33,29,20,0.22)",
-        timeVisible: false,
-        secondsVisible: false,
-      },
+      timeScale: { borderColor: "rgba(33,29,20,0.22)", minBarSpacing: 0.001 },
       crosshair: { mode: 0 },
       height: 260,
     });
 
-    const line = chart.addLineSeries({
-      color: "#9c6d14",
-      lineWidth: 2,
-      priceLineVisible: false,
+    const area = vixChart.addAreaSeries({
+      lineColor: "#211d14",
+      lineWidth: 1,
+      topColor: "rgba(33,29,20,0.18)",
+      bottomColor: "rgba(33,29,20,0.02)",
     });
-    line.setData(bars);
+    area.setData(hist);
 
-    // Reference bands at 12 / 20 / 30 / 50
-    [
-      { price: 12, color: "#2c6b4c", label: "calm"   },
-      { price: 20, color: "#8c8470", label: "normal" },
-      { price: 30, color: "#9c6d14", label: "elev"   },
-      { price: 50, color: "#a23423", label: "panic"  },
-    ].forEach(b => {
-      line.createPriceLine({
-        price: b.price,
-        color: b.color,
+    // bands at 12 / 20 / 30 / 50
+    [12, 20, 30, 50].forEach(level => {
+      area.createPriceLine({
+        price: level,
+        color: level >= 30 ? "#a23423" : "rgba(33,29,20,0.35)",
         lineWidth: 1,
-        lineStyle: 2,          // dashed
+        lineStyle: 2,
         axisLabelVisible: true,
-        title: b.label,
       });
     });
 
-    // Strategy-era shading — lightweight-charts doesn't ship a native
-    // range-highlight primitive. We approximate with a second filled
-    // area series drawn only over the strategy-valid era (constant y
-    // near the chart's max) at low opacity.
-    const eraStart = r.strategy_era_start
-      ? Math.floor(new Date(r.strategy_era_start + "T00:00:00Z").getTime() / 1000)
-      : null;
-    if (eraStart) {
-      const maxV = bars.reduce((m, b) => Math.max(m, b.value), 0);
-      const topY = Math.ceil(maxV / 10) * 10;
-      const eraSeries = chart.addAreaSeries({
-        topColor: "rgba(44,107,76,0.08)",
-        bottomColor: "rgba(44,107,76,0.02)",
-        lineColor: "rgba(44,107,76,0)",
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: false,
-      });
-      const eraData = bars
-        .filter(b => b.time >= eraStart)
-        .map(b => ({ time: b.time, value: topY }));
-      if (eraData.length > 0) eraSeries.setData(eraData);
+    // strategy-valid era shading: baseline area over the era, drawn under main series
+    if (r.strategy_era_start) {
+      const eraTs = Math.floor(new Date(r.strategy_era_start).getTime() / 1000);
+      const eraPts = hist.filter(p => p.time >= eraTs);
+      if (eraPts.length) {
+        const maxV = Math.max(...hist.map(p => p.value));
+        const era = vixChart.addAreaSeries({
+          lineColor: "rgba(187,58,38,0)",
+          topColor: "rgba(187,58,38,0.10)",
+          bottomColor: "rgba(187,58,38,0.10)",
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: false,
+        });
+        era.setData(eraPts.map(p => ({ time: p.time, value: maxV })));
+      }
     }
 
-    // Marker on the latest bar
-    const last = bars[bars.length - 1];
-    const subtitle = $("vix-chart-subtitle");
-    if (subtitle) {
-      subtitle.textContent = `last ${last.value} · ${new Date(last.time * 1000).toISOString().slice(0,10)}`;
-    }
-
-    chart.timeScale().fitContent();
+    vixChart.timeScale().fitContent();
     window.addEventListener("resize", () => {
-      chart.applyOptions({ width: container.clientWidth });
+      vixChart.applyOptions({ width: container.clientWidth });
     });
   }
 
   async function load() {
     try {
-      const resp = await fetch(URL + "?t=" + Date.now(), { cache: "no-store" });
+      const resp = await fetch("regime.json", { cache: "no-store" });
       if (!resp.ok) throw new Error("HTTP " + resp.status);
-      const r = await resp.json();
-      renderPanel(r);
-      renderVixChart(r);
+      render(await resp.json());
     } catch (e) {
-      console.error("regime.json load failed", e);
       $("regime-verdict").textContent = "load failed";
-      $("edge-badge").textContent = "edge —";
+      console.error("regime load failed", e);
     }
   }
 
-  document.addEventListener("DOMContentLoaded", load);
+  load();
+  setInterval(load, 30 * 60 * 1000);
 })();

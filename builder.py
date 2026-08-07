@@ -52,10 +52,7 @@ from fetchers import tech_ai as f_tech
 from fetchers import research as f_research
 from fetchers import consciousness as f_conscious
 from fetchers import system as f_system
-from fetchers import trade_guard_daily as f_trade_guard
-from fetchers import trade_tracker as f_trade_tracker
-from fetchers import backtest_stats as f_backtest_stats
-from fetchers import per_cell_tracker as f_per_cell
+from fetchers import gold as f_gold
 from fetchers import selfcalib as f_selfcalib
 import strategy as strategy_picker
 import llm
@@ -73,6 +70,7 @@ log = logging.getLogger("morning-brief.builder")
 
 SECTIONS = [
     ("market",        "Market",                   f_market),
+    ("gold",          "Gold & Metals",            f_gold),
     ("geopolitics",   "Geopolitics",              f_geo),
     ("tech_ai",       "Tech & AI / Claude / LLM", f_tech),
     ("research",      "Research",                 f_research),
@@ -161,30 +159,9 @@ def build(use_llm: bool = True) -> dict:
     # llm/deploy toggles + section list for downstream filtering.
     _log_morning_brief_policy_state(regime, strategy, use_llm)
 
-    try:
-        trade_guard = f_trade_guard.fetch()
-    except Exception as e:
-        log.exception("trade_guard_daily fetch failed")
-        trade_guard = {"status": "error", "error": str(e), "per_strategy": {}, "orb_handoff": {}}
-
-    try:
-        trade_tracker = f_trade_tracker.fetch()
-    except Exception as e:
-        log.exception("trade_tracker fetch failed")
-        trade_tracker = {"status": "error", "error": str(e)}
-
-    try:
-        backtest_stats = f_backtest_stats.fetch()
-    except Exception as e:
-        log.exception("backtest_stats fetch failed")
-        backtest_stats = {"status": "error", "error": str(e)}
-
-    try:
-        cell_activity = f_per_cell.fetch()
-    except Exception as e:
-        log.exception("per_cell_tracker fetch failed")
-        cell_activity = {"status": "error", "error": str(e), "cells": [], "summary": {}}
-
+    # Account-facing fetchers (trade_guard, trade_tracker, backtest_stats,
+    # per_cell_tracker) removed 2026-08-07 — the public brief carries no
+    # own-account data. Their modules stay in fetchers/ for local use.
     try:
         selfcalib = f_selfcalib.fetch()
     except Exception as e:
@@ -206,11 +183,7 @@ def build(use_llm: bool = True) -> dict:
                 log.exception("section %s raised at future level", k)
                 sections[k] = empty_section(status="err")
 
-    brief = build_brief(regime=regime, strategy=strategy, sections=sections)
-    brief["trade_guard"] = trade_guard
-    brief["trade_tracker"] = trade_tracker
-    brief["backtest_stats"] = backtest_stats
-    brief["cell_activity"] = cell_activity
+    brief = build_brief(regime=regime, sections=sections)
     brief["_selfcalib"] = selfcalib  # kept on brief for diagnostics; web reads /selfcalib.json
     brief["_sccs"] = _sccs_brief_block()
     return brief

@@ -1,28 +1,36 @@
 #!/usr/bin/env bash
-# Refresh the MNQ bars for the chart. Primary path: project-x-py (CME
-# real-time via ProjectX gateway). Fallback: Yahoo (15-min delayed).
-# CME Globex MNQ runs 23x5, so the systemd timer fires every 5 min Mon-Fri.
-set -euo pipefail
+# Refresh MNQ + MGC bars for the charts. Primary path: project-x-py (CME
+# real-time via ProjectX gateway, PRAC account from mwm-trading/.env).
+# Fallback: Yahoo (15-min delayed). CME Globex runs 23x5, so the systemd
+# timer fires every 5 min Mon-Fri.
+set -uo pipefail
 
 cd "$(dirname "$0")"
 
 PXPY="/home/mats/MWM-AI/projects/mwm-trading/.venv/bin/python"
 YAHOO="/usr/bin/python3.11"
-OUT="web/bars_mnq.json"
 
-ok=false
-if [[ -x "$PXPY" ]]; then
-  if "$PXPY" -m fetchers.bars_pxpy --interval 5 --days 1 --write "$OUT"; then
-    ok=true
+refresh_symbol() {
+  local px_sym="$1" yahoo_sym="$2" out="$3"
+  local ok=false
+  if [[ -x "$PXPY" ]]; then
+    if "$PXPY" -m fetchers.bars_pxpy --symbol "$px_sym" --interval 5 --days 1 --write "$out"; then
+      ok=true
+    else
+      echo "bars_pxpy $px_sym failed (rc=$?); falling back to Yahoo" >&2
+    fi
   else
-    echo "bars_pxpy failed (rc=$?); falling back to Yahoo" >&2
+    echo "project-x-py venv missing at $PXPY; using Yahoo" >&2
   fi
-else
-  echo "project-x-py venv missing at $PXPY; using Yahoo" >&2
-fi
+  if ! $ok; then
+    "$YAHOO" -m fetchers.bars --symbol "$yahoo_sym" --interval 5m --range 1d --write "$out" || return 1
+  fi
+  return 0
+}
 
-if ! $ok; then
-  "$YAHOO" -m fetchers.bars --interval 5m --range 1d --write "$OUT"
-fi
+rc=0
+refresh_symbol MNQ NQ=F  web/bars_mnq.json || rc=1
+refresh_symbol MGC MGC=F web/bars_mgc.json || rc=1
 
-rsync -az "$OUT" mats@204.168.244.173:/var/www/brief/bars_mnq.json
+rsync -az web/bars_mnq.json web/bars_mgc.json mats@204.168.244.173:/var/www/brief/ || rc=1
+exit $rc

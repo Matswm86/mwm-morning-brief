@@ -79,12 +79,11 @@ def empty_section(source: str = "—", status: str = "warn") -> dict:
     }
 
 
-def build_brief(regime: dict, strategy: dict, sections: dict) -> dict:
+def build_brief(regime: dict, sections: dict) -> dict:
     return {
         "schema": "morning_brief.v1",
         "generated_at": now_utc_iso(),
         "regime": regime,
-        "strategy": strategy,
         "sections": sections,
     }
 
