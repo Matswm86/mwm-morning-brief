@@ -45,6 +45,7 @@ except Exception:
 from config import BRIEF_JSON, LOG_DIR, VPS_TARGET, WEB_DIR
 from schema import build_brief, atomic_write, empty_section, now_utc_iso
 from fetchers import regime as f_regime
+from fetchers import regime_mgc as f_regime_mgc
 from fetchers import calibration as f_calibration
 from fetchers import market as f_market
 from fetchers import geopolitics as f_geo
@@ -147,6 +148,12 @@ def build(use_llm: bool = True) -> dict:
                     "contracts": 0, "symbol": "MNQ"}
 
     try:
+        regime_mgc = f_regime_mgc.fetch()
+    except Exception as e:
+        log.exception("regime_mgc fetch failed")
+        regime_mgc = None
+
+    try:
         calibration = f_calibration.fetch()
     except Exception as e:
         log.exception("calibration fetch failed")
@@ -184,6 +191,8 @@ def build(use_llm: bool = True) -> dict:
                 sections[k] = empty_section(status="err")
 
     brief = build_brief(regime=regime, sections=sections)
+    if regime_mgc:
+        brief["regimes"] = {"MGC": regime_mgc}
     brief["_selfcalib"] = selfcalib  # kept on brief for diagnostics; web reads /selfcalib.json
     brief["_sccs"] = _sccs_brief_block()
     return brief
