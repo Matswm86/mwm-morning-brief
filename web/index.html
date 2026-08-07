@@ -57,25 +57,20 @@
   </section>
 
   <!-- Intraday regime nowcast (15-min VPS producer, validated 252d holdout) -->
-  <section class="regime-section" id="nowcast-section">
+  <section class="regime-section nowcast-section" id="nowcast-section">
     <div class="regime-head">
       <div class="regime-title">
         <span class="eyebrow">Intraday Nowcast</span>
         <span class="eyebrow-soft" id="nowcast-meta">loading…</span>
       </div>
-      <span class="nowcast-badge" id="nowcast-call" data-state="UNKNOWN">—</span>
     </div>
-    <div class="nowcast-plotwrap">
-      <div class="nowcast-side" aria-hidden="true"><span>up</span><span>down</span></div>
-      <div class="nowcast-plot" id="nowcast-plot" hidden></div>
-    </div>
-    <p class="nowcast-body mono" id="nowcast-body">—</p>
-    <p class="nowcast-note" id="nowcast-note"></p>
+    <div class="nowcast-pair" id="nowcast-pair"></div>
     <ul class="nowcast-legend" aria-label="Nowcast states">
       <li><span class="key key-up"></span>trending up</li>
       <li><span class="key key-down"></span>trending down</li>
       <li><span class="key key-chop"></span>chopping</li>
       <li><span class="key key-none"></span>no call</li>
+      <li class="nowcast-legend-hint">band width = holdout uncertainty · hover a point for detail</li>
     </ul>
   </section>
 
@@ -181,6 +176,33 @@
   </footer>
 
 </div>
+
+<template id="nowcast-template">
+  <article class="nowcast-panel" data-symbol="">
+    <header class="nowcast-panel-head">
+      <div class="nowcast-panel-id">
+        <span class="nowcast-panel-sym"></span>
+        <span class="nowcast-panel-name"></span>
+      </div>
+      <span class="nowcast-badge" data-state="UNKNOWN">—</span>
+    </header>
+    <div class="nowcast-panel-meta"></div>
+    <div class="nowcast-read">
+      <span class="nowcast-arrow" aria-hidden="true"></span>
+      <div class="nowcast-read-text">
+        <h3 class="nowcast-headline">—</h3>
+        <p class="nowcast-body">—</p>
+        <p class="nowcast-note"></p>
+      </div>
+    </div>
+    <div class="nowcast-reliability"></div>
+    <div class="nowcast-plotwrap">
+      <div class="nowcast-side" aria-hidden="true"><span>up</span><span>down</span></div>
+      <div class="nowcast-plot" hidden></div>
+    </div>
+    <div class="nowcast-meters"></div>
+  </article>
+</template>
 
 <template id="card-template">
   <article class="card" data-section="">
