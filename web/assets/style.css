@@ -695,3 +695,31 @@ a:hover { color: var(--red); border-bottom-color: var(--red); }
   .masthead-right { position: static; }
   .sc-legend-hint { margin-left: 0; }
 }
+
+/* ---- Regime stack: structural + intraday under one heading --------------- */
+/* The two tiers answer different questions over different horizons, so they
+ * share a heading but keep their own rules and titles. */
+.regime-stack {
+  border-top: 1px solid var(--ink);
+  box-shadow: 0 -3px 0 -1px var(--paper), 0 -4px 0 -1px var(--ink);
+  padding-top: 12px;
+  margin: 4px 0 30px;
+}
+.regime-stack-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.regime-stack .regime-section {
+  border-top: 0;
+  box-shadow: none;
+  margin: 0 0 22px;
+  padding-top: 8px;
+}
+.regime-stack .regime-section + .regime-section {
+  border-top: 1px solid var(--rule-soft);
+  padding-top: 16px;
+}
+.regime-stack .regime-section:last-child { margin-bottom: 0; }

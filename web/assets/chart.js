@@ -1,6 +1,6 @@
 /*! Live price charts — MNQ + MGC, uses lightweight-charts.
- *  MNQ reads bars_mnq.json (existing cron). MGC reads bars_mgc.json;
- *  its section stays hidden until that file exists and has bars.
+ *  MNQ reads bars_mnq.json, MGC reads bars_mgc.json (both refreshed by
+ *  mwm-brief-bars-refresh.timer from TopstepX via project-x-py).
  *  Polls every 60s.
  */
 (function () {
@@ -91,7 +91,7 @@
           srcEl.textContent = `${feed} · ${cfg.label} · ${data.interval || '5m'}`;
         }
       } catch (e) {
-        if (cfg.optional) return; // MGC feed not live yet — keep section hidden
+        if (cfg.optional) return; // reserved for feeds not yet live
         last.textContent = 'fetch failed';
         console.error(cfg.url + ' chart load failed', e);
       }
@@ -111,6 +111,6 @@
     containerId: 'mgc-chart', sectionId: 'chart-section-mgc',
     lastId: 'chart-last-mgc', updatedId: 'chart-updated-mgc',
     sourceId: 'chart-source-mgc', label: 'MGC',
-    url: 'bars_mgc.json', optional: true,
+    url: 'bars_mgc.json', optional: false,
   });
 })();
