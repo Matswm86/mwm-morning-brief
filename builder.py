@@ -45,6 +45,7 @@ except Exception:
 from config import BRIEF_JSON, LOG_DIR, VPS_TARGET, WEB_DIR
 from schema import build_brief, atomic_write, empty_section, now_utc_iso
 from fetchers import regime as f_regime
+from fetchers import trading_news as f_trading_news
 from fetchers import regime_derived as f_regime_derived
 from fetchers import calibration as f_calibration
 from fetchers import market as f_market
@@ -70,6 +71,7 @@ log = logging.getLogger("morning-brief.builder")
 
 
 SECTIONS = [
+    ("trading_news",  "Trading News · 24h",       f_trading_news),
     ("market",        "Market",                   f_market),
     ("gold",          "Gold & Metals",            f_gold),
     ("geopolitics",   "Geopolitics",              f_geo),
@@ -121,6 +123,15 @@ def _run_section(key: str, label: str, mod, use_llm: bool) -> tuple[str, dict]:
                 row["url"] = url
             bullets.append(row)
         payload["bullets"] = bullets
+
+    # The trading wire renders the raw items itself (each line names the
+    # instrument it bears on and the driver family that qualified it), so those
+    # fields must survive the generic card payload rather than being collapsed
+    # into LLM bullets.
+    if key == "trading_news":
+        payload["items"] = items
+        payload["instrument_counts"] = raw.get("instrument_counts", {})
+        payload["window_hours"] = raw.get("window_hours")
 
     return key, payload
 
@@ -349,9 +360,16 @@ def main() -> int:
 
 def _rsync_to_vps() -> None:
     """Push the whole web/ tree to BRIEF_VPS_TARGET. Atomic at file level via --inplace --partial."""
+    # --delete would remove artifacts written into the webroot by OTHER
+    # producers. nowcast.json is published straight to /var/www/brief by the
+    # VPS regime-nowcast timer and has no local counterpart, so a plain
+    # --delete erased it on every build (hit 2026-08-07). Protect any such
+    # foreign artifact explicitly; add to this list when a new producer starts
+    # writing into the webroot.
     cmd = [
         "rsync", "-az", "--delete",
         "--exclude=.*",
+        "--filter=protect nowcast.json",
         f"{WEB_DIR}/",
         VPS_TARGET,
     ]

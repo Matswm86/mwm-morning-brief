@@ -30,7 +30,17 @@
     </div>
   </header>
 
-  <!-- News grid (lead) -->
+  <!-- Trading wire: last 24h, MNQ/MGC drivers only -->
+<section class="wire-section" id="wire-section">
+  <div class="wire-head">
+    <span class="eyebrow">Trading News · 24h</span>
+    <span class="eyebrow-soft" id="wire-meta">loading…</span>
+  </div>
+  <p class="wire-lede" id="wire-lede"></p>
+  <ol class="wire-list" id="wire-list"></ol>
+</section>
+
+<!-- News grid (lead) -->
   <main class="grid" id="grid">
     <!-- cards injected by app.js -->
   </main>
@@ -233,5 +243,6 @@
 <script src="assets/regime.js" defer></script>
 <script src="assets/selfcalib.js" defer></script>
 <script src="assets/nowcast.js" defer></script>
+<script src="assets/wire.js" defer></script>
 </body>
 </html>

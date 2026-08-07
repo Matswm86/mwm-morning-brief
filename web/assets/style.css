@@ -458,6 +458,49 @@ a:hover { color: var(--red); border-bottom-color: var(--red); }
 }
 .colophon .mono { font-family: var(--mono); font-style: normal; font-size: 11px; }
 
+/* ---- Trading wire: 24h MNQ/MGC driver headlines ------------------------- */
+.wire-section { margin-bottom: 26px; padding-bottom: 18px; border-bottom: 2px solid var(--ink); }
+.wire-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
+}
+.wire-lede { margin: 10px 0 2px; font-family: var(--serif); font-style: italic; font-size: 15px; }
+.wire-list { list-style: none; margin-top: 6px; }
+.wire-item {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.wire-tag {
+  flex: none;
+  width: 42px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  border: 1px solid var(--rule-soft);
+  padding: 1px 0;
+  text-align: center;
+}
+.wire-tag[data-tag="MNQ"] { color: #0f7a52; border-color: #0f7a52; }
+.wire-tag[data-tag="MGC"] { color: #a8721f; border-color: #a8721f; }
+.wire-text { display: block; }
+.wire-head-line { font-family: var(--sans); font-size: 13.5px; line-height: 1.35; }
+.wire-head-line a { border-bottom: 1px solid var(--rule-soft); }
+.wire-why {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
 /* ---- Intraday nowcast: diverging state strip ---------------------------- */
 /* Direction (up/down/midline/hairline) is the primary encoding; the two hues
  * only reinforce it, so the card still reads under CVD or in print. */
