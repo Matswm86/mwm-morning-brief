@@ -53,13 +53,20 @@
         <span class="eyebrow">Intraday Nowcast</span>
         <span class="eyebrow-soft" id="nowcast-meta">loading…</span>
       </div>
-      <span class="edge-badge" id="nowcast-call" data-flag="unknown">—</span>
+      <span class="nowcast-badge" id="nowcast-call" data-state="UNKNOWN">—</span>
     </div>
-    <div class="regime-grid">
-      <article class="regime-row">
-        <span class="mono" id="nowcast-body">—</span>
-      </article>
+    <div class="nowcast-plotwrap">
+      <div class="nowcast-side" aria-hidden="true"><span>up</span><span>down</span></div>
+      <div class="nowcast-plot" id="nowcast-plot" hidden></div>
     </div>
+    <p class="nowcast-body mono" id="nowcast-body">—</p>
+    <p class="nowcast-note" id="nowcast-note"></p>
+    <ul class="nowcast-legend" aria-label="Nowcast states">
+      <li><span class="key key-up"></span>trending up</li>
+      <li><span class="key key-down"></span>trending down</li>
+      <li><span class="key key-chop"></span>chopping</li>
+      <li><span class="key key-none"></span>no call</li>
+    </ul>
   </section>
 
   <!-- Live charts -->

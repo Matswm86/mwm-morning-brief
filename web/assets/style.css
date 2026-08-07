@@ -458,6 +458,76 @@ a:hover { color: var(--red); border-bottom-color: var(--red); }
 }
 .colophon .mono { font-family: var(--mono); font-style: normal; font-size: 11px; }
 
+/* ---- Intraday nowcast: diverging state strip ---------------------------- */
+/* Direction (up/down/midline/hairline) is the primary encoding; the two hues
+ * only reinforce it, so the card still reads under CVD or in print. */
+.nowcast-up { color: #0f7a52; }
+.nowcast-down { color: #bb3a26; }
+
+.nowcast-badge {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border: 1px solid var(--rule);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.nowcast-badge[data-state="TREND_UP"] { color: #0f7a52; border-color: #0f7a52; }
+.nowcast-badge[data-state="TREND_DOWN"] { color: #bb3a26; border-color: #bb3a26; }
+.nowcast-badge[data-state="CHOP"] { color: var(--ink); border-color: var(--rule); }
+
+.nowcast-plotwrap { display: flex; align-items: stretch; gap: 8px; }
+.nowcast-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px 0 16px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.nowcast-plot { position: relative; margin: 12px 0 0; flex: 1; min-width: 0; }
+.nowcast-strip { display: block; width: 100%; height: 46px; }
+.nowcast-axis { position: relative; height: 14px; margin-top: 2px; }
+.nowcast-tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--faint);
+}
+.nowcast-body { margin-top: 10px; font-size: 12px; color: var(--muted); }
+.nowcast-body strong { color: var(--ink); font-weight: 600; }
+.nowcast-note {
+  margin-top: 3px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 12px;
+  color: var(--amber);
+}
+.nowcast-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule-soft);
+  list-style: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--faint);
+}
+.nowcast-legend li { display: flex; align-items: center; gap: 5px; }
+.nowcast-legend .key { display: inline-block; width: 9px; }
+.key-up { height: 11px; background: #0f7a52; }
+.key-down { height: 11px; background: #bb3a26; align-self: flex-end; }
+.key-chop { height: 5px; background: var(--ink); opacity: 0.42; }
+.key-none { height: 1px; background: var(--rule); }
+
 @media (max-width: 760px) {
   .viewport { padding: 20px 14px 36px; }
   .grid { grid-template-columns: 1fr; }
