@@ -46,6 +46,7 @@ from config import BRIEF_JSON, LOG_DIR, VPS_TARGET, WEB_DIR
 from schema import build_brief, atomic_write, empty_section, now_utc_iso
 from fetchers import regime as f_regime
 from fetchers import trading_news as f_trading_news
+from fetchers import event_calendar as f_event_calendar
 from fetchers import regime_derived as f_regime_derived
 from fetchers import calibration as f_calibration
 from fetchers import market as f_market
@@ -72,6 +73,7 @@ log = logging.getLogger("morning-brief.builder")
 
 SECTIONS = [
     ("trading_news",  "Trading News · 24h",       f_trading_news),
+    ("event_calendar", "Scheduled · US macro",    f_event_calendar),
     ("market",        "Market",                   f_market),
     ("gold",          "Gold & Metals",            f_gold),
     ("geopolitics",   "Geopolitics",              f_geo),
@@ -83,7 +85,9 @@ SECTIONS = [
 
 # Sections whose raw items are already card-ready — skipping the LLM keeps
 # numeric timeframe captions (e.g. "+0.28% vs prev close") intact.
-SKIP_LLM_SECTIONS = {"market", "system"}
+# event_calendar joins them: an LLM paraphrase of "CPI, Wed 08:30 ET" is a
+# chance to get a time wrong, and a wrong release time is worse than no card.
+SKIP_LLM_SECTIONS = {"market", "system", "event_calendar"}
 
 
 def _run_section(key: str, label: str, mod, use_llm: bool) -> tuple[str, dict]:
@@ -132,6 +136,16 @@ def _run_section(key: str, label: str, mod, use_llm: bool) -> tuple[str, dict]:
         payload["items"] = items
         payload["instrument_counts"] = raw.get("instrument_counts", {})
         payload["window_hours"] = raw.get("window_hours")
+
+    # Same reasoning for the Regime block's schedule tier: events.js renders the
+    # rows itself (ET + Oslo times, impact, instrument) and must be able to tell
+    # "nothing scheduled" from "the scrape broke", so error/fomc survive too.
+    if key == "event_calendar":
+        payload["items"] = items
+        payload["fomc"] = raw.get("fomc", {})
+        payload["horizon_days"] = raw.get("horizon_days")
+        if raw.get("error"):
+            payload["error"] = raw["error"]
 
     return key, payload
 

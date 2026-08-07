@@ -108,6 +108,25 @@
     </div>
   </section>
 
+  <!-- Scheduled US macro. Sits between the structural backdrop and the intraday
+       read on purpose: backdrop -> what is scheduled -> what the session is
+       doing. A regime read that ignores an 08:30 ET CPI print is misleading.
+       Display only — nothing here gates a cell, runner, or account. -->
+  <section class="regime-section events-section" id="events-section">
+    <div class="regime-head">
+      <div class="regime-title">
+        <span class="eyebrow">Scheduled · next 7 days</span>
+        <span class="eyebrow-soft" id="events-meta">loading…</span>
+      </div>
+      <span class="edge-badge" id="events-next" data-flag="unknown">next —</span>
+    </div>
+    <ul class="events-list" id="events-list"></ul>
+    <div class="chart-foot">
+      <span class="mono" id="events-fomc">—</span>
+      <span class="mono" id="events-source">—</span>
+    </div>
+  </section>
+
   <!-- Intraday regime nowcast (15-min VPS producer, validated 252d holdout) -->
   <section class="regime-section nowcast-section" id="nowcast-section">
     <div class="regime-head">
@@ -278,5 +297,6 @@
 <script src="assets/selfcalib.js" defer></script>
 <script src="assets/nowcast.js" defer></script>
 <script src="assets/wire.js" defer></script>
+<script src="assets/events.js" defer></script>
 </body>
 </html>

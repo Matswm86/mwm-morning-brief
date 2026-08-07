@@ -723,3 +723,52 @@ a:hover { color: var(--red); border-bottom-color: var(--red); }
   padding-top: 16px;
 }
 .regime-stack .regime-section:last-child { margin-bottom: 0; }
+
+/* ---- Scheduled US macro (Regime block, middle tier) --------------------- */
+/* A timetable, not a card: the eye scans the time column down the left, so
+ * times are mono and left-aligned, and the day acts as a rule-line header. */
+.events-section { margin-top: 18px; }
+.events-list { list-style: none; margin-top: 8px; }
+.events-day {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--faint);
+  padding: 10px 0 4px;
+  border-bottom: 1px solid var(--rule);
+}
+.events-item {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.events-item[data-impact="HIGH"] { border-left: 2px solid var(--red); padding-left: 8px; }
+.events-time {
+  flex: none;
+  width: 92px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.25;
+}
+.events-oslo { display: block; font-size: 10px; color: var(--faint); }
+.events-text { display: block; }
+.events-name { font-family: var(--sans); font-size: 13.5px; line-height: 1.35; }
+.events-period { font-family: var(--mono); font-size: 10px; color: var(--faint); }
+.events-why {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--faint);
+}
+.events-fail {
+  padding: 10px 0 10px 8px;
+  border-left: 2px solid var(--red);
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--red);
+}
