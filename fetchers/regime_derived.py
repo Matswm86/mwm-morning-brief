@@ -19,10 +19,10 @@ from zoneinfo import ZoneInfo
 
 from fetchers import bars as f_bars
 
-log = logging.getLogger("morning-brief.regime_mgc")
+log = logging.getLogger("morning-brief.regime_derived")
 
 ET = ZoneInfo("America/New_York")
-SYMBOL = "MGC=F"
+DEFAULT_SYMBOL = "MGC=F"
 EMA_N = 20
 ATR_N = 14
 SLOPE_BARS = 12  # 1h of 5m bars
@@ -77,11 +77,11 @@ def _levels(bars: list[dict]) -> dict:
     return out
 
 
-def fetch() -> dict:
-    payload = f_bars.fetch(SYMBOL, "5m", "5d")
+def fetch(symbol: str = DEFAULT_SYMBOL) -> dict:
+    payload = f_bars.fetch(symbol, "5m", "5d")
     bars = [b for b in payload["bars"] if b.get("high") is not None and b.get("low") is not None]
     if len(bars) < EMA_N + SLOPE_BARS:
-        return _empty(f"only {len(bars)} bars")
+        return _empty(symbol, f"only {len(bars)} bars")
 
     closes = [b["close"] for b in bars]
     ema = _ema(closes, EMA_N)
@@ -126,7 +126,7 @@ def fetch() -> dict:
         "volatility": volatility,
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "levels": {k: round(v, 1) for k, v in levels.items()},
-        "source": "derived: yahoo MGC=F 5m bars (EMA20 trend + ATR14 vol)",
+        "source": f"derived: yahoo {symbol} 5m bars (EMA20 trend + ATR14 vol)",
         "raw": {
             "slope_pct_1h": round(slope_pct, 4),
             "dist_from_ema_pct": round(dist_pct, 4),
@@ -136,11 +136,11 @@ def fetch() -> dict:
     }
 
 
-def _empty(reason: str) -> dict:
+def _empty(symbol: str, reason: str) -> dict:
     return {
         "tier": None, "tier_caption": f"no data: {reason}", "regime": None,
         "score": None, "direction": "—", "direction_confidence": 0,
         "volatility": "—",
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "levels": {}, "source": "derived: yahoo MGC=F", "raw": {},
+        "levels": {}, "source": f"derived: yahoo {symbol}", "raw": {},
     }
