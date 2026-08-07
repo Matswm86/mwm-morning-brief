@@ -46,6 +46,22 @@
     </div>
   </section>
 
+  <!-- Intraday regime nowcast (15-min VPS producer, validated 252d holdout) -->
+  <section class="regime-section" id="nowcast-section">
+    <div class="regime-head">
+      <div class="regime-title">
+        <span class="eyebrow">Intraday Nowcast</span>
+        <span class="eyebrow-soft" id="nowcast-meta">loading…</span>
+      </div>
+      <span class="edge-badge" id="nowcast-call" data-flag="unknown">—</span>
+    </div>
+    <div class="regime-grid">
+      <article class="regime-row">
+        <span class="mono" id="nowcast-body">—</span>
+      </article>
+    </div>
+  </section>
+
   <!-- Live charts -->
   <section class="chart-section" id="chart-section-mnq">
     <div class="chart-head">
@@ -209,5 +225,6 @@
 <script src="assets/chart.js" defer></script>
 <script src="assets/regime.js" defer></script>
 <script src="assets/selfcalib.js" defer></script>
+<script src="assets/nowcast.js" defer></script>
 </body>
 </html>
