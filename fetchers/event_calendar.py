@@ -70,18 +70,34 @@ MONTHS = {
         start=1,
     )
 }
+# The Fed page mixes full names and three-letter abbreviations ("Apr/May 30-1").
+MONTH_RX = "|".join(list(MONTHS) + [m[:3] for m in MONTHS])
+
+
+def _month_num(token: str) -> int:
+    return next(v for k, v in MONTHS.items() if k.startswith(token))
+
 
 # (display family, regex). First match wins, so the specific families precede
 # the generic ones. Rows in the same family at the same timestamp collapse to
 # one line — TradingEconomics lists CPI as six separate rows at 12:30.
 FAMILIES: list[tuple[str, re.Pattern]] = [
-    ("FOMC rate decision", re.compile(r"fed interest rate decision|fomc statement", re.I)),
+    (
+        "FOMC rate decision",
+        re.compile(r"fed interest rate decision|fomc statement", re.I),
+    ),
     ("FOMC minutes", re.compile(r"fomc minutes", re.I)),
     ("Fed speaker", re.compile(r"\bfed\b.*(speech|testimony)|powell", re.I)),
     ("CPI · inflation", re.compile(r"inflation rate|^cpi\b|core cpi", re.I)),
     ("PCE prices", re.compile(r"\bpce\b", re.I)),
     ("PPI", re.compile(r"\bppi\b", re.I)),
-    ("Nonfarm payrolls", re.compile(r"non ?farm payrolls|unemployment rate|participation rate|average hourly earnings", re.I)),
+    (
+        "Nonfarm payrolls",
+        re.compile(
+            r"non ?farm payrolls|unemployment rate|participation rate|average hourly earnings",
+            re.I,
+        ),
+    ),
     ("Jobless claims", re.compile(r"jobless claims", re.I)),
     ("GDP", re.compile(r"\bgdp\b", re.I)),
     ("Retail sales", re.compile(r"retail sales", re.I)),
@@ -89,9 +105,17 @@ FAMILIES: list[tuple[str, re.Pattern]] = [
 ]
 # Families that qualify even when TradingEconomics tiers them MEDIUM/LOW.
 ALWAYS_KEEP = {
-    "FOMC rate decision", "FOMC minutes", "Fed speaker", "CPI · inflation",
-    "PCE prices", "PPI", "Nonfarm payrolls", "Jobless claims", "GDP",
-    "Retail sales", "ISM",
+    "FOMC rate decision",
+    "FOMC minutes",
+    "Fed speaker",
+    "CPI · inflation",
+    "PCE prices",
+    "PPI",
+    "Nonfarm payrolls",
+    "Jobless claims",
+    "GDP",
+    "Retail sales",
+    "ISM",
 }
 IMPACT_RANK = {"HIGH": 3, "MEDIUM": 2, "LOW": 1}
 
@@ -123,7 +147,11 @@ def _parse_te_rows(html: str, now_utc: datetime) -> list[dict]:
         cells = row.find_all("td")
         if len(cells) < 8 or cells[3].get_text(strip=True) != "US":
             continue
-        dates = [c for c in cells[0].get("class", []) if re.fullmatch(r"\d{4}-\d{2}-\d{2}", c)]
+        dates = [
+            c
+            for c in cells[0].get("class", [])
+            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", c)
+        ]
         if not dates:
             continue
         raw_time = cells[0].get_text(strip=True)
@@ -139,8 +167,10 @@ def _parse_te_rows(html: str, now_utc: datetime) -> list[dict]:
         span = cells[0].find("span")
         cls = " ".join(span.get("class", [])) if span else ""
         impact = (
-            "HIGH" if "calendar-date-3" in cls
-            else "MEDIUM" if "calendar-date-2" in cls
+            "HIGH"
+            if "calendar-date-3" in cls
+            else "MEDIUM"
+            if "calendar-date-2" in cls
             else "LOW"
         )
         link = cells[4].find("a", class_="calendar-event")
@@ -161,18 +191,20 @@ def _parse_te_rows(html: str, now_utc: datetime) -> list[dict]:
             driver, instrument = "Fed / rates", "BOTH"
         else:
             driver, instrument = _driver(name)
-        out.append({
-            "when_utc": when.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "_when": when,
-            "family": fam or name,
-            "detail": name,
-            "period": period,
-            "impact": impact,
-            "driver": driver,
-            "instrument": instrument,
-            "forecast": cells[7].get_text(strip=True) if len(cells) > 7 else "",
-            "previous": cells[6].get_text(strip=True) if len(cells) > 6 else "",
-        })
+        out.append(
+            {
+                "when_utc": when.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "_when": when,
+                "family": fam or name,
+                "detail": name,
+                "period": period,
+                "impact": impact,
+                "driver": driver,
+                "instrument": instrument,
+                "forecast": cells[7].get_text(strip=True) if len(cells) > 7 else "",
+                "previous": cells[6].get_text(strip=True) if len(cells) > 6 else "",
+            }
+        )
     return out
 
 
@@ -189,13 +221,15 @@ def _collapse(rows: list[dict]) -> list[dict]:
     for r in items[:MAX_ITEMS]:
         when = r.pop("_when")
         et, oslo = when.astimezone(ET), when.astimezone(OSLO)
-        out.append({
-            **r,
-            "date_et": et.strftime("%Y-%m-%d"),
-            "day_et": et.strftime("%a %d %b"),
-            "time_et": et.strftime("%H:%M"),
-            "time_oslo": oslo.strftime("%H:%M"),
-        })
+        out.append(
+            {
+                **r,
+                "date_et": et.strftime("%Y-%m-%d"),
+                "day_et": et.strftime("%a %d %b"),
+                "time_et": et.strftime("%H:%M"),
+                "time_oslo": oslo.strftime("%H:%M"),
+            }
+        )
     return out
 
 
@@ -209,13 +243,23 @@ def _fomc(now_utc: datetime) -> dict:
         start = flat.find("2026 FOMC Meetings")
         end = flat.find("2025 FOMC Meetings", start + 1)
         if start >= 0 and end > start:
-            for mon, d1, d2 in re.findall(
-                r"(January|February|March|April|May|June|July|August|September|"
-                r"October|November|December)\s+(\d{1,2})-(\d{1,2})",
+            # Same-month meetings render "July 30-31"; cross-month ones render
+            # "Apr/May 30-1" (verified live 2026-08-07). The generic-form-only
+            # regex silently dropped or mis-dated every cross-month meeting —
+            # same bug class as build_event_history.py's fetch_fomc_dates(),
+            # whose fix this mirrors.
+            for m1, m2, d1, d2 in re.findall(
+                rf"({MONTH_RX})(?:/({MONTH_RX}))?\s*\.?\s+(\d{{1,2}})-(\d{{1,2}})",
                 flat[start:end],
             ):
-                m = MONTHS[mon]
-                meetings.append((f"2026-{m:02d}-{int(d1):02d}", f"2026-{m:02d}-{int(d2):02d}"))
+                mo1 = _month_num(m1)
+                mo2 = _month_num(m2) if m2 else mo1
+                if int(d2) < int(d1) and not m2:  # wrap with no explicit second month
+                    mo2 = 1 if mo2 == 12 else mo2 + 1
+                y2 = 2027 if (mo2 == 1 and mo1 == 12) else 2026
+                meetings.append(
+                    (f"2026-{mo1:02d}-{int(d1):02d}", f"{y2}-{mo2:02d}-{int(d2):02d}")
+                )
     if len(meetings) != 8:  # partial parse is untrustworthy — use the verified list
         if meetings:
             log.warning("FOMC scrape parsed %d meetings, expected 8", len(meetings))
@@ -240,22 +284,28 @@ def fetch() -> dict:
         # An empty timeline reads as "nothing scheduled", which is the one
         # failure mode that is actively dangerous here. Say it is broken.
         return {
-            "items": [], "count": 0, "fomc": fomc,
+            "items": [],
+            "count": 0,
+            "fomc": fomc,
             "source": "TradingEconomics (unreachable)",
             "status": "err",
             "error": "calendar fetch failed — schedule unknown, not empty",
-            "generated_at": generated, "horizon_days": HORIZON_DAYS,
+            "generated_at": generated,
+            "horizon_days": HORIZON_DAYS,
         }
     try:
         items = _collapse(_parse_te_rows(html, now))
     except Exception as e:  # noqa: BLE001 — layout drift must not blank the block
         log.warning("TradingEconomics parse failed: %s", e)
         return {
-            "items": [], "count": 0, "fomc": fomc,
+            "items": [],
+            "count": 0,
+            "fomc": fomc,
             "source": "TradingEconomics (parse failed)",
             "status": "err",
             "error": f"calendar parse failed ({type(e).__name__}) — schedule unknown",
-            "generated_at": generated, "horizon_days": HORIZON_DAYS,
+            "generated_at": generated,
+            "horizon_days": HORIZON_DAYS,
         }
 
     return {
