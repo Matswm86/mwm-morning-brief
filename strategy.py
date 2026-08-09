@@ -68,7 +68,11 @@ def pick_play(event_section: dict, now: datetime | None = None) -> dict:
     items = event_section.get("items") or []
     calendar_ok = event_section.get("status") == "ok" and not event_section.get("error")
     todays = [it for it in items if it.get("date_et") == today]
-    gate_hits = [it for it in todays if it.get("family") in GATE_FAMILIES]
+    gate_hits = [
+        it
+        for it in todays
+        if it.get("family") in GATE_FAMILIES or it.get("family") == FOMC_DECISION
+    ]
     fomc_today = any(it.get("family") == FOMC_DECISION for it in todays)
     other = [it for it in todays if it not in gate_hits]
 
