@@ -27,10 +27,12 @@
       meta.textContent = p && p.error ? "builder error: " + p.error : "unavailable";
       return;
     }
-    const stale = p.date_et !== etToday() && !p.weekend;
+    const stale = p.date_et < etToday(); // preview dates are future — not stale
     meta.textContent = stale
       ? "STALE — built for " + p.date_et + ", refresh pending"
-      : p.date_et + (p.weekend ? " · markets closed" : " · verdicts for this session");
+      : p.preview
+        ? "markets closed · preview for " + p.date_et
+        : p.date_et + " · verdicts for this session";
 
     grid.innerHTML = p.rows
       .map((r) => {

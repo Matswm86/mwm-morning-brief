@@ -23,7 +23,7 @@ Legacy strategy_code map (v3, 2026-04-20): 0 FLAT · 1 ORB_full · 2 ORB_half ·
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -52,10 +52,18 @@ EVIDENCE = (
 
 
 def pick_play(event_section: dict, now: datetime | None = None) -> dict:
-    """Today's Play from the already-fetched event_calendar section."""
+    """Today's Play from the already-fetched event_calendar section.
+
+    On weekends the card previews the NEXT session instead of rendering a
+    dead CLOSED row — Mats reads the brief on Sunday too, and "closed" tells
+    him nothing he doesn't know.
+    """
     now_et = (now or datetime.now(tz=ET)).astimezone(ET)
-    today = now_et.strftime("%Y-%m-%d")
     weekend = now_et.weekday() >= 5
+    target = now_et
+    if weekend:
+        target += timedelta(days=7 - now_et.weekday())  # Sat +2 / Sun +1 -> Monday
+    today = target.strftime("%Y-%m-%d")
 
     items = event_section.get("items") or []
     calendar_ok = event_section.get("status") == "ok" and not event_section.get("error")
@@ -81,10 +89,7 @@ def pick_play(event_section: dict, now: datetime | None = None) -> dict:
     }
     qc = {"strategy": "QC Trend Strat", "size": "2ct MNQ"}
 
-    if weekend:
-        preset = {**preset, "verdict": "CLOSED", "why": "Markets closed (weekend)."}
-        qc.update(verdict="CLOSED", why="Markets closed (weekend).")
-    elif not calendar_ok:
+    if not calendar_ok:
         qc.update(
             verdict="UNKNOWN",
             why=(
@@ -131,6 +136,7 @@ def pick_play(event_section: dict, now: datetime | None = None) -> dict:
 
     return {
         "date_et": today,
+        "preview": weekend,  # true = markets closed now; verdicts are for date_et
         "weekend": weekend,
         "calendar_ok": calendar_ok,
         "fomc_today": fomc_today,
