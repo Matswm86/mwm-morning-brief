@@ -30,6 +30,19 @@
     </div>
   </header>
 
+  <!-- Today's Play: which QuantCrawler strategy runs today, calendar-gated.
+       Verdicts are baked at build time for play.date_et; play.js greys the
+       card if the browser's ET date has moved on — a stale RUN is worse than
+       no card. Display only: Mats flips the switch, not this page. -->
+  <section class="play-section" id="play-section">
+    <div class="play-head">
+      <span class="eyebrow">Today's Play · strategy of the day</span>
+      <span class="eyebrow-soft" id="play-meta">loading…</span>
+    </div>
+    <div class="play-grid" id="play-grid"></div>
+    <p class="play-evidence" id="play-evidence"></p>
+  </section>
+
   <!-- Trading wire: last 24h, MNQ/MGC drivers only -->
 <section class="wire-section" id="wire-section">
   <div class="wire-head">
@@ -295,6 +308,7 @@
 <script src="assets/selfcalib.js" defer></script>
 <script src="assets/nowcast.js" defer></script>
 <script src="assets/wire.js" defer></script>
+<script src="assets/play.js" defer></script>
 <script src="assets/events.js" defer></script>
 </body>
 </html>

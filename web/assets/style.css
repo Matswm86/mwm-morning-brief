@@ -817,3 +817,37 @@ a:hover { color: var(--red); border-bottom-color: var(--red); }
   font-size: 13px;
   color: var(--red);
 }
+
+/* ── Today's Play — strategy of the day, calendar-gated ────────────────── */
+.play-section { margin-bottom: 26px; padding-bottom: 18px; border-bottom: 2px solid var(--ink); }
+.play-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
+}
+.play-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0 28px;
+}
+.play-card { padding: 12px 0 8px; border-bottom: 1px solid var(--rule-soft); }
+.play-card-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.play-name { font-family: var(--serif); font-size: 22px; }
+.play-size { font-family: var(--mono); font-size: 11px; color: var(--faint); margin-top: 2px; }
+.play-verdict {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  padding: 1px 8px;
+  border: 1.5px solid currentColor;
+}
+.play-run { color: var(--green); }
+.play-skip { color: var(--red); }
+.play-unknown { color: var(--amber); }
+.play-closed { color: var(--faint); }
+.play-why { font-family: var(--sans); font-size: 13px; margin-top: 6px; color: var(--muted); }
+.play-evidence { font-family: var(--mono); font-size: 10.5px; color: var(--faint); margin-top: 10px; }
+.play-stale { opacity: 0.45; }

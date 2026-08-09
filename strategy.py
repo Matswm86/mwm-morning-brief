@@ -1,18 +1,144 @@
-"""Strategy picker — maps Market Detector v3 payload to today's recommended strategy.
+"""Strategy picker.
 
-v3 (2026-04-20): ORB + sweep-code. LiqSweep was RETIRED fleet-wide 2026-06-22
-(blew XFA 24154823 on an overnight loss); the funded fleet now runs PDHR
-(Prior-Day H/L break-and-retest, MNQ @5ct, RTH-only). The detector still emits
-the legacy sweep-affinity code 3, so it now surfaces PDHR as the live funded
-strategy rather than the dead LiqSweep.
-  0 = FLAT (regime below WARM or event guard active)
-  1 = ORB_full       (HOT regime + ORB affinity)
-  2 = ORB_half       (WARM regime + ORB affinity)
-  3 = PDHR           (funded fleet — prior-day H/L retest, not regime-gated)
-  4 = SKIP           (no clear edge)
+Two generations live here:
+
+pick_play() — CURRENT (2026-08-09). "Today's Play" for the QuantCrawler pair
+(QCS-Preset / QC Trend Strat), gated by the scheduled-macro calendar the brief
+already fetches. The rule and every number come from the 1-year TradingView
+List-of-Trades exports measured 2026-08-09 (handoff-strategy-selector-not-
+regime-label-2026-08-08, Phase B): the preset shows NO news penalty (87% win on
+event days vs 80% off them) so it always runs; QC Trend Strat earns 4% of its
+net from 20% of its trades on tier-1 release days, so it sits out those days.
+Gate set = the families the study measured (CPI, NFP, PCE, PPI, GDP, retail
+sales at 08:30 ET, plus FOMC decisions). Claims / ISM / Fed speakers are shown
+but NOT gated — unmeasured. Display only: verdicts are something Mats reads;
+nothing here touches QuantCrawler, a runner, or an account.
+
+pick() — LEGACY (Market Detector v3 → ORB/PDHR). The detector's alert path was
+decommissioned; kept only because the SCCS policy-state log still records its
+output shape.
+
+Legacy strategy_code map (v3, 2026-04-20): 0 FLAT · 1 ORB_full · 2 ORB_half ·
+3 PDHR (replaced retired LiqSweep) · 4 SKIP.
 """
 from __future__ import annotations
+
+from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
+
+ET = ZoneInfo("America/New_York")
+
+# Families whose event-day cost to QC Trend Strat was MEASURED (tier>=1 in the
+# 2026-08-09 study). Anything outside this set does not gate — unmeasured.
+GATE_FAMILIES = {
+    "CPI · inflation",
+    "Nonfarm payrolls",
+    "PCE prices",
+    "PPI",
+    "GDP",
+    "Retail sales",
+}
+FOMC_DECISION = "FOMC rate decision"
+
+EVIDENCE = (
+    "Basis: 1-yr TV exports measured 2026-08-09 — preset event days win 87% "
+    "(carry 36% of net, never gate it); QC event days = 20% of trades but 4% "
+    "of net, post-release entries 29% win; skipping them keeps $21.1k of "
+    "$23.4k and cuts maxDD 23%. Descriptive study, not pre-registered. "
+    "Gate set = CPI/NFP/PCE/PPI/GDP/retail + FOMC; claims/ISM/speakers shown "
+    "but unmeasured. Display only — you flip the QuantCrawler switch, not this page."
+)
+
+
+def pick_play(event_section: dict, now: datetime | None = None) -> dict:
+    """Today's Play from the already-fetched event_calendar section."""
+    now_et = (now or datetime.now(tz=ET)).astimezone(ET)
+    today = now_et.strftime("%Y-%m-%d")
+    weekend = now_et.weekday() >= 5
+
+    items = event_section.get("items") or []
+    calendar_ok = event_section.get("status") == "ok" and not event_section.get("error")
+    todays = [it for it in items if it.get("date_et") == today]
+    gate_hits = [it for it in todays if it.get("family") in GATE_FAMILIES]
+    fomc_today = any(it.get("family") == FOMC_DECISION for it in todays)
+    other = [it for it in todays if it not in gate_hits]
+
+    def _evt(it: dict) -> dict:
+        return {
+            "family": it.get("family"),
+            "detail": it.get("detail"),
+            "time_et": it.get("time_et"),
+            "time_oslo": it.get("time_oslo"),
+            "impact": it.get("impact"),
+        }
+
+    preset = {
+        "strategy": "QCS-Preset",
+        "size": "4ct MNQ",
+        "verdict": "RUN",
+        "why": "Event-immune: wins 87% on release days vs 80% off them. Always on.",
+    }
+    qc = {"strategy": "QC Trend Strat", "size": "2ct MNQ"}
+
+    if weekend:
+        preset = {**preset, "verdict": "CLOSED", "why": "Markets closed (weekend)."}
+        qc.update(verdict="CLOSED", why="Markets closed (weekend).")
+    elif not calendar_ok:
+        qc.update(
+            verdict="UNKNOWN",
+            why=(
+                "Calendar fetch FAILED — cannot confirm a no-event day. "
+                "Treat as an event day (sit out) until the schedule is back."
+            ),
+        )
+    elif fomc_today:
+        qc.update(
+            verdict="SKIP",
+            why=(
+                "FOMC decision 14:00 ET today. QC on FOMC days: 36 trades, "
+                "33% win, net -$194 over the year."
+            ),
+        )
+        preset["why"] += " FOMC 14:00 ET today: held-through-print evidence is n=2 (both won, triple MAE)."
+    elif gate_hits:
+        names = ", ".join(
+            f"{g['family']} {g['time_et']} ET" for g in map(_evt, gate_hits)
+        )
+        qc.update(
+            verdict="SKIP",
+            why=(
+                f"Tier-1 release today: {names}. QC event days carry 20% of "
+                "its trades but 4% of its net; sitting out keeps 90% of the "
+                "year's profit at 23% less drawdown."
+            ),
+        )
+    else:
+        qc.update(
+            verdict="RUN",
+            why=(
+                "No tier-1 release scheduled. No-event days carry 96% of QC's "
+                "annual net."
+                + (
+                    " (Unmeasured events today: "
+                    + ", ".join(f"{o.get('family')} {o.get('time_et')} ET" for o in other)
+                    + " — not gated.)"
+                    if other
+                    else ""
+                )
+            ),
+        )
+
+    return {
+        "date_et": today,
+        "weekend": weekend,
+        "calendar_ok": calendar_ok,
+        "fomc_today": fomc_today,
+        "gate_events": [_evt(g) for g in gate_hits],
+        "other_events": [_evt(o) for o in other],
+        "rows": [preset, qc],
+        "evidence": EVIDENCE,
+    }
 
 NAME_BY_CODE = {
     0: "Stand down",

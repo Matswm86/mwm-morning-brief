@@ -217,6 +217,11 @@ def build(use_llm: bool = True) -> dict:
                 sections[k] = empty_section(status="err")
 
     brief = build_brief(regime=regime, sections=sections)
+    try:
+        brief["play"] = strategy_picker.pick_play(sections.get("event_calendar") or {})
+    except Exception as e:
+        log.exception("pick_play failed")
+        brief["play"] = {"error": f"{e.__class__.__name__}: {e}", "rows": []}
     if regimes:
         brief["regimes"] = regimes
     brief["_selfcalib"] = selfcalib  # kept on brief for diagnostics; web reads /selfcalib.json
