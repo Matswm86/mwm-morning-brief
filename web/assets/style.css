@@ -572,6 +572,68 @@ a:hover { color: var(--red); border-bottom-color: var(--red); }
   .sc-legend-hint { margin-left: 0; }
 }
 
+/* ——— back-page comic: The Calibrating Organism ——— */
+.comic-title {
+  font-family: var(--blackletter);
+  font-weight: 400;
+  font-size: 34px;
+  text-align: center;
+  margin: 2px 0 2px;
+}
+.comic-byline {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13.5px;
+  color: var(--faint);
+  text-align: center;
+  margin-bottom: 14px;
+}
+.comic-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.comic-panel { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.comic-panel svg { display: block; width: 100%; height: auto; }
+.comic-panel-no {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--faint);
+  text-align: center;
+}
+.comic-caption {
+  font-family: var(--serif);
+  font-size: 13px;
+  line-height: 1.38;
+  color: var(--muted);
+  text-align: center;
+  padding: 0 4px;
+  text-wrap: pretty;
+}
+.comic-caption strong { font-weight: 600; color: var(--ink); }
+.comic-hand { font-family: "Patrick Hand", var(--serif); fill: var(--ink); letter-spacing: 0.02em; }
+.comic-label {
+  font-family: var(--serif); font-weight: 700; font-size: 10px;
+  letter-spacing: 0.12em; fill: var(--muted);
+}
+.comic-hit { cursor: default; }
+.comic-hit:hover { opacity: 0.75; }
+.comic-foot {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--faint);
+  text-align: center;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule-soft);
+}
+@media (max-width: 900px) { .comic-strip { grid-template-columns: repeat(2, 1fr); gap: 14px 12px; } }
+@media (max-width: 480px) { .comic-strip { grid-template-columns: 1fr; } }
+
 /* ——— colophon ——— */
 .colophon {
   display: flex;
