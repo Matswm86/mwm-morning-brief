@@ -35,6 +35,12 @@
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
   const N = (v) => v.toFixed(2);
 
+  /* Same convention as play.js: the session the play card verdicts are for. */
+  function etToday() {
+    return new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+  }
+  const isPrevSession = (d) => !!(d && d.session && d.session < etToday());
+
   function precisionFor(call, h) {
     if (!h) return null;
     if (call === "CHOP") return h.chop_precision;
@@ -253,8 +259,9 @@
     headline.textContent = d.call ? HEADLINE[d.call] : d.status === "WAITING" ? "Pre-open" : "No read";
     headline.dataset.state = state;
 
+    const prev = isPrevSession(d);
     q(".nowcast-panel-meta").textContent = d.status === "LIVE"
-      ? d.session + " · " + d.checkpoint + " ET"
+      ? (prev ? d.session + " final · " + d.checkpoint + " ET" : d.session + " · " + d.checkpoint + " ET")
       : String(d.status || "") + (d.grey_reason ? " · " + d.grey_reason : "");
 
     const plot = q(".nowcast-plot");
@@ -287,8 +294,11 @@
           " ET across " + (h.n_sessions || "—") + " held-out sessions."
         : "The model abstains on " + pct(h.unknown_rate) +
           " of sessions at this checkpoint — today's read is one of them.";
-      q(".nowcast-note").textContent = d.before_stable_window
-        ? "Provisional — precision only settles from " + d.stable_from + " ET." : "";
+      q(".nowcast-note").textContent = prev
+        ? "Final read from the " + d.session + " session — today's first call lands " +
+          (d.earliest_valid || "10:45") + " ET."
+        : d.before_stable_window
+          ? "Provisional — precision only settles from " + d.stable_from + " ET." : "";
     }
     return node;
   }
@@ -300,9 +310,13 @@
     INSTRUMENTS.forEach((inst) => pair.appendChild(renderPanel(inst, insts[inst.code] || null)));
 
     const stamp = data.generated_at || (insts.MNQ && insts.MNQ.generated_at);
-    $("nowcast-meta").textContent = stamp
-      ? "as of " + new Date(stamp).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
-      : "15-minute checkpoints · 252-session holdout";
+    const anyPrev = INSTRUMENTS.some((i) => isPrevSession(insts[i.code]));
+    const first = INSTRUMENTS.map((i) => insts[i.code]).find((d) => d && d.session);
+    $("nowcast-meta").textContent = anyPrev && first
+      ? "final read · " + first.session + " session · today from " + (first.earliest_valid || "10:45") + " ET"
+      : stamp
+        ? "as of " + new Date(stamp).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
+        : "15-minute checkpoints · 252-session holdout";
   }
 
   function load() {
