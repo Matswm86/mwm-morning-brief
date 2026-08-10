@@ -1,6 +1,7 @@
 {
-  "target_state": "Self-calibrating research-and-trading organism",
-  "target_state_no": "Selvkalibrerende forsknings- og handelsorganisme",
+  "target_state": "Self-calibrating research organism",
+  "target_state_no": "Selvkalibrerende forskningsorganisme",
+  "target_state_note": "Re-scoped 2026-08-10: trading arm amputated 2026-08-03 (TV→QuantCrawler→TopstepX only, per feedback_trading_is_quantcrawler_only); prior label 'research-and-trading organism' preserved in git history",
   "subtitle": "Opus as disposable cognition, re-instantiated per cron tick or session",
   "dimensions": [
     {
@@ -21,11 +22,12 @@
         "Scorer-defense Phase B LIVE 2026-05-19 (commits 4cc85d7+66f50ec+b0b4b1b+96e4c85+5aef138) — 3-judge minority-veto substrate (Llama-3.3-70B + Qwen3-32B + GPT-OSS-120B) wrapping research-swarm reviewer + CIP weekly synthesis; verdicts emit to data/runners/anomalies.jsonl source='judge_ensemble' observationally (text/obj NEVER mutated); CIP signals #28/#29 registered; first fire Sun 2026-05-24 03:01 + 06:07 CEST; gate-flip ~Sun 2026-06-21 after ≥25 verdicts",
         "SCCS-aug B1 weekly scheduler wired 2026-05-18 (commit cca8cbf) — `audit/utility_tracker.py --weekly` + systemd .service + .timer Sun 03:30 Oslo (post-A.3 03:00); sudo install on box pending; closed-loop counterfactual credit `D_i` updates weekly",
         "Swarm-synthesis arm found silently failing + FIXED & verified 2026-05-31 (selfcalib-gate-starved + CIP-infra handoff) — the CIP weekly synthesis stage was erroring out; closed-loop reliability restored so the slow loop actually consumes its inputs again",
-        "F18 skill-self-optimizer gate fix 2026-05-31 (commit d701cfa) — the self-optimizer loop was being starved by a gate bug; fix unblocks the bounded mutation channel from going dormant"
+        "F18 skill-self-optimizer gate fix 2026-05-31 (commit d701cfa) — the self-optimizer loop was being starved by a gate bug; fix unblocks the bounded mutation channel from going dormant",
+        "B1 utility-sweep timer INSTALLED and firing — mwm-utility-sweep.timer Sun 03:00 Oslo, verified fired 2026-08-09",
+        "Ingest arm RECOVERED 2026-08-03 (local Qdrant restart after 4-week outage) — 72 items ingested 08-03→08-10; swarm-synthesis 08-09 wrote a real cross-domain report; CIP 08-09 rc=0"
       ],
       "next": [
         "Auto-merge Memento suggestions past score threshold (currently score-only)",
-        "B1 sudo install on box (cca8cbf timer not yet active)",
         "Phase B gate-flip from observational to passed=False after ≥25 verdicts (~Sun 2026-06-21)"
       ]
     },
@@ -33,7 +35,7 @@
       "id": "D2",
       "label": "Outcome-grounded learning",
       "weight": 25,
-      "pct": 67,
+      "pct": 55,
       "keywords": ["outcome", "scorer", "adaptive", "backtest", "trade-tracker", "backtest-panel", "ironclad", "eval", "platt", "rrf", "bm25", "policy_state", "bernstein", "adwin", "f4", "conformal", "f9", "forward_sufficiency", "f20", "f21", "f22", "f23", "f24", "honeypot", "honest_abstention", "drift_anchor", "claim_decomp", "topology_drift", "rho_compression", "rho_fisher", "chi_euler", "retrieval_regression_fix", "counterfactual_credit", "ironclad_hardened_r2"],
       "done": [
         "Adaptive scorer (Beta-Binomial + Thompson)",
@@ -63,9 +65,10 @@
         "Qdrant topic-detector + source-type-classifier regression FIXED & committed 2026-05-31 (commit ffcd132) — keeps the brain's outcome corpus from silently mis-routing chunks"
       ],
       "next": [
-        "selfcalib SCCS gate is STARVED — 11 fires all returned 0 deltas (2026-05-31); the outcome-learning signal is not flowing yet. betting-CS confidence-set arm KILLED; leverage survivor re-queued. The gate must see non-zero outcome deltas before this dim can honestly climb.",
+        "selfcalib SCCS gate STILL STARVED as of 2026-08-09 — boundary_flux.jsonl shows f18_kept=0 for 10 straight weeks (06-07→08-09); the outcome-learning signal is not flowing yet. The gate must see non-zero outcome deltas before this dim can honestly climb.",
+        "PCT CUT 67→55 on 2026-08-10 audit: trading substrate amputated 2026-08-03 (QuantCrawler-only) — F3 '≥3 distinct regimes of live cell data' prerequisite path is DEAD; outcome signal must re-ground in research-side metrics (eval_gold, retrieval hit@k, honeypot)",
+        "Honeypot gate RED since 06-14 on judge artifact (honest abstains scored as rejected; wrong=0.00 every week) — 0.83 floor re-baseline owed (Mats decision)",
         "Force confidence variance (model still states ≥0.9 on 48/60, base rate 0.367 — calibration starved of signal)",
-        "Cell diversity in policy_state — too few distinct (regime, tier) cells; ≥3 distinct regimes is the F3 prerequisite (~2-3 months of live cell data)",
         "B1 falsification check (Scope C) — wire `compute_counterfactual_credit` LOO math to F4.5 conformal residuals so scout-disable replay becomes evaluable on weekly D_i ticks"
       ]
     },
@@ -73,7 +76,7 @@
       "id": "D3",
       "label": "Bounded self-modification",
       "weight": 20,
-      "pct": 75,
+      "pct": 78,
       "keywords": ["memento", "drift", "guard", "harness", "auto-pr", "reviewer-memento", "graph-memento", "cip-rule-proposal", "scientific_method", "sccs", "bernstein", "conformal", "bounds", "f4", "f4-5", "f6", "bocpd", "dowhy", "f9", "forward_sufficiency", "f3", "causal-gate", "f18", "f18_live", "f19", "boundary_flux", "action_reason_trace", "s_swarm_entropy"],
       "done": [
         "Memento scientific_method rubric live (6 dims × 0-10, thr 42/60 — F9 forward_sufficiency added 04-28, original 5-dim 35/50 preserved 70% pass ratio)",
@@ -92,7 +95,8 @@
         "SCCS-aug D1 paired-ablation methodology codified 2026-05-18 Scope B (commit e219ea8) — 1-page methodology doc + commit-msg pre-commit lint catching PRs adding new SCCS eval gates without baseline coverage + canonical YAML wire-up in both defensive-hooks installer (for the 8 project repos) and mwm-infrastructure pre-commit; 14/14 bash scenario tests pass; Scope A 200-LOC harness deliberately NOT built per §1.5 alignment (methodology already in active use per Phase 1.5 RAG KILL, F18 flip gates, ironclad-hardened r2).",
         "Phase 0 freeze dissolved 2026-05-18 — SCCS is general substrate per [[sccs_is_general_substrate]], no longer trading-account-pass gated.",
         "Autonomous research-agent scope CONCLUDED 2026-05-31 — article-writer capability REJECTED as out-of-bounds; research + inward-verification ACCEPTED. The system declined to expand its own write-surface, which is exactly the bounded-self-modification behaviour the dim measures.",
-        "Geometric-retrieval track retired on evidence 2026-05-30 — a failing track was killed rather than tuned to fit, demonstrating bounded modification under a falsification gate instead of motivated continuation."
+        "Geometric-retrieval track retired on evidence 2026-05-30 — a failing track was killed rather than tuned to fit, demonstrating bounded modification under a falsification gate instead of motivated continuation.",
+        "F18 first REAL applied mutation 2026-08-09 (cycle 20260809T050120Z) — research-synthesis.md baseline 2.6→9.6, rounds_kept 2/5, applied=true dry_run=false (SCCS_F18_DRY_RUN flipped 1→0 on 08-04 with Mats approval); 4 sibling skills correctly self-cancelled at baseline; 1 of 3 production runs toward F19 orchestrator wire-in. PCT 75→78 on 2026-08-10 audit."
       ],
       "next": [
         "T2 safety harness spec (auto-PR with diff cap + 24h soak + auto-revert)",
