@@ -590,8 +590,8 @@ a:hover { color: var(--red); border-bottom-color: var(--red); }
 }
 .comic-strip {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
 }
 .comic-panel { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .comic-panel svg { display: block; width: 100%; height: auto; }
@@ -631,8 +631,7 @@ a:hover { color: var(--red); border-bottom-color: var(--red); }
   padding-top: 8px;
   border-top: 1px solid var(--rule-soft);
 }
-@media (max-width: 900px) { .comic-strip { grid-template-columns: repeat(2, 1fr); gap: 14px 12px; } }
-@media (max-width: 480px) { .comic-strip { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .comic-strip { grid-template-columns: 1fr; } }
 
 /* ——— colophon ——— */
 .colophon {
