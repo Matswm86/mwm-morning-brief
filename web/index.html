@@ -85,17 +85,6 @@
     <p class="play-evidence" id="play-evidence"></p>
   </section>
 
-  <!-- Instrument Outlook: MNQ/NQ + MGC/Gold predictions -->
-  <section class="outlook-section" id="outlook-section">
-    <div class="outlook-head">
-      <span class="eyebrow">Instrument Outlook</span>
-      <span class="eyebrow-soft" id="outlook-updated">Market Detector · regime &amp; direction</span>
-    </div>
-    <div class="outlook-grid" id="outlook-grid">
-      <!-- one .outlook-card per instrument, injected by outlook.js -->
-    </div>
-  </section>
-
   <!-- Intraday regime nowcast (15-min VPS producer, validated 252d holdout) -->
   <section class="regime-section nowcast-section" id="nowcast-section">
     <div class="regime-head">
@@ -112,6 +101,17 @@
       <li><span class="key key-none"></span>no call</li>
       <li class="nowcast-legend-hint">band width = holdout uncertainty · hover a point for detail</li>
     </ul>
+  </section>
+
+  <!-- Instrument Outlook: MNQ/NQ + MGC/Gold predictions -->
+  <section class="outlook-section" id="outlook-section">
+    <div class="outlook-head">
+      <span class="eyebrow">Instrument Outlook</span>
+      <span class="eyebrow-soft" id="outlook-updated">Market Detector · regime &amp; direction</span>
+    </div>
+    <div class="outlook-grid" id="outlook-grid">
+      <!-- one .outlook-card per instrument, injected by outlook.js -->
+    </div>
   </section>
 
   <!-- Regime: one block, two horizons. Structural (SPX trend / VIX term
