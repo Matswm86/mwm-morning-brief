@@ -42,16 +42,95 @@ GATE_FAMILIES = {
 FOMC_DECISION = "FOMC rate decision"
 
 EVIDENCE = (
-    "Basis: 1-yr TV exports measured 2026-08-09 — preset event days win 87% "
-    "(carry 36% of net, never gate it); QC event days = 20% of trades but 4% "
-    "of net, post-release entries 29% win; skipping them keeps $21.1k of "
-    "$23.4k and cuts maxDD 23%. Descriptive study, not pre-registered. "
-    "Gate set = CPI/NFP/PCE/PPI/GDP/retail + FOMC; claims/ISM/speakers shown "
-    "but unmeasured. Display only — you flip the QuantCrawler switch, not this page."
+    "Calendar basis: 1-yr TV exports measured 2026-08-09 — preset event days "
+    "win 87% (never gate it); QC MNQ event days = 20% of trades but 4% of net; "
+    "gate set = CPI/NFP/PCE/PPI/GDP/retail + FOMC (calendar effect on MGC "
+    "unmeasured — not gated). Edge basis: qcs.mwmai.no watchdog, real fills on "
+    "the leader account, nightly 17:15 ET — GREEN full size / YELLOW half / "
+    "RED stand down. Display only — you flip the QuantCrawler switch, not this page."
 )
 
+# play-card row -> watchdog strategy key in qcs.mwmai.no/data.json
+EDGE_STALE_HOURS = 80  # Friday 17:15 ET verdict must survive the weekend
 
-def pick_play(event_section: dict, now: datetime | None = None) -> dict:
+
+def _edge_status(payload: dict | None, key: str) -> dict | None:
+    """Reduce one watchdog strategy block to {status, why-fragment, asof}.
+
+    Mirrors the dashboard's verdictOf(): danger on WR-30 < red / streak >= red /
+    21d net <= red / month <= red; watch on the yellow versions + winner shrink.
+    Fail-open to None (row renders without an edge chip, never a fake GREEN).
+    """
+    if not payload:
+        return None
+    s = (payload.get("strategies") or {}).get(key)
+    th = payload.get("thresholds")
+    gen = payload.get("generated_at")
+    if not s or not th or not gen:
+        return None
+    try:
+        age_h = (
+            datetime.now(tz=ZoneInfo("UTC"))
+            - datetime.strptime(gen, "%Y-%m-%d %H:%M UTC").replace(
+                tzinfo=ZoneInfo("UTC")
+            )
+        ).total_seconds() / 3600
+    except ValueError:
+        return None
+    if age_h > EDGE_STALE_HOURS:
+        return {"status": "STALE", "asof": gen, "detail": f"payload {age_h:.0f}h old"}
+    wr, streak = s.get("wr30"), s.get("streak", 0)
+    net21, netm = s.get("net21", 0), s.get("net_month", 0)
+    shrink = s.get("win_shrink_pct")
+    if (
+        (wr is not None and s.get("trades_total", 0) >= 30 and wr < th["wr_red"] * 100)
+        or streak >= th["streak_red"]
+        or net21 <= th["net21_red"]
+        or netm <= th["month_red"]
+    ):
+        status = "RED"
+    elif (
+        (wr is not None and wr < th["wr_yellow"] * 100)
+        or streak >= th["streak_yellow"]
+        or net21 <= th["net21_yellow"]
+        or (shrink is not None and shrink < th["winner_shrink"] * 100)
+    ):
+        status = "YELLOW"
+    else:
+        status = "GREEN"
+    detail = f"WR-30 {wr}%, streak {streak}, 21d ${net21:+,.0f}"
+    return {"status": status, "asof": gen, "detail": detail}
+
+
+def _apply_edge(row: dict, edge: dict | None) -> dict:
+    """Merge the edge-health verdict into a calendar-verdict row."""
+    if edge is None:
+        row["edge"] = None
+        return row
+    row["edge"] = edge
+    st = edge["status"]
+    if st in ("STALE",):
+        row["why"] += " Edge data stale — verdict is calendar-only."
+        return row
+    if row["verdict"] == "SKIP":
+        return row  # calendar already sat it out; edge chip still shown
+    if st == "RED":
+        row["verdict"] = "SKIP"
+        row["why"] += f" EDGE RED ({edge['detail']}) — watchdog says stand down."
+    elif st == "YELLOW":
+        if row["verdict"] == "RUN":
+            row["verdict"] = "HALF"
+            row["why"] += f" Edge YELLOW ({edge['detail']}) — half size."
+        else:
+            row["why"] += f" Edge YELLOW ({edge['detail']})."
+    else:
+        row["why"] += f" Edge GREEN ({edge['detail']})."
+    return row
+
+
+def pick_play(
+    event_section: dict, now: datetime | None = None, edge_payload: dict | None = None
+) -> dict:
     """Today's Play from the already-fetched event_calendar section.
 
     On weekends the card previews the NEXT session instead of rendering a
@@ -91,10 +170,16 @@ def pick_play(event_section: dict, now: datetime | None = None) -> dict:
         "verdict": "RUN",
         "why": "Event-immune: wins 87% on release days vs 80% off them. Always on.",
     }
-    qc = {"strategy": "QC Trend Strat", "size": "2ct MNQ"}
+    qc_mnq = {"strategy": "QC Trend MNQ", "size": "1ct MNQ"}
+    qc_mgc = {
+        "strategy": "QC Trend MGC",
+        "size": "2ct MGC",
+        "verdict": "RUN",
+        "why": "Calendar effect on MGC unmeasured — not calendar-gated.",
+    }
 
     if not calendar_ok:
-        qc.update(
+        qc_mnq.update(
             verdict="UNKNOWN",
             why=(
                 "Calendar fetch FAILED — cannot confirm a no-event day. "
@@ -102,7 +187,7 @@ def pick_play(event_section: dict, now: datetime | None = None) -> dict:
             ),
         )
     elif fomc_today:
-        qc.update(
+        qc_mnq.update(
             verdict="SKIP",
             why=(
                 "FOMC decision 14:00 ET today. QC on FOMC days: 36 trades, "
@@ -114,7 +199,7 @@ def pick_play(event_section: dict, now: datetime | None = None) -> dict:
         names = ", ".join(
             f"{g['family']} {g['time_et']} ET" for g in map(_evt, gate_hits)
         )
-        qc.update(
+        qc_mnq.update(
             verdict="SKIP",
             why=(
                 f"Tier-1 release today: {names}. QC event days carry 20% of "
@@ -123,7 +208,7 @@ def pick_play(event_section: dict, now: datetime | None = None) -> dict:
             ),
         )
     else:
-        qc.update(
+        qc_mnq.update(
             verdict="RUN",
             why=(
                 "No tier-1 release scheduled. No-event days carry 96% of QC's "
@@ -138,15 +223,22 @@ def pick_play(event_section: dict, now: datetime | None = None) -> dict:
             ),
         )
 
+    rows = [
+        _apply_edge(preset, _edge_status(edge_payload, "qcs")),
+        _apply_edge(qc_mnq, _edge_status(edge_payload, "mnq")),
+        _apply_edge(qc_mgc, _edge_status(edge_payload, "mgc")),
+    ]
+
     return {
         "date_et": today,
         "preview": weekend,  # true = markets closed now; verdicts are for date_et
         "weekend": weekend,
         "calendar_ok": calendar_ok,
         "fomc_today": fomc_today,
+        "edge_ok": any(r.get("edge") for r in rows),
         "gate_events": [_evt(g) for g in gate_hits],
         "other_events": [_evt(o) for o in other],
-        "rows": [preset, qc],
+        "rows": rows,
         "evidence": EVIDENCE,
     }
 

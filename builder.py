@@ -57,6 +57,7 @@ from fetchers import consciousness as f_conscious
 from fetchers import system as f_system
 from fetchers import gold as f_gold
 from fetchers import selfcalib as f_selfcalib
+import http_util
 import strategy as strategy_picker
 import llm
 
@@ -218,7 +219,14 @@ def build(use_llm: bool = True) -> dict:
 
     brief = build_brief(regime=regime, sections=sections)
     try:
-        brief["play"] = strategy_picker.pick_play(sections.get("event_calendar") or {})
+        edge_payload = None
+        try:
+            edge_payload = http_util.get_json("https://qcs.mwmai.no/data.json")
+        except Exception:
+            log.warning("qcs watchdog fetch failed — play card is calendar-only")
+        brief["play"] = strategy_picker.pick_play(
+            sections.get("event_calendar") or {}, edge_payload=edge_payload
+        )
     except Exception as e:
         log.exception("pick_play failed")
         brief["play"] = {"error": f"{e.__class__.__name__}: {e}", "rows": []}

@@ -1013,8 +1013,19 @@ a:hover { color: var(--red); border-bottom-color: var(--red); }
 }
 .play-run { color: var(--green); }
 .play-skip { color: var(--red); }
+.play-half { color: var(--amber); }
 .play-unknown { color: var(--amber); }
 .play-closed { color: var(--faint); }
+.play-edge {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  margin-top: 5px;
+}
+.play-edge-green { color: var(--green); }
+.play-edge-yellow { color: var(--amber); }
+.play-edge-red { color: var(--red); }
+.play-edge-stale, .play-edge-none { color: var(--faint); }
 .play-why {
   font-family: var(--serif);
   font-size: 14.5px;

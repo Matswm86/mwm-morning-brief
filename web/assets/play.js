@@ -37,11 +37,19 @@
     grid.innerHTML = p.rows
       .map((r) => {
         const v = String(r.verdict || "").toLowerCase();
+        const e = r.edge;
+        const chip = e
+          ? `<div class="play-edge play-edge-${esc(String(e.status).toLowerCase())}">` +
+            `EDGE ${esc(e.status)}` +
+            (e.detail ? ` · ${esc(e.detail)}` : "") +
+            ` · as of ${esc(e.asof || "")}</div>`
+          : `<div class="play-edge play-edge-none">edge health unavailable — calendar-only verdict</div>`;
         return (
           `<div class="play-card${stale ? " play-stale" : ""}">` +
           `<div class="play-card-top"><span class="play-name">${esc(r.strategy)}</span>` +
           `<span class="play-verdict play-${esc(v)}">${esc(r.verdict)}</span></div>` +
           `<div class="play-size">${esc(r.size || "")}</div>` +
+          chip +
           `<p class="play-why">${esc(r.why || "")}</p></div>`
         );
       })
