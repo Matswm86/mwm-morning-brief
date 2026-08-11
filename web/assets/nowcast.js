@@ -260,6 +260,13 @@
     headline.dataset.state = state;
 
     const prev = isPrevSession(d);
+    if (prev) {
+      panel.classList.add("is-prevsession");
+      const tag = document.createElement("span");
+      tag.className = "nowcast-yday";
+      tag.textContent = "YESTERDAY'S SESSION";
+      badge.parentNode.insertBefore(tag, badge);
+    }
     q(".nowcast-panel-meta").textContent = d.status === "LIVE"
       ? (prev ? d.session + " final · " + d.checkpoint + " ET" : d.session + " · " + d.checkpoint + " ET")
       : String(d.status || "") + (d.grey_reason ? " · " + d.grey_reason : "");
@@ -294,9 +301,14 @@
           " ET across " + (h.n_sessions || "—") + " held-out sessions."
         : "The model abstains on " + pct(h.unknown_rate) +
           " of sessions at this checkpoint — today's read is one of them.";
+      const reg = prev && REGIMES && REGIMES[inst.code];
       q(".nowcast-note").textContent = prev
         ? "Final read from the " + d.session + " session — today's first call lands " +
-          (d.earliest_valid || "10:45") + " ET."
+          (d.earliest_valid || "10:45") + " ET." +
+          (reg
+            ? " Overnight detector now: " + (reg.tier_caption || reg.regime || "—") +
+              (reg.volatility ? ", " + reg.volatility + " vol." : ".")
+            : "")
         : d.before_stable_window
           ? "Provisional — precision only settles from " + d.stable_from + " ET." : "";
     }
@@ -319,11 +331,18 @@
         : "15-minute checkpoints · 252-session holdout";
   }
 
+  let REGIMES = null; // Market Detector block from brief.json, for the reconcile line
+
   function load() {
-    fetch("nowcast.json", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then(render)
-      .catch(() => { $("nowcast-meta").textContent = "nowcast.json unavailable"; });
+    fetch("brief.json", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((b) => { if (b && b.regimes) REGIMES = b.regimes; })
+      .catch(() => {})
+      .then(() =>
+        fetch("nowcast.json", { cache: "no-store" })
+          .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+          .then(render)
+          .catch(() => { $("nowcast-meta").textContent = "nowcast.json unavailable"; }));
   }
   load();
   setInterval(load, 60000);

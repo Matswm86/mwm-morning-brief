@@ -762,6 +762,21 @@ a:hover { color: var(--red); border-bottom-color: var(--red); }
 }
 .nowcast-badge[data-state="TREND_UP"] { color: #0b6b47; border-color: #0b6b47; }
 .nowcast-badge[data-state="TREND_DOWN"] { color: #a83220; border-color: #a83220; }
+.nowcast-yday {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--paper);
+  background: var(--faint);
+  padding: 2px 7px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.is-prevsession .nowcast-headline,
+.is-prevsession .nowcast-arrow,
+.is-prevsession .nowcast-badge,
+.is-prevsession .nowcast-plotwrap { opacity: 0.45; }
 
 .nowcast-read { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
 .nowcast-read-text { min-width: 0; }
