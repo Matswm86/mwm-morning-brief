@@ -32,6 +32,46 @@
     </div>
   </header>
 
+  <!-- Trading wire: last 24h, MNQ/MGC drivers only -->
+<section class="wire-section" id="wire-section">
+  <div class="wire-head">
+    <span class="eyebrow">Trading News · 24h</span>
+    <span class="eyebrow-soft" id="wire-meta">loading…</span>
+  </div>
+  <p class="wire-lede" id="wire-lede"></p>
+  <ol class="wire-list" id="wire-list"></ol>
+</section>
+
+<!-- Live charts -->
+  <section class="chart-section" id="chart-section-mnq">
+    <div class="chart-head">
+      <span class="eyebrow">MNQ · live</span>
+      <span class="eyebrow-soft" id="chart-last-mnq">—</span>
+    </div>
+    <div id="mnq-chart" class="price-chart"></div>
+    <div class="chart-foot">
+      <span class="mono" id="chart-source-mnq">TopstepX · MNQ · 5m</span>
+      <span class="mono" id="chart-updated-mnq">—</span>
+    </div>
+  </section>
+
+  <section class="chart-section" id="chart-section-mgc">
+    <div class="chart-head">
+      <span class="eyebrow">MGC · live</span>
+      <span class="eyebrow-soft" id="chart-last-mgc">—</span>
+    </div>
+    <div id="mgc-chart" class="price-chart"></div>
+    <div class="chart-foot">
+      <span class="mono" id="chart-source-mgc">TopstepX · MGC · 5m</span>
+      <span class="mono" id="chart-updated-mgc">—</span>
+    </div>
+  </section>
+
+  <!-- News grid (lead) -->
+  <main class="grid" id="grid">
+    <!-- cards injected by app.js -->
+  </main>
+
   <!-- Today's Play: which QuantCrawler strategy runs today, calendar-gated.
        Verdicts are baked at build time for play.date_et; play.js greys the
        card if the browser's ET date has moved on — a stale RUN is worse than
@@ -45,21 +85,6 @@
     <p class="play-evidence" id="play-evidence"></p>
   </section>
 
-  <!-- Trading wire: last 24h, MNQ/MGC drivers only -->
-<section class="wire-section" id="wire-section">
-  <div class="wire-head">
-    <span class="eyebrow">Trading News · 24h</span>
-    <span class="eyebrow-soft" id="wire-meta">loading…</span>
-  </div>
-  <p class="wire-lede" id="wire-lede"></p>
-  <ol class="wire-list" id="wire-list"></ol>
-</section>
-
-<!-- News grid (lead) -->
-  <main class="grid" id="grid">
-    <!-- cards injected by app.js -->
-  </main>
-
   <!-- Instrument Outlook: MNQ/NQ + MGC/Gold predictions -->
   <section class="outlook-section" id="outlook-section">
     <div class="outlook-head">
@@ -71,6 +96,24 @@
     </div>
   </section>
 
+  <!-- Intraday regime nowcast (15-min VPS producer, validated 252d holdout) -->
+  <section class="regime-section nowcast-section" id="nowcast-section">
+    <div class="regime-head">
+      <div class="regime-title">
+        <span class="eyebrow">Intraday · today's session</span>
+        <span class="eyebrow-soft" id="nowcast-meta">loading…</span>
+      </div>
+    </div>
+    <div class="nowcast-pair" id="nowcast-pair"></div>
+    <ul class="nowcast-legend" aria-label="Nowcast states">
+      <li><span class="key key-up"></span>trending up</li>
+      <li><span class="key key-down"></span>trending down</li>
+      <li><span class="key key-chop"></span>chopping</li>
+      <li><span class="key key-none"></span>no call</li>
+      <li class="nowcast-legend-hint">band width = holdout uncertainty · hover a point for detail</li>
+    </ul>
+  </section>
+
   <!-- Regime: one block, two horizons. Structural (SPX trend / VIX term
        structure / credit / tripwires, from regime.json) sets the backdrop;
        the intraday nowcast (15-min producer, 252-session holdout) reads the
@@ -79,7 +122,7 @@
   <section class="regime-stack" id="regime-stack">
     <div class="regime-stack-head">
       <span class="eyebrow">Regime</span>
-      <span class="eyebrow-soft">structural backdrop · intraday read</span>
+      <span class="eyebrow-soft">structural backdrop · scheduled macro</span>
     </div>
   <!-- Long-term regime monitor -->
   <section class="regime-section" id="regime-section">
@@ -142,50 +185,12 @@
     </div>
   </section>
 
-  <!-- Intraday regime nowcast (15-min VPS producer, validated 252d holdout) -->
-  <section class="regime-section nowcast-section" id="nowcast-section">
-    <div class="regime-head">
-      <div class="regime-title">
-        <span class="eyebrow">Intraday · today's session</span>
-        <span class="eyebrow-soft" id="nowcast-meta">loading…</span>
-      </div>
-    </div>
-    <div class="nowcast-pair" id="nowcast-pair"></div>
-    <ul class="nowcast-legend" aria-label="Nowcast states">
-      <li><span class="key key-up"></span>trending up</li>
-      <li><span class="key key-down"></span>trending down</li>
-      <li><span class="key key-chop"></span>chopping</li>
-      <li><span class="key key-none"></span>no call</li>
-      <li class="nowcast-legend-hint">band width = holdout uncertainty · hover a point for detail</li>
-    </ul>
-  </section>
+  
 
   </section>
 
-  <!-- Live charts -->
-  <section class="chart-section" id="chart-section-mnq">
-    <div class="chart-head">
-      <span class="eyebrow">MNQ · live</span>
-      <span class="eyebrow-soft" id="chart-last-mnq">—</span>
-    </div>
-    <div id="mnq-chart" class="price-chart"></div>
-    <div class="chart-foot">
-      <span class="mono" id="chart-source-mnq">TopstepX · MNQ · 5m</span>
-      <span class="mono" id="chart-updated-mnq">—</span>
-    </div>
-  </section>
-
-  <section class="chart-section" id="chart-section-mgc">
-    <div class="chart-head">
-      <span class="eyebrow">MGC · live</span>
-      <span class="eyebrow-soft" id="chart-last-mgc">—</span>
-    </div>
-    <div id="mgc-chart" class="price-chart"></div>
-    <div class="chart-foot">
-      <span class="mono" id="chart-source-mgc">TopstepX · MGC · 5m</span>
-      <span class="mono" id="chart-updated-mgc">—</span>
-    </div>
-  </section>
+  <!-- News grid (back pages): Tech & AI, Research, Consciousness, System Health -->
+  <section class="grid" id="grid-back"></section>
 
   <!-- Self-calibration progress — back-page funnies edition.
        Same data as the old growth rings (brief._selfcalib), drawn as a

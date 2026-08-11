@@ -5,6 +5,7 @@
 
 const BRIEF_URL = "brief.json";
 
+const FRONT_SECTIONS = ["market", "gold", "geopolitics"];
 const SECTION_ORDER = [
   ["market",         "Market",                   "M"],
   ["gold",           "Gold & Metals",            "Au"],
@@ -102,12 +103,12 @@ function renderCard(sectionKey, label, icon, data) {
 }
 
 function renderGrid(brief) {
-  const grid = $("grid");
-  grid.innerHTML = "";
+  const front = $("grid"), back = $("grid-back");
+  front.innerHTML = ""; back.innerHTML = "";
   const sections = brief.sections || {};
   SECTION_ORDER.forEach(([key, label, icon]) => {
     if (!sections[key] && key === "gold") return; // gold card appears once the feed lands
-    grid.appendChild(renderCard(key, label, icon, sections[key]));
+    (FRONT_SECTIONS.includes(key) ? front : back).appendChild(renderCard(key, label, icon, sections[key]));
   });
 }
 

@@ -190,7 +190,8 @@ a:hover { color: var(--red); border-bottom-color: var(--red); }
   min-width: 0;
   position: relative;
 }
-.grid .card:nth-child(2n)::before {
+#grid-back .card:nth-child(2n)::before,
+#grid .card:nth-child(2n+1):not([data-section="market"])::before {
   content: "";
   position: absolute;
   left: -18px; top: 14px; bottom: 18px;
@@ -898,7 +899,7 @@ a:hover { color: var(--red); border-bottom-color: var(--red); }
 @media (max-width: 760px) {
   .viewport { padding: 18px 14px 36px; }
   .grid { grid-template-columns: 1fr; }
-  .grid .card::before { display: none; }
+  #grid .card::before, #grid-back .card::before { display: none; }
   .outlook-grid .outlook-card + .outlook-card::before { display: none; }
   .nameplate { font-size: 40px; }
   .nameplate::before, .nameplate::after { padding: 0 10px; }
