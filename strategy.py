@@ -47,7 +47,9 @@ EVIDENCE = (
     "gate set = CPI/NFP/PCE/PPI/GDP/retail + FOMC (calendar effect on MGC "
     "unmeasured — not gated). Edge basis: qcs.mwmai.no watchdog, real fills on "
     "the leader account, nightly 17:15 ET — GREEN full size / YELLOW half / "
-    "RED stand down. Display only — you flip the QuantCrawler switch, not this page."
+    "RED stand down. Sizes mirror the 2026-08-14 TV exports (QCS 4ct MNQ / "
+    "QC Trend 3ct MNQ / QC Trend 2ct MGC). Display only — you flip the "
+    "QuantCrawler switch, not this page."
 )
 
 # play-card row -> watchdog strategy key in qcs.mwmai.no/data.json
@@ -170,7 +172,7 @@ def pick_play(
         "verdict": "RUN",
         "why": "Event-immune: wins 87% on release days vs 80% off them. Always on.",
     }
-    qc_mnq = {"strategy": "QC Trend MNQ", "size": "1ct MNQ"}
+    qc_mnq = {"strategy": "QC Trend MNQ", "size": "3ct MNQ"}
     qc_mgc = {
         "strategy": "QC Trend MGC",
         "size": "2ct MGC",
