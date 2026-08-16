@@ -103,25 +103,37 @@ dimensions:
   - id: D4
     label: Autonomous prioritization
     weight: 15
-    frozen_reason: "T3 priority-bandit blocked on policy_state cell diversity (~2-3 months ETA)"
-    # Q2 ratified 05-05: keep flat-low until T3 ships. Rubric REDESIGNED 05-05 after dry-run
-    # exposed cell_diversity bias: prior version scored 80 because data was ready;
-    # intent is "automation has shipped" not "data is ready." T3 code dominates.
+    frozen_reason: "D4 gated on the P2 outcome ledger (the reward), not on cell diversity — plans/d4-autonomous-prioritization-audit-and-plan-2026-08-15.md"
+    # REDESIGNED 2026-08-16 (D4 audit): the T3 "policy_state cell diversity" blocker was
+    # stale (20 distinct regime×tier already; signal saturated at 100 and stopped
+    # discriminating). Real blocker = no reward channel. Staged plan P0 reward repair →
+    # P1 machine queue → P2 outcome ledger → P3 proposer → P4 learner; score path
+    # P0+P1 ≈35, P2 ≈50, P3 ≈65, P4 ≈80. Weights below reproduce that path.
     signals:
       - name: file_fresh
-        weight: 0.30
+        weight: 0.10
         signal_id: master_todo_curated
         params: {path_relpath: MASTER_TODO.md, fresh_days: 14}
+      - name: file_fresh
+        weight: 0.20
+        signal_id: queue_items_fresh
+        # P1: steward writes data/queue/items.jsonl daily (06:30)
+        params: {path_relpath: data/queue/items.jsonl, fresh_days: 2, stale_days: 7}
+      - name: sqlite_recent_positive
+        weight: 0.15
+        signal_id: reward_channel_alive
+        # P0: last 2 weekly utility sweeps produced useful>0 (utility_channel_silent otherwise)
+        params: {db_relpath: core/research-swarm/db/adaptive.db, table: sweep_log, column: useful, order_col: id, n: 2}
+      - name: file_fresh
+        weight: 0.30
+        signal_id: outcomes_ledger_fresh
+        # P2: data/queue/outcomes.jsonl refreshed weekly by the Sunday steward
+        params: {path_relpath: data/queue/outcomes.jsonl, fresh_days: 8, stale_days: 21}
       - name: file_present
-        weight: 0.60
-        signal_id: t3_code_landed
-        params: {candidate_paths: [core/adaptive-scorer/linucb.py, core/sccs/linucb.py, core/sccs/priority_bandit.py]}
-      - name: file_grep_present
-        weight: 0.10
-        signal_id: t3_design_doc
-        params:
-          path_relpath: notes/inbox/sccs-r1-r13-deep-research-2026-04-26.md
-          patterns: [LinUCB]
+        weight: 0.25
+        signal_id: proposer_output_present
+        # P3: weekly proposer writes notes/inbox/priority-<date>.md (+ 4-week pick-rate kill-test)
+        params: {glob_relpath: "notes/inbox/priority-2*.md"}
 
   - id: D5
     label: Cost & resource governance

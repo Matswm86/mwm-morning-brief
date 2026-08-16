@@ -518,6 +518,28 @@ def signal_policy_state_cell_diversity(p: dict, ctx: dict) -> int | None:
     return min(100, int(distinct / max(1, p.get("target_cells", 3)) * 100))
 
 
+def signal_sqlite_recent_positive(p: dict, ctx: dict) -> int | None:
+    """Share of the last ``n`` rows (by ``order_col`` desc) with ``column`` > 0.
+    D4 `reward_channel_alive`: utility_tracker.sweep_log — 2 consecutive
+    zero-`useful` sweeps = dead reward channel (typed `utility_channel_silent`)."""
+    db = MWM_ROOT / p["db_relpath"]
+    if not db.exists():
+        return 0
+    n = int(p.get("n", 2))
+    table, col, order_col = p["table"], p["column"], p.get("order_col", "id")
+    try:
+        with sqlite3.connect(f"file:{db}?mode=ro", uri=True) as conn:
+            rows = conn.execute(
+                f"SELECT {col} FROM {table} ORDER BY {order_col} DESC LIMIT {n}"
+            ).fetchall()
+    except Exception as e:
+        log.warning("sqlite_recent_positive failed on %s: %s", db, e)
+        return None
+    if not rows:
+        return 0
+    return int(sum(1 for (v,) in rows if (v or 0) > 0) * 100 / n)
+
+
 def signal_file_present(p: dict, ctx: dict) -> int | None:
     if "candidate_paths" in p:
         for rel in p["candidate_paths"]:
@@ -649,6 +671,7 @@ SIGNAL_REGISTRY = {
     "file_fresh": signal_file_fresh,
     "policy_state_cell_diversity": signal_policy_state_cell_diversity,
     "file_present": signal_file_present,
+    "sqlite_recent_positive": signal_sqlite_recent_positive,
     # D5
     "prompt_cache_active": signal_prompt_cache_active,
     "rtk_proxy_live": signal_rtk_proxy_live,
