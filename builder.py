@@ -57,6 +57,7 @@ from fetchers import consciousness as f_conscious
 from fetchers import system as f_system
 from fetchers import gold as f_gold
 from fetchers import selfcalib as f_selfcalib
+from fetchers import nq_analyzer as f_nq
 import http_util
 import strategy as strategy_picker
 import llm
@@ -230,6 +231,16 @@ def build(use_llm: bool = True) -> dict:
     except Exception as e:
         log.exception("pick_play failed")
         brief["play"] = {"error": f"{e.__class__.__name__}: {e}", "rows": []}
+    # NQ analyzer (weekly Sunday + daily pre-open runs) → lead board on the front page +
+    # the Week Ahead edition page (web/nq/weekahead-latest.json). Advisory only.
+    try:
+        brief["nq"] = f_nq.fetch(web_dir=WEB_DIR)
+        log.info("nq analyzer: %s run %s (%s) stale=%s audit=%s",
+                 brief["nq"].get("status"), brief["nq"].get("run_date"), brief["nq"].get("mode"),
+                 brief["nq"].get("stale"), (brief["nq"].get("audit") or {}).get("verdict"))
+    except Exception as e:
+        log.exception("nq analyzer fetch failed")
+        brief["nq"] = {"status": "unavailable", "error": f"{e.__class__.__name__}: {e}"}
     if regimes:
         brief["regimes"] = regimes
     brief["_selfcalib"] = selfcalib  # kept on brief for diagnostics; web reads /selfcalib.json

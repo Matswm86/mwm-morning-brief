@@ -32,6 +32,23 @@
     </div>
   </header>
 
+  <!-- The Week Ahead · Master Analysis (lead board). NQ analyzer week run
+       (Sun) refreshed by the weekday pre-open run; MNQ outlook + strategy gates,
+       MGC column pending its own analyzer. Drawn by assets/nq.js from brief.json → nq.
+       Stale runs grey themselves; the second-model audit verdict is always shown.
+       Advisory only: Mats flips the QuantCrawler switch, not this page. -->
+  <section class="nq-section" id="nq-section">
+    <div class="nq-head">
+      <span class="eyebrow">The Week Ahead · Master Analysis</span>
+      <span class="nq-head-right">
+        <span class="eyebrow-soft" id="nq-meta">loading…</span>
+        <a class="nq-edition-link" href="week-ahead.html">read the full edition &rarr;</a>
+      </span>
+    </div>
+    <div class="nq-board" id="nq-board"></div>
+    <div class="nq-foot" id="nq-foot"></div>
+  </section>
+
   <!-- Trading wire: last 24h, MNQ/MGC drivers only -->
 <section class="wire-section" id="wire-section">
   <div class="wire-head">
@@ -72,19 +89,6 @@
     <!-- cards injected by app.js -->
   </main>
 
-  <!-- Today's Play: which QuantCrawler strategy runs today, calendar-gated.
-       Verdicts are baked at build time for play.date_et; play.js greys the
-       card if the browser's ET date has moved on — a stale RUN is worse than
-       no card. Display only: Mats flips the switch, not this page. -->
-  <section class="play-section" id="play-section">
-    <div class="play-head">
-      <span class="eyebrow">Today's Play · strategy of the day</span>
-      <span class="eyebrow-soft" id="play-meta">loading…</span>
-    </div>
-    <div class="play-grid" id="play-grid"></div>
-    <p class="play-evidence" id="play-evidence"></p>
-  </section>
-
   <!-- Intraday regime nowcast (15-min VPS producer, validated 252d holdout) -->
   <section class="regime-section nowcast-section" id="nowcast-section">
     <div class="regime-head">
@@ -101,6 +105,20 @@
       <li><span class="key key-none"></span>no call</li>
       <li class="nowcast-legend-hint">band width = holdout uncertainty · hover a point for detail</li>
     </ul>
+  </section>
+
+  <!-- Today's Play (moved below the nowcast 2026-08-17: the Week Ahead board is
+       the lead; this stays as today's calendar + watchdog gate). Calendar-gated.
+       Verdicts are baked at build time for play.date_et; play.js greys the
+       card if the browser's ET date has moved on — a stale RUN is worse than
+       no card. Display only: Mats flips the switch, not this page. -->
+  <section class="play-section" id="play-section">
+    <div class="play-head">
+      <span class="eyebrow">Today's Play · strategy of the day</span>
+      <span class="eyebrow-soft" id="play-meta">loading…</span>
+    </div>
+    <div class="play-grid" id="play-grid"></div>
+    <p class="play-evidence" id="play-evidence"></p>
   </section>
 
   <!-- Instrument Outlook: MNQ/NQ + MGC/Gold predictions -->
@@ -312,6 +330,7 @@
 <script src="assets/nowcast.js" defer></script>
 <script src="assets/wire.js" defer></script>
 <script src="assets/play.js" defer></script>
+<script src="assets/nq.js" defer></script>
 <script src="assets/events.js" defer></script>
 </body>
 </html>
