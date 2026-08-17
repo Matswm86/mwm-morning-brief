@@ -110,7 +110,6 @@ def fetch(web_dir: Path | None = None) -> dict:
         "status": "ok" if meta.get("analyst_ok") else "fallback",
         "schema": wa.get("schema"),
         "run_date": meta.get("run_date"),
-        "run_dir": str(run_dir),
         "mode": meta.get("mode"),
         "generated_at": meta.get("generated_at"),
         "week_monday": meta.get("week_monday"),
