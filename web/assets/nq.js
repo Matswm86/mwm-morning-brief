@@ -29,6 +29,23 @@
   }
 
   const callClass = (w) => (/CHOP/.test(w) ? "amber" : /UP/.test(w) ? "green" : /DOWN/.test(w) ? "red" : "faint");
+  // Range call (WIDE / NORMAL / NARROW) replaced the direction call as the headline on 2026-08-17:
+  // as-of backtest 2023-06..2026-08 (n=167 wks) — direction 43% (killed), range call 70% (51/73, 95% 59-79).
+  const rangeClass = (w) => (/WIDE/.test(w) ? "red" : /NARROW/.test(w) ? "green" : /NORMAL/.test(w) ? "amber" : "faint");
+  const rangeWord = (rc) => (rc && rc.call ? String(rc.call).replace(/_/g, " ") + " RANGE" : "RANGE —");
+  const rangeMeta = (rc, o, modeWord, prefix) => {
+    const bits = [];
+    if (rc && rc.hitRate != null) bits.push("range call hit " + Math.round(rc.hitRate * 100) + "% (n=" + rc.n + ")");
+    if (rc && rc.volLabel) bits.push("vol " + rc.volLabel);
+    if (o && o.labels && o.labels.trend) bits.push("trend " + String(o.labels.trend).replace(/_/g, " ").toLowerCase());
+    bits.push(prefix + " " + modeWord);
+    return bits.join(" · ");
+  };
+  const dirLine = (dc, fallbackCall, fallbackConf) => {
+    const c = (dc && dc.call) || fallbackCall || "UNKNOWN";
+    const cf = (dc && dc.confidence) || fallbackConf || "—";
+    return "direction (narrative only, not tradeable: 43% in backtest): " + String(c).replace(/_/g, " ").toLowerCase() + " · conf " + cf;
+  };
   const gateClass = (w) => (/REDUCED|HALF/.test(w) ? "amber" : /STOP|SKIP/.test(w) ? "red" : /RUN/.test(w) ? "green" : "faint");
   const auditClass = (v) => (v === "PASS" ? "green" : v === "REVISE" ? "amber" : v === "FAIL" ? "red" : "faint");
   const dayNames = { Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" };
@@ -95,10 +112,10 @@
     const mnqCard = el("a", { class: "nq-col nq-col-mnq" + (stale ? " nq-stale" : ""), href: (nq.hrefs || {}).edition || "week-ahead.html" },
       el("div", { class: "nq-col-top" },
         el("span", { class: "nq-sym" }, "MNQ ", el("span", { class: "nq-sym-name" }, "Micro E-mini Nasdaq-100")),
-        el("span", { class: "nq-call " + callClass(o.call || "") }, String(o.call || "UNKNOWN").replace(/_/g, " "))),
-      el("div", { class: "nq-col-meta" }, "confidence " + (o.confidence || "—") + " · NQ analyzer " + modeWord +
-        (o.labels ? " · vol " + (o.labels.vol || "?") + " · trend " + String(o.labels.trend || "?").replace(/_/g, " ").toLowerCase() : "")),
-      el("p", { class: "nq-one" }, o.one_line || "—"),
+        el("span", { class: "nq-call " + rangeClass(rangeWord(o.range_call)) }, rangeWord(o.range_call))),
+      el("div", { class: "nq-col-meta" }, rangeMeta(o.range_call, o, modeWord, "NQ analyzer")),
+      el("p", { class: "nq-one" }, o.expected_range || "—"),
+      el("p", { class: "nq-one nq-one-italic" }, dirLine(o.direction_call, o.call, o.confidence) + " — " + (o.one_line || "—")),
       el("div", { class: "nq-gates" }, gates("MNQ")));
 
     const mgc = nq.mgc || {};
@@ -106,12 +123,10 @@
     const mgcCard = el("a", { class: "nq-col nq-col-mgc" + (stale ? " nq-stale" : ""), href: (nq.hrefs || {}).edition || "week-ahead.html" },
       el("div", { class: "nq-col-top" },
         el("span", { class: "nq-sym" }, "MGC ", el("span", { class: "nq-sym-name" }, "Micro Gold")),
-        el("span", { class: "nq-call " + (mgcLive ? callClass(mgc.call || "") : "faint") }, String(mgc.call || "UNKNOWN").replace(/_/g, " "))),
-      el("div", { class: "nq-col-meta" }, mgcLive
-        ? "confidence " + (mgc.confidence || "—") + " · gold analyzer " + modeWord +
-          (mgc.labels ? " · vol " + (mgc.labels.vol || "?") + " · trend " + String(mgc.labels.trend || "?").replace(/_/g, " ").toLowerCase() : "")
-        : "gold call unavailable this run · rule labels only"),
-      el("p", { class: "nq-one" + (mgcLive ? "" : " nq-one-italic") }, mgc.one_line || "—"),
+        el("span", { class: "nq-call " + rangeClass(rangeWord(mgc.range_call)) }, rangeWord(mgc.range_call))),
+      el("div", { class: "nq-col-meta" }, rangeMeta(mgc.range_call, mgc, modeWord, "gold analyzer") + (mgcLive ? "" : " · analyst layer off")),
+      el("p", { class: "nq-one" }, mgc.expected_range || "—"),
+      el("p", { class: "nq-one nq-one-italic" }, dirLine(mgc.direction_call, mgc.call, mgc.confidence) + " — " + (mgc.one_line || "—")),
       el("div", { class: "nq-gates" }, gates("MGC")));
 
     board.replaceChildren(mnqCard, mgcCard);
@@ -258,22 +273,24 @@
       el("span", { class: "nq-gate " + gateClass(v.word || "") }, String(v.name || "").replace(/\s*\(.*\)$/, "") + " — " + (v.word || "—")));
 
     /* Master call */
-    const master = el("section", { class: "wa-section" }, h2("The Master Call", "one verdict per instrument · regime, calendar and strategy gates folded in"),
+    const master = el("section", { class: "wa-section" }, h2("The Week Range Call", "WIDE / NORMAL / NARROW per instrument · 70% hit in a 167-week as-of backtest · direction is narrative only (43%, killed)"),
       el("div", { class: "wa-two" },
         el("div", { class: "wa-half" },
           el("div", { class: "wa-inst" }, el("span", { class: "wa-inst-sym" }, "MNQ"), el("span", { class: "wa-inst-name" }, "Micro E-mini Nasdaq-100")),
-          el("div", { class: "wa-bigcall " + callClass(mnq.call || "") }, String(mnq.call || "UNKNOWN").replace(/_/g, " ")),
-          el("div", { class: "wa-callmeta" }, "confidence " + (mnq.confidence || "—") + " · NQ analyzer " + (meta.mode || "") + " run" + (mnq.status === "fallback" ? " · ANALYST LAYER OFF — rule labels only" : "")),
+          el("div", { class: "wa-bigcall " + rangeClass(rangeWord(mnq.rangeCall)) }, rangeWord(mnq.rangeCall)),
+          el("div", { class: "wa-callmeta" }, rangeMeta(mnq.rangeCall, mnq, (meta.mode || "") + " run", "NQ analyzer") + (mnq.status === "fallback" ? " · ANALYST LAYER OFF — rule labels only" : "")),
+          el("div", { class: "wa-callmeta" }, (mnq.rangeCall && mnq.rangeCall.meaning) || ""),
+          el("div", { class: "wa-callmeta" }, dirLine(mnq.directionCall, mnq.call, mnq.confidence)),
           el("p", { class: "wa-lede" }, mnq.oneLiner || "—"),
           el("div", { class: "wa-chips" }, chips(mnq.oneLinerFacts)),
           el("div", { class: "wa-range" }, "Expected week range: " + (mnq.expectedRange || "UNKNOWN") + " ", chips(mnq.expectedRangeFacts)),
           el("div", { class: "wa-gateline" }, "Strategy gates · ", gateLine("MNQ"))),
         el("div", { class: "wa-half wa-half-right" },
           el("div", { class: "wa-inst" }, el("span", { class: "wa-inst-sym" }, "MGC"), el("span", { class: "wa-inst-name" }, "Micro Gold")),
-          el("div", { class: "wa-bigcall " + (mgc.status === "ok" ? callClass(mgc.call || "") : "faint") }, String(mgc.call || "UNKNOWN").replace(/_/g, " ")),
-          el("div", { class: "wa-callmeta" }, mgc.status === "ok"
-            ? "confidence " + (mgc.confidence || "—") + " · gold analyzer " + (meta.mode || "") + " run · " + (mgc.proxyNote || "GLD proxy")
-            : "gold call unavailable this run · rule labels only"),
+          el("div", { class: "wa-bigcall " + rangeClass(rangeWord(mgc.rangeCall)) }, rangeWord(mgc.rangeCall)),
+          el("div", { class: "wa-callmeta" }, rangeMeta(mgc.rangeCall, mgc, (meta.mode || "") + " run", "gold analyzer") + " · " + (mgc.proxyNote || "GLD proxy") + (mgc.status === "ok" ? "" : " · analyst layer off")),
+          el("div", { class: "wa-callmeta" }, (mgc.rangeCall && mgc.rangeCall.meaning) || ""),
+          el("div", { class: "wa-callmeta" }, dirLine(mgc.directionCall, mgc.call, mgc.confidence)),
           el("p", { class: "wa-lede" + (mgc.status === "ok" ? "" : " wa-lede-italic") }, mgc.oneLiner || "—"),
           el("div", { class: "wa-chips" }, chips(mgc.oneLinerFacts)),
           el("div", { class: "wa-range" }, "Expected week range: " + (mgc.expectedRange || "UNKNOWN") + " ", chips(mgc.expectedRangeFacts)),

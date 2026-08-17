@@ -125,6 +125,8 @@ def fetch(web_dir: Path | None = None) -> dict:
             "one_line": mnq.get("oneLiner"),
             "facts": mnq.get("oneLinerFacts") or [],
             "expected_range": mnq.get("expectedRange"),
+            "range_call": mnq.get("rangeCall") or {},
+            "direction_call": mnq.get("directionCall") or {},
             "labels": mnq.get("labels") or {},
         },
         "mgc": {
@@ -134,6 +136,8 @@ def fetch(web_dir: Path | None = None) -> dict:
             "one_line": (wa.get("mgc") or {}).get("oneLiner"),
             "facts": (wa.get("mgc") or {}).get("oneLinerFacts") or [],
             "expected_range": (wa.get("mgc") or {}).get("expectedRange"),
+            "range_call": (wa.get("mgc") or {}).get("rangeCall") or {},
+            "direction_call": (wa.get("mgc") or {}).get("directionCall") or {},
             "labels": (wa.get("mgc") or {}).get("labels") or {},
         },
         "strategy_verdicts": verdicts,
