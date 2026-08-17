@@ -1078,6 +1078,14 @@ a:hover { color: var(--red); border-bottom-color: var(--red); }
 .nq-col-meta { font-family: var(--mono); font-size: 10.5px; color: var(--faint); margin-top: 4px; }
 .nq-one { font-family: var(--serif); font-size: 14.5px; color: var(--muted); margin: 7px 0 6px; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
 .nq-one-italic { font-style: italic; font-size: 14px; }
+/* range screen (model p50/p80/p95 + $ per contract) — 2026-08-17 */
+.nq-range { margin: 8px 0 6px; border-top: 1px dotted var(--rule); border-bottom: 1px dotted var(--rule); padding: 6px 0 5px; }
+.nq-range-row { display: grid; grid-template-columns: 138px 1fr; gap: 8px; align-items: baseline; padding: 2px 0; }
+.nq-range-k { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+.nq-range-v { font-family: var(--serif); font-size: 14px; color: var(--ink); }
+.nq-range-v b, .nq-range-v { font-variant-numeric: tabular-nums; }
+.nq-range-note { font-family: var(--mono); font-size: 10px; color: var(--faint); margin-top: 5px; line-height: 1.45; }
+@media (max-width: 480px) { .nq-range-row { grid-template-columns: 1fr; gap: 1px; } }
 .nq-gates { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 2px; }
 .nq-gate { font-family: var(--mono); font-size: 11px; }
 .nq-foot { font-family: var(--mono); font-size: 10.5px; color: var(--faint); border-top: 1px dotted var(--rule); margin-top: 10px; padding-top: 7px; }

@@ -33,13 +33,32 @@
   // as-of backtest 2023-06..2026-08 (n=167 wks) — direction 43% (killed), range call 70% (51/73, 95% 59-79).
   const rangeClass = (w) => (/WIDE/.test(w) ? "red" : /NARROW/.test(w) ? "green" : /NORMAL/.test(w) ? "amber" : "faint");
   const rangeWord = (rc) => (rc && rc.call ? String(rc.call).replace(/_/g, " ") + " RANGE" : "RANGE —");
+  const fmt0 = (x) => (x == null || isNaN(x) ? "—" : Math.round(Number(x)).toLocaleString("en-US"));
   const rangeMeta = (rc, o, modeWord, prefix) => {
     const bits = [];
-    if (rc && rc.hitRate != null) bits.push("range call hit " + Math.round(rc.hitRate * 100) + "% (n=" + rc.n + ")");
+    if (rc && rc.hitRate != null) bits.push("wide/narrow hit " + Math.round(rc.hitRate * 100) + "% vs base " + Math.round((rc.baseRate || 0.5) * 100) + "% (n=" + rc.n + ")");
     if (rc && rc.volLabel) bits.push("vol " + rc.volLabel);
-    if (o && o.labels && o.labels.trend) bits.push("trend " + String(o.labels.trend).replace(/_/g, " ").toLowerCase());
     bits.push(prefix + " " + modeWord);
     return bits.join(" · ");
+  };
+  // Range screen: model p50/p80/p95 for the next session and the week, $ per micro contract, events.
+  const rangeScreen = (rf, unitWord) => {
+    if (!rf || rf.status !== "ok") return el("p", { class: "nq-one nq-one-italic" }, "range model unavailable this run");
+    const d = rf.day || {}, w = rf.week || {};
+    const box = el("div", { class: "nq-range" });
+    box.append(el("div", { class: "nq-range-row" },
+      el("span", { class: "nq-range-k" }, "Week " + (w.monday || "")),
+      el("span", { class: "nq-range-v" }, "median " + fmt0(w.p50) + " " + unitWord + " · 80% under " + fmt0(w.p80) + " · 95% under " + fmt0(w.p95) +
+        (w.median26w ? " · 26-wk median " + fmt0(w.median26w) : "") + (w.events && w.events !== "none" ? " · events: " + w.events : ""))));
+    box.append(el("div", { class: "nq-range-row" },
+      el("span", { class: "nq-range-k" }, "Next session " + (d.date || "")),
+      el("span", { class: "nq-range-v" }, "median " + fmt0(d.p50) + " · p80 " + fmt0(d.p80) + " · p95 " + fmt0(d.p95) + " " + unitWord +
+        (d.call ? " · " + d.call + " vs 26-day median" : "") + (d.events && d.events !== "none" ? " · events: " + d.events : ""))));
+    if (d.usdPerContractP50 != null) box.append(el("div", { class: "nq-range-row" },
+      el("span", { class: "nq-range-k" }, "Per micro contract"),
+      el("span", { class: "nq-range-v" }, "median day ≈ $" + fmt0(d.usdPerContractP50) + " · p80 day ≈ $" + fmt0(d.usdPerContractP80) + " · daily loss gate $1,000")));
+    box.append(el("div", { class: "nq-range-note" }, rf.backtest || ""));
+    return box;
   };
   const dirLine = (dc, fallbackCall, fallbackConf) => {
     const c = (dc && dc.call) || fallbackCall || "UNKNOWN";
@@ -114,7 +133,7 @@
         el("span", { class: "nq-sym" }, "MNQ ", el("span", { class: "nq-sym-name" }, "Micro E-mini Nasdaq-100")),
         el("span", { class: "nq-call " + rangeClass(rangeWord(o.range_call)) }, rangeWord(o.range_call))),
       el("div", { class: "nq-col-meta" }, rangeMeta(o.range_call, o, modeWord, "NQ analyzer")),
-      el("p", { class: "nq-one" }, o.expected_range || "—"),
+      rangeScreen(o.range_forecast, "pts"),
       el("p", { class: "nq-one nq-one-italic" }, dirLine(o.direction_call, o.call, o.confidence) + " — " + (o.one_line || "—")),
       el("div", { class: "nq-gates" }, gates("MNQ")));
 
@@ -125,7 +144,7 @@
         el("span", { class: "nq-sym" }, "MGC ", el("span", { class: "nq-sym-name" }, "Micro Gold")),
         el("span", { class: "nq-call " + rangeClass(rangeWord(mgc.range_call)) }, rangeWord(mgc.range_call))),
       el("div", { class: "nq-col-meta" }, rangeMeta(mgc.range_call, mgc, modeWord, "gold analyzer") + (mgcLive ? "" : " · analyst layer off")),
-      el("p", { class: "nq-one" }, mgc.expected_range || "—"),
+      rangeScreen(mgc.range_forecast, "$/oz≈pts"),
       el("p", { class: "nq-one nq-one-italic" }, dirLine(mgc.direction_call, mgc.call, mgc.confidence) + " — " + (mgc.one_line || "—")),
       el("div", { class: "nq-gates" }, gates("MGC")));
 
@@ -273,7 +292,7 @@
       el("span", { class: "nq-gate " + gateClass(v.word || "") }, String(v.name || "").replace(/\s*\(.*\)$/, "") + " — " + (v.word || "—")));
 
     /* Master call */
-    const master = el("section", { class: "wa-section" }, h2("The Week Range Call", "WIDE / NORMAL / NARROW per instrument · 70% hit in a 167-week as-of backtest · direction is narrative only (43%, killed)"),
+    const master = el("section", { class: "wa-section" }, h2("The Week Range Call", "WIDE / NARROW per instrument from the range model (HAR + VIX + events) · 69% wide-vs-median hit over 603 weeks, R² +0.31 vs persistence · direction is narrative only (43%, killed)"),
       el("div", { class: "wa-two" },
         el("div", { class: "wa-half" },
           el("div", { class: "wa-inst" }, el("span", { class: "wa-inst-sym" }, "MNQ"), el("span", { class: "wa-inst-name" }, "Micro E-mini Nasdaq-100")),
@@ -284,6 +303,7 @@
           el("p", { class: "wa-lede" }, mnq.oneLiner || "—"),
           el("div", { class: "wa-chips" }, chips(mnq.oneLinerFacts)),
           el("div", { class: "wa-range" }, "Expected week range: " + (mnq.expectedRange || "UNKNOWN") + " ", chips(mnq.expectedRangeFacts)),
+          rangeScreen(mnq.rangeForecast, "pts"),
           el("div", { class: "wa-gateline" }, "Strategy gates · ", gateLine("MNQ"))),
         el("div", { class: "wa-half wa-half-right" },
           el("div", { class: "wa-inst" }, el("span", { class: "wa-inst-sym" }, "MGC"), el("span", { class: "wa-inst-name" }, "Micro Gold")),
@@ -294,6 +314,7 @@
           el("p", { class: "wa-lede" + (mgc.status === "ok" ? "" : " wa-lede-italic") }, mgc.oneLiner || "—"),
           el("div", { class: "wa-chips" }, chips(mgc.oneLinerFacts)),
           el("div", { class: "wa-range" }, "Expected week range: " + (mgc.expectedRange || "UNKNOWN") + " ", chips(mgc.expectedRangeFacts)),
+          rangeScreen(mgc.rangeForecast, "$/oz≈pts"),
           el("div", { class: "wa-gateline" }, "Strategy gate · ", gateLine("MGC")))));
 
     /* Why + flips (both instruments) */
