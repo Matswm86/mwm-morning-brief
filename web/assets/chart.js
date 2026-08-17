@@ -65,8 +65,13 @@
         }
         if (section && section.hidden) section.hidden = false;
         ensureChart();
-        candles.setData(data.bars);
-        volume.setData(data.bars.map(b => ({
+        // lightweight-charts draws epoch seconds as UTC. Shift each bar by the
+        // viewer's local offset so the axis reads local wall-clock (Oslo for Mats):
+        // bars are 11:05 UTC = 13:05 Oslo, and the axis must say 13:05.
+        const toLocal = (t) => t - new Date(t * 1000).getTimezoneOffset() * 60;
+        const bars = data.bars.map(b => ({ ...b, time: toLocal(b.time) }));
+        candles.setData(bars);
+        volume.setData(bars.map(b => ({
           time: b.time,
           value: b.volume,
           color: b.close >= b.open ? 'rgba(44,107,76,0.35)' : 'rgba(162,52,35,0.35)',
