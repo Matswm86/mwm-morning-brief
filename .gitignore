@@ -22,3 +22,6 @@ venv/
 *.swp
 *.swo
 *~
+
+# NQ analyzer runtime artifacts (published by fetchers/nq_analyzer.py every build)
+web/nq/
