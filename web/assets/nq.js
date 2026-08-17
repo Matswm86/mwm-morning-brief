@@ -134,7 +134,7 @@
         el("span", { class: "nq-call " + rangeClass(rangeWord(o.range_call)) }, rangeWord(o.range_call))),
       el("div", { class: "nq-col-meta" }, rangeMeta(o.range_call, o, modeWord, "NQ analyzer")),
       rangeScreen(o.range_forecast, "pts"),
-      el("p", { class: "nq-one nq-one-italic" }, dirLine(o.direction_call, o.call, o.confidence) + " — " + (o.one_line || "—")),
+      el("p", { class: "nq-one" }, el("span", { class: "wa-analyst-k" }, "Analyst · "), o.one_line || "—", el("span", { class: "wa-analyst-dir" }, " (lean " + String((o.direction_call || {}).call || o.call || "—").replace(/_/g, " ").toLowerCase() + " · not tradeable)")),
       el("div", { class: "nq-gates" }, gates("MNQ")));
 
     const mgc = nq.mgc || {};
@@ -145,7 +145,7 @@
         el("span", { class: "nq-call " + rangeClass(rangeWord(mgc.range_call)) }, rangeWord(mgc.range_call))),
       el("div", { class: "nq-col-meta" }, rangeMeta(mgc.range_call, mgc, modeWord, "gold analyzer") + (mgcLive ? "" : " · analyst layer off")),
       rangeScreen(mgc.range_forecast, "$/oz≈pts"),
-      el("p", { class: "nq-one nq-one-italic" }, dirLine(mgc.direction_call, mgc.call, mgc.confidence) + " — " + (mgc.one_line || "—")),
+      el("p", { class: "nq-one" }, el("span", { class: "wa-analyst-k" }, "Analyst · "), mgc.one_line || "—", el("span", { class: "wa-analyst-dir" }, " (lean " + String((mgc.direction_call || {}).call || mgc.call || "—").replace(/_/g, " ").toLowerCase() + " · not tradeable)")),
       el("div", { class: "nq-gates" }, gates("MGC")));
 
     board.replaceChildren(mnqCard, mgcCard);
@@ -217,8 +217,7 @@
     ];
     const wos = v.watchoutList || [];
     if (wos.length) {
-      kids.push(el("div", {}, el("div", { class: "wa-mini-head" }, "Watch-outs"),
-        el("ul", { class: "wa-watchouts" }, wos.map((w) => el("li", {}, w.text, " ", chips(w.facts))))));
+      kids.push(collapsible("Watch-outs", wos.length, () => el("ul", { class: "wa-watchouts" }, wos.map((w) => el("li", {}, w.text, " ", chips(w.facts))))));
     }
     if (bt) {
       const stats = [
@@ -251,13 +250,12 @@
     if (keys.length) box.append(el("div", { class: "wa-checks" }, keys.map((k) =>
       el("span", { class: "wa-check " + (chk[k] === "PASS" ? "green" : "red") }, k.replace(/_/g, " ") + " " + chk[k]))));
     if ((au.issues || []).length) {
-      box.append(table({ headers: ["Severity", "Where", "Problem", "Evidence", "Fix"],
+      box.append(collapsible("Issues the auditor found", (au.issues || []).length, () => table({ headers: ["Severity", "Where", "Problem", "Evidence", "Fix"],
         rows: au.issues.map((i) => [i.severity, i.where, i.problem,
-          (String(i.evidence || "").match(/\[[FH]:[^\]]+\]/g) || []).map((x) => x[1].toLowerCase() + "-" + x.slice(3, -1)), i.fix]) }, true));
+          (String(i.evidence || "").match(/\[[FH]:[^\]]+\]/g) || []).map((x) => x[1].toLowerCase() + "-" + x.slice(3, -1)), i.fix]) }, true)));
     }
     if ((au.materialMissed || []).length) {
-      box.append(el("div", { class: "wa-mini-head" }, "Material the draft left out"));
-      box.append(el("ul", { class: "wa-watchouts" }, au.materialMissed.map((m) => el("li", {}, m.text, " ", chips(m.facts)))));
+      box.append(collapsible("Material the draft left out", au.materialMissed.length, () => el("ul", { class: "wa-watchouts" }, au.materialMissed.map((m) => el("li", {}, m.text, " ", chips(m.facts))))));
     }
     if (au.draftOutlook && au.draftOutlook !== (meta._finalCall || au.draftOutlook)) {
       box.append(el("p", { class: "wa-note" }, "The auditor changed the outlook call: draft " + au.draftOutlook + " → printed " + meta._finalCall + "."));
@@ -284,7 +282,9 @@
     const mnq = d.mnq || {}, mgc = d.mgc || {};
     meta._finalCall = mnq.call;
     $("wa-dateline").textContent = "Week of " + weekRange(meta.week_monday, meta.week_friday);
-    $("wa-genline").textContent = (meta.eyebrow || "") + (meta.mode === "day" ? " · this is the DAY run of " + meta.run_date + " (the week call is refreshed each morning)" : "");
+    $("wa-genline").replaceChildren(
+      document.createTextNode((meta.mode === "day" ? "day run " + meta.run_date : "week run " + meta.run_date) + " · " + (meta.generated_at || "").slice(0, 16).replace("T", " ") + "Z · audit " + ((d.audit || {}).verdict || "—") + " · "),
+      el("a", { href: "#", class: "wa-chip-toggle", on: { click: (e) => { e.preventDefault(); document.body.classList.toggle("wa-chips-on"); e.target.textContent = document.body.classList.contains("wa-chips-on") ? "hide fact ids" : "show fact ids"; } } }, "show fact ids"));
     document.title = (meta.title || "The Week Ahead") + " · The Morning Brief";
 
     const verdicts = d.strategyVerdicts || [];
@@ -292,36 +292,28 @@
       el("span", { class: "nq-gate " + gateClass(v.word || "") }, String(v.name || "").replace(/\s*\(.*\)$/, "") + " — " + (v.word || "—")));
 
     /* Master call */
-    const master = el("section", { class: "wa-section" }, h2("The Week Range Call", "WIDE / NARROW per instrument from the range model (HAR + VIX + events) · 69% wide-vs-median hit over 603 weeks, R² +0.31 vs persistence · direction is narrative only (43%, killed)"),
+    const master = el("section", { class: "wa-section" }, h2("The Week Range Call", "range model (HAR + VIX + events) · MNQ 69% wide-vs-median over 603 weeks · not a direction call"),
       el("div", { class: "wa-two" },
         el("div", { class: "wa-half" },
           el("div", { class: "wa-inst" }, el("span", { class: "wa-inst-sym" }, "MNQ"), el("span", { class: "wa-inst-name" }, "Micro E-mini Nasdaq-100")),
           el("div", { class: "wa-bigcall " + rangeClass(rangeWord(mnq.rangeCall)) }, rangeWord(mnq.rangeCall)),
           el("div", { class: "wa-callmeta" }, rangeMeta(mnq.rangeCall, mnq, (meta.mode || "") + " run", "NQ analyzer") + (mnq.status === "fallback" ? " · ANALYST LAYER OFF — rule labels only" : "")),
-          el("div", { class: "wa-callmeta" }, (mnq.rangeCall && mnq.rangeCall.meaning) || ""),
-          el("div", { class: "wa-callmeta" }, dirLine(mnq.directionCall, mnq.call, mnq.confidence)),
-          el("p", { class: "wa-lede" }, mnq.oneLiner || "—"),
-          el("div", { class: "wa-chips" }, chips(mnq.oneLinerFacts)),
-          el("div", { class: "wa-range" }, "Expected week range: " + (mnq.expectedRange || "UNKNOWN") + " ", chips(mnq.expectedRangeFacts)),
           rangeScreen(mnq.rangeForecast, "pts"),
-          el("div", { class: "wa-gateline" }, "Strategy gates · ", gateLine("MNQ"))),
+          el("div", { class: "wa-gateline" }, "Strategy gates · ", gateLine("MNQ")),
+          el("p", { class: "wa-analyst" }, el("span", { class: "wa-analyst-k" }, "Analyst · "), mnq.oneLiner || "—", el("span", { class: "wa-analyst-dir" }, " (lean " + String((mnq.directionCall || {}).call || mnq.call || "—").replace(/_/g, " ").toLowerCase() + " · not tradeable)"), " ", chips(mnq.oneLinerFacts))),
         el("div", { class: "wa-half wa-half-right" },
           el("div", { class: "wa-inst" }, el("span", { class: "wa-inst-sym" }, "MGC"), el("span", { class: "wa-inst-name" }, "Micro Gold")),
           el("div", { class: "wa-bigcall " + rangeClass(rangeWord(mgc.rangeCall)) }, rangeWord(mgc.rangeCall)),
-          el("div", { class: "wa-callmeta" }, rangeMeta(mgc.rangeCall, mgc, (meta.mode || "") + " run", "gold analyzer") + " · " + (mgc.proxyNote || "GLD proxy") + (mgc.status === "ok" ? "" : " · analyst layer off")),
-          el("div", { class: "wa-callmeta" }, (mgc.rangeCall && mgc.rangeCall.meaning) || ""),
-          el("div", { class: "wa-callmeta" }, dirLine(mgc.directionCall, mgc.call, mgc.confidence)),
-          el("p", { class: "wa-lede" + (mgc.status === "ok" ? "" : " wa-lede-italic") }, mgc.oneLiner || "—"),
-          el("div", { class: "wa-chips" }, chips(mgc.oneLinerFacts)),
-          el("div", { class: "wa-range" }, "Expected week range: " + (mgc.expectedRange || "UNKNOWN") + " ", chips(mgc.expectedRangeFacts)),
+          el("div", { class: "wa-callmeta" }, rangeMeta(mgc.rangeCall, mgc, (meta.mode || "") + " run", "gold analyzer") + " · XAUUSD ≈ MGC pts" + (mgc.status === "ok" ? "" : " · analyst layer off")),
           rangeScreen(mgc.rangeForecast, "$/oz≈pts"),
-          el("div", { class: "wa-gateline" }, "Strategy gate · ", gateLine("MGC")))));
+          el("div", { class: "wa-gateline" }, "Strategy gate · ", gateLine("MGC")),
+          el("p", { class: "wa-analyst" }, el("span", { class: "wa-analyst-k" }, "Analyst · "), mgc.oneLiner || "—", el("span", { class: "wa-analyst-dir" }, " (lean " + String((mgc.directionCall || {}).call || mgc.call || "—").replace(/_/g, " ").toLowerCase() + " · not tradeable)"), " ", chips(mgc.oneLinerFacts)))));
 
     /* Why + flips (both instruments) */
     const whyPair = (label, o) => el("div", { class: "wa-two wa-why-row" },
-      el("div", { class: "wa-half" }, sub(label + " · why"), (o.why || []).map(pointRow)),
-      el("div", { class: "wa-half wa-half-right" }, sub(label + " · flips if"), (o.flipsIf || []).map(pointRow)));
-    const why = el("section", { class: "wa-section" }, h2("Why These Calls, and What Flips Them", "the 3-6 facts behind each verdict · measurable conditions that would change it"),
+      el("div", { class: "wa-half" }, sub(label + " · why"), (o.why || []).slice(0, 3).map(pointRow)),
+      el("div", { class: "wa-half wa-half-right" }, sub(label + " · flips if"), (o.flipsIf || []).slice(0, 3).map(pointRow)));
+    const why = el("section", { class: "wa-section" }, h2("Why, and What Flips It", "three facts each · measurable conditions"),
       whyPair("MNQ", mnq), (mgc.why || []).length || (mgc.flipsIf || []).length ? whyPair("MGC", mgc) : null);
 
     /* Day by day (both instruments) */
@@ -342,33 +334,36 @@
     /* Strategies */
     const bts = d.backtests || {};
     const btFor = (v) => (v.key === "qcs" ? bts.mnq : v.key === "mnq" ? bts.qcTrendMnq : v.key === "mgc" ? bts.mgc : null);
-    const strat = el("section", { class: "wa-section" }, h2("Strategies · Run or Stop", "edge watchdog + regime tables → verdict · the TradingView backtest beneath each"),
+    const strat = el("section", { class: "wa-section" }, h2("Strategies · Run or Stop", "watchdog + regime tables → verdict · TradingView backtest beneath"),
       el("div", { class: "wa-cards" }, verdicts.map((v) => strategyCard(v, btFor(v)))));
 
-    /* Inside the analysis */
-    const reasoning = d.reasoning || {};
-    const inside = el("section", { class: "wa-section" }, h2("Inside the Analysis", "the auditor's notes, the analyst's reasoning, the regime board, and every table behind the call"));
-    inside.append(auditSection(d.audit, meta));
-    const rb = el("div", { class: "wa-block" }, sub("The Analyst's Reasoning"), el("div", { class: "wa-meta" }, reasoning.meta || ""));
-    for (const b of reasoning.blocks || []) {
-      rb.append(el("div", { class: "wa-reason" }, el("div", { class: "wa-q" }, b.q),
-        b.verdict ? el("div", { class: "wa-verdict" }, b.verdict, " ", chips(b.verdictFacts)) : null,
-        (b.points || []).map(pointRow)));
-    }
-    inside.append(rb);
-    inside.append(el("div", { class: "wa-block" }, sub("The Regime Board"),
-      el("div", { class: "wa-tiles" }, (d.regimeTiles || []).map((t) => el("div", { class: "wa-tile" },
-        el("div", { class: "wa-tile-l" }, t.label), el("div", { class: "wa-tile-n" }, t.name),
-        (t.rows || []).map((r) => el("div", { class: "wa-tile-row" }, el("span", {}, r[0]), el("span", { class: "mono" }, r[1]))))))));
-    const mx = d.matrix || {};
-    inside.append(el("div", { class: "wa-block" }, sub("Confirmation Matrix"), el("p", { class: "wa-note" }, mx.intro || ""),
-      table({ headers: mx.headers, rows: (mx.rows || []).map((r) => r.slice(0, 3).concat([{ text: r[3] }])) })));
+    /* Calendar (concrete, visible) */
     const cal = d.calendar || {}, earn = d.earnings || {};
-    inside.append(el("div", { class: "wa-block" }, sub("This Week's Calendar & Earnings"),
+    const calSec = el("section", { class: "wa-section" }, h2("This Week's Calendar & Earnings", "scheduled macro · NDX constituents reporting"),
       el("div", { class: "wa-two" },
         el("div", { class: "wa-half" }, el("div", { class: "wa-mini-head" }, "Scheduled macro"), table(cal, true)),
         el("div", { class: "wa-half wa-half-right" }, el("div", { class: "wa-mini-head" }, "NDX constituents reporting"), table(earn, true))),
-      el("div", { class: "wa-note" }, d.calendarFoot || "")));
+      el("div", { class: "wa-note" }, d.calendarFoot || ""));
+
+    /* Inside the analysis (folded) */
+    const reasoning = d.reasoning || {};
+    const inside = el("section", { class: "wa-section" }, h2("Inside the Analysis", "auditor's notes · analyst's reasoning · regime board · confirmation matrix (unfold)"));
+    inside.append(auditSection(d.audit, meta));
+    inside.append(collapsible("The Analyst's Reasoning", (reasoning.blocks || []).length + " questions", () => {
+      const rb = el("div", { class: "wa-block" }, el("div", { class: "wa-meta" }, reasoning.meta || ""));
+      for (const b of reasoning.blocks || []) {
+        rb.append(el("div", { class: "wa-reason" }, el("div", { class: "wa-q" }, b.q),
+          b.verdict ? el("div", { class: "wa-verdict" }, b.verdict, " ", chips(b.verdictFacts)) : null,
+          (b.points || []).map(pointRow)));
+      }
+      return rb;
+    }));
+    inside.append(collapsible("The Regime Board", (d.regimeTiles || []).length + " tiles", () => el("div", { class: "wa-tiles" }, (d.regimeTiles || []).map((t) => el("div", { class: "wa-tile" },
+      el("div", { class: "wa-tile-l" }, t.label), el("div", { class: "wa-tile-n" }, t.name),
+      (t.rows || []).map((r) => el("div", { class: "wa-tile-row" }, el("span", {}, r[0]), el("span", { class: "mono" }, r[1]))))))));
+    const mx = d.matrix || {};
+    inside.append(collapsible("Confirmation Matrix", (mx.rows || []).length + " rows", () => el("div", {}, el("p", { class: "wa-note" }, mx.intro || ""),
+      table({ headers: mx.headers, rows: (mx.rows || []).map((r) => r.slice(0, 3).concat([{ text: r[3] }])) }))));
 
     /* Back pages */
     const back = el("section", { class: "wa-section" }, h2("The Back Pages", "unfold a section with the manicule · every number carries a source"));
@@ -403,7 +398,7 @@
       return wrap;
     }));
 
-    root.replaceChildren(master, why, days, strat, inside, back);
+    root.replaceChildren(master, days, calSec, strat, why, inside, back);
     $("wa-foot-left").textContent = (d.schema || "weekahead.v1") + " · " + facts.length + " facts · " + (meta.run_date || "") + " · " + (meta.mode || "");
     // if the URL carries a #f-… anchor, open provenance so the target exists
     if (location.hash && /^#[fh]-/.test(location.hash)) {

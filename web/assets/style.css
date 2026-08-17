@@ -1123,6 +1123,14 @@ a:hover { color: var(--red); border-bottom-color: var(--red); }
 .wa-why-row + .wa-why-row { margin-top: 18px; }
 .wa-day { display: grid; grid-template-columns: 150px 1fr; gap: 0 20px; padding: 10px 0; border-top: 1px dotted var(--rule-soft); align-items: baseline; }
 .wa-day-label { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.2em; }
+.wa-day > div { min-width: 0; overflow-wrap: anywhere; }
+/* 2026-08-17 streamline: fact-id chips hidden unless toggled; analyst one-liner compact */
+body:not(.wa-chips-on) #wa-root .nq-chip { display: none; }
+.wa-chip-toggle { border-bottom: 1px dotted var(--rule); color: var(--faint); }
+.wa-analyst { font-family: var(--serif); font-size: 14.5px; line-height: 1.4; color: var(--muted); margin: 10px 0 0; }
+.wa-analyst-k { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+.wa-analyst-dir { font-style: italic; color: var(--faint); }
+#wa-root .wa-fold-head { font-size: 11px; }
 .wa-day-note { font-size: 15.5px; color: var(--muted); }
 .wa-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0 32px; }
 .wa-card { padding: 12px 0 14px; border-top: 1px dotted var(--rule-soft); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
