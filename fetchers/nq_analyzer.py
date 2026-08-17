@@ -128,8 +128,15 @@ def fetch(web_dir: Path | None = None) -> dict:
             "expected_range": mnq.get("expectedRange"),
             "labels": mnq.get("labels") or {},
         },
-        "mgc": {"status": (wa.get("mgc") or {}).get("status"), "call": (wa.get("mgc") or {}).get("call"),
-                "one_line": (wa.get("mgc") or {}).get("oneLiner")},
+        "mgc": {
+            "status": (wa.get("mgc") or {}).get("status"),
+            "call": (wa.get("mgc") or {}).get("call"),
+            "confidence": (wa.get("mgc") or {}).get("confidence"),
+            "one_line": (wa.get("mgc") or {}).get("oneLiner"),
+            "facts": (wa.get("mgc") or {}).get("oneLinerFacts") or [],
+            "expected_range": (wa.get("mgc") or {}).get("expectedRange"),
+            "labels": (wa.get("mgc") or {}).get("labels") or {},
+        },
         "strategy_verdicts": verdicts,
         "audit": {
             "ok": au.get("ok"),

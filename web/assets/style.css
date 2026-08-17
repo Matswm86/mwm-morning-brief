@@ -1112,7 +1112,8 @@ a:hover { color: var(--red); border-bottom-color: var(--red); }
 .wa-point { display: flex; gap: 9px; padding: 5px 0; border-top: 1px dotted var(--rule-soft); }
 .wa-pilcrow { color: var(--red); font-weight: 700; flex: none; }
 .wa-point-text { font-size: 14.5px; color: var(--muted); }
-.wa-day { display: grid; grid-template-columns: 190px 1fr; gap: 0 20px; padding: 10px 0; border-top: 1px dotted var(--rule-soft); align-items: baseline; }
+.wa-why-row + .wa-why-row { margin-top: 18px; }
+.wa-day { display: grid; grid-template-columns: 150px 1fr; gap: 0 20px; padding: 10px 0; border-top: 1px dotted var(--rule-soft); align-items: baseline; }
 .wa-day-label { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.2em; }
 .wa-day-note { font-size: 15.5px; color: var(--muted); }
 .wa-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0 32px; }

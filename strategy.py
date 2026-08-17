@@ -225,11 +225,14 @@ def pick_play(
             ),
         )
 
+    # 2026-08-17 (Mats): only the two live strategies on the card — the MNQ preset and the
+    # MGC trend. QC Trend MNQ is still computed (calendar gate) but not shown; keep it in
+    # `hidden_rows` so nothing downstream that reads it breaks.
     rows = [
         _apply_edge(preset, _edge_status(edge_payload, "qcs")),
-        _apply_edge(qc_mnq, _edge_status(edge_payload, "mnq")),
         _apply_edge(qc_mgc, _edge_status(edge_payload, "mgc")),
     ]
+    hidden_rows = [_apply_edge(qc_mnq, _edge_status(edge_payload, "mnq"))]
 
     return {
         "date_et": today,
@@ -241,6 +244,7 @@ def pick_play(
         "gate_events": [_evt(g) for g in gate_hits],
         "other_events": [_evt(o) for o in other],
         "rows": rows,
+        "hidden_rows": hidden_rows,
         "evidence": EVIDENCE,
     }
 

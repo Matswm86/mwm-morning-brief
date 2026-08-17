@@ -102,19 +102,22 @@
       el("div", { class: "nq-gates" }, gates("MNQ")));
 
     const mgc = nq.mgc || {};
+    const mgcLive = mgc.status === "ok";
     const mgcCard = el("a", { class: "nq-col nq-col-mgc" + (stale ? " nq-stale" : ""), href: (nq.hrefs || {}).edition || "week-ahead.html" },
       el("div", { class: "nq-col-top" },
         el("span", { class: "nq-sym" }, "MGC ", el("span", { class: "nq-sym-name" }, "Micro Gold")),
-        el("span", { class: "nq-call faint" }, mgc.call || "PENDING")),
-      el("div", { class: "nq-col-meta" }, "same fact contract as MNQ · analyzer pending"),
-      el("p", { class: "nq-one nq-one-italic" }, mgc.one_line || "MGC analyzer not yet live."),
+        el("span", { class: "nq-call " + (mgcLive ? callClass(mgc.call || "") : "faint") }, String(mgc.call || "UNKNOWN").replace(/_/g, " "))),
+      el("div", { class: "nq-col-meta" }, mgcLive
+        ? "confidence " + (mgc.confidence || "—") + " · gold analyzer " + modeWord +
+          (mgc.labels ? " · vol " + (mgc.labels.vol || "?") + " · trend " + String(mgc.labels.trend || "?").replace(/_/g, " ").toLowerCase() : "")
+        : "gold call unavailable this run · rule labels only"),
+      el("p", { class: "nq-one" + (mgcLive ? "" : " nq-one-italic") }, mgc.one_line || "—"),
       el("div", { class: "nq-gates" }, gates("MGC")));
 
     board.replaceChildren(mnqCard, mgcCard);
-    foot.replaceChildren(
-      el("span", {}, "analyst " + (nq.analyst_model || "—") + " · check " + (nq.validation || "—") + " · "),
-      auditLine(nq.audit),
-      el("span", {}, " · generated " + fmtGen(nq.generated_at) + " · advisory only — you flip the switch"));
+    // footer intentionally minimal (Mats 08-17): provenance + audit detail live on the edition page
+    foot.replaceChildren();
+    foot.hidden = true;
   }
 
   /* ───────────────────────────── edition page ─────────────────────────── */
@@ -267,19 +270,24 @@
           el("div", { class: "wa-gateline" }, "Strategy gates · ", gateLine("MNQ"))),
         el("div", { class: "wa-half wa-half-right" },
           el("div", { class: "wa-inst" }, el("span", { class: "wa-inst-sym" }, "MGC"), el("span", { class: "wa-inst-name" }, "Micro Gold")),
-          el("div", { class: "wa-bigcall faint" }, mgc.call || "PENDING"),
-          el("div", { class: "wa-callmeta" }, "same fact contract as MNQ · analyzer pending"),
-          el("p", { class: "wa-lede wa-lede-italic" }, mgc.oneLiner || "—"),
+          el("div", { class: "wa-bigcall " + (mgc.status === "ok" ? callClass(mgc.call || "") : "faint") }, String(mgc.call || "UNKNOWN").replace(/_/g, " ")),
+          el("div", { class: "wa-callmeta" }, mgc.status === "ok"
+            ? "confidence " + (mgc.confidence || "—") + " · gold analyzer " + (meta.mode || "") + " run · " + (mgc.proxyNote || "GLD proxy")
+            : "gold call unavailable this run · rule labels only"),
+          el("p", { class: "wa-lede" + (mgc.status === "ok" ? "" : " wa-lede-italic") }, mgc.oneLiner || "—"),
+          el("div", { class: "wa-chips" }, chips(mgc.oneLinerFacts)),
+          el("div", { class: "wa-range" }, "Expected week range: " + (mgc.expectedRange || "UNKNOWN") + " ", chips(mgc.expectedRangeFacts)),
           el("div", { class: "wa-gateline" }, "Strategy gate · ", gateLine("MGC")))));
 
-    /* Why + flips */
-    const why = el("section", { class: "wa-section" }, h2("Why This Call, and What Flips It", "the 3-6 facts behind the verdict · measurable conditions that would change it"),
-      el("div", { class: "wa-two" },
-        el("div", { class: "wa-half" }, sub("Why"), (mnq.why || []).map(pointRow)),
-        el("div", { class: "wa-half wa-half-right" }, sub("Flips if"), (mnq.flipsIf || []).map(pointRow))));
+    /* Why + flips (both instruments) */
+    const whyPair = (label, o) => el("div", { class: "wa-two wa-why-row" },
+      el("div", { class: "wa-half" }, sub(label + " · why"), (o.why || []).map(pointRow)),
+      el("div", { class: "wa-half wa-half-right" }, sub(label + " · flips if"), (o.flipsIf || []).map(pointRow)));
+    const why = el("section", { class: "wa-section" }, h2("Why These Calls, and What Flips Them", "the 3-6 facts behind each verdict · measurable conditions that would change it"),
+      whyPair("MNQ", mnq), (mgc.why || []).length || (mgc.flipsIf || []).length ? whyPair("MGC", mgc) : null);
 
-    /* Day by day */
-    const dayRows = (mnq.days || []).map((p) => {
+    /* Day by day (both instruments) */
+    const dayRow = (p) => {
       const i = p.text.indexOf(":");
       let label = i > 0 ? p.text.slice(0, i) : "";
       const note = i > 0 ? p.text.slice(i + 1).trim() : p.text;
@@ -287,9 +295,11 @@
       label = label.replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/g, (m) => dayNames[m])
         .replace(/\b\d{4}-(\d{2})-(\d{2})\b/g, (m, mo, dd) => "· " + months[parseInt(mo, 10) - 1] + " " + parseInt(dd, 10));
       return el("div", { class: "wa-day" }, el("div", { class: "wa-day-label" }, label), el("div", {}, el("span", { class: "wa-day-note" }, note), " ", chips(p.facts)));
-    });
+    };
     const days = el("section", { class: "wa-section" }, h2("The Week, Day by Day", "bias, history and the tape's appointments"),
-      dayRows.length ? dayRows : el("p", { class: "wa-note" }, "No day-by-day lines in this run."));
+      el("div", { class: "wa-two" },
+        el("div", { class: "wa-half" }, sub("MNQ"), (mnq.days || []).length ? (mnq.days || []).map(dayRow) : el("p", { class: "wa-note" }, "No day-by-day lines in this run.")),
+        el("div", { class: "wa-half wa-half-right" }, sub("MGC"), (mgc.days || []).length ? (mgc.days || []).map(dayRow) : el("p", { class: "wa-note" }, "No MGC day-by-day lines in this run."))));
 
     /* Strategies */
     const bts = d.backtests || {};
