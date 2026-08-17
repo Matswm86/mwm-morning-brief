@@ -68,6 +68,7 @@
     <div id="mnq-chart" class="price-chart"></div>
     <div class="chart-foot">
       <span class="mono" id="chart-source-mnq">TopstepX · MNQ · 5m</span>
+      <span class="mono" id="chart-levels-mnq">—</span>
       <span class="mono" id="chart-updated-mnq">—</span>
     </div>
   </section>
@@ -80,6 +81,7 @@
     <div id="mgc-chart" class="price-chart"></div>
     <div class="chart-foot">
       <span class="mono" id="chart-source-mgc">TopstepX · MGC · 5m</span>
+      <span class="mono" id="chart-levels-mgc">—</span>
       <span class="mono" id="chart-updated-mgc">—</span>
     </div>
   </section>
@@ -121,16 +123,11 @@
     <p class="play-evidence" id="play-evidence"></p>
   </section>
 
-  <!-- Instrument Outlook: MNQ/NQ + MGC/Gold predictions -->
-  <section class="outlook-section" id="outlook-section">
-    <div class="outlook-head">
-      <span class="eyebrow">Instrument Outlook</span>
-      <span class="eyebrow-soft" id="outlook-updated">Market Detector · regime &amp; direction</span>
-    </div>
-    <div class="outlook-grid" id="outlook-grid">
-      <!-- one .outlook-card per instrument, injected by outlook.js -->
-    </div>
-  </section>
+  <!-- Instrument Outlook removed 2026-08-17 (Mats): one 5-min EMA20/ATR read of the tape,
+       "long bias 25%" contradicted the Week Ahead call and no direction predictor survived
+       measurement. Its PDH/PDL + overnight levels moved into the live-chart footers
+       (assets/levels.js). Revert: git tag pre-outlook-removal-2026-08-17 or
+       web-backup-2026-08-17-pre-outlook-removal/. -->
 
   <!-- Regime: one block, two horizons. Structural (SPX trend / VIX term
        structure / credit / tripwires, from regime.json) sets the backdrop;
@@ -285,45 +282,10 @@
   </article>
 </template>
 
-<template id="outlook-template">
-  <article class="outlook-card" data-symbol="">
-    <header class="outlook-card-head">
-      <div class="outlook-sym">
-        <span class="outlook-sym-code"></span>
-        <span class="outlook-sym-name"></span>
-      </div>
-      <span class="outlook-tier-badge" data-tier="">—</span>
-    </header>
-    <div class="outlook-regime-row">
-      <span class="outlook-regime-label">—</span>
-      <span class="outlook-regime-score mono">—</span>
-    </div>
-    <div class="outlook-dir">
-      <div class="outlook-dir-head">
-        <span class="k">Direction bias</span>
-        <span class="v outlook-dir-label">—</span>
-      </div>
-      <div class="outlook-conf-track"><div class="outlook-conf-fill" style="width:0%"></div></div>
-      <div class="outlook-conf-caption mono">confidence —</div>
-    </div>
-    <div class="outlook-strip">
-      <div class="outlook-strip-item"><span class="k">Volatility</span><span class="v outlook-vol">—</span></div>
-      <div class="outlook-strip-item"><span class="k">Signal age</span><span class="v outlook-age">—</span></div>
-    </div>
-    <div class="outlook-levels">
-      <div class="outlook-levels-head k">Key levels</div>
-      <div class="outlook-levels-grid"></div>
-    </div>
-    <div class="outlook-sessions">
-      <div class="outlook-sessions-head k">Session outlook</div>
-      <div class="outlook-sessions-grid"></div>
-    </div>
-  </article>
-</template>
 
 <script src="assets/lightweight-charts.js" defer></script>
 <script src="assets/app.js" defer></script>
-<script src="assets/outlook.js" defer></script>
+<script src="assets/levels.js" defer></script>
 <script src="assets/chart.js" defer></script>
 <script src="assets/regime.js" defer></script>
 <script src="assets/selfcalib.js" defer></script>
