@@ -383,7 +383,7 @@
       return wrap;
     }));
     const hist = d.history || {};
-    back.append(collapsible("NQ Behaviour Under Similar Conditions", (hist.tables || []).length + " tables", () => el("div", {}, el("p", { class: "wa-note" }, hist.intro || ""),
+    back.append(collapsible("NQ + Gold Behaviour Under Similar Conditions", (hist.tables || []).length + " tables", () => el("div", {}, el("p", { class: "wa-note" }, hist.intro || ""),
       (hist.tables || []).map((t) => el("div", { class: "wa-hist" }, el("div", { class: "wa-mini-head" }, t.title), table(t, true))))));
     back.append(collapsible("Your Strategies Under Those Conditions", (d.strategyHistory || []).length + " strategies", () => el("div", {},
       (d.strategyHistory || []).map((g) => el("div", { class: "wa-hist" }, el("div", { class: "wa-card-name" }, g.title), el("div", { class: "wa-meta" }, g.meta),
