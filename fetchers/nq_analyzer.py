@@ -107,7 +107,12 @@ def fetch(web_dir: Path | None = None) -> dict:
             "watchdogStatus": v.get("watchdogStatus"),
         })
     return {
-        "status": "ok" if meta.get("analyst_ok") else "fallback",
+        "status": "carried"
+        if meta.get("carried")
+        else "ok"
+        if meta.get("analyst_ok")
+        else "fallback",
+        "carried": meta.get("carried"),
         "schema": wa.get("schema"),
         "run_date": meta.get("run_date"),
         "mode": meta.get("mode"),

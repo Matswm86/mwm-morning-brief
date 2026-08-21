@@ -34,6 +34,17 @@
   const rangeClass = (w) => (/WIDE/.test(w) ? "red" : /NARROW/.test(w) ? "green" : /NORMAL/.test(w) ? "amber" : "faint");
   const rangeWord = (rc) => (rc && rc.call ? String(rc.call).replace(/_/g, " ") + " RANGE" : "RANGE —");
   const fmt0 = (x) => (x == null || isNaN(x) ? "—" : Math.round(Number(x)).toLocaleString("en-US"));
+  /* The analyst narrative can be reused from an earlier run when today's
+     claude -p call fails (run.py --carry-forward). The range and level numbers
+     are still today's; only the prose is older. Say so rather than passing it
+     off as fresh. */
+  const carriedNote = (src) => {
+    const c = src && (src.carried || (src.meta && src.meta.carried));
+    if (!c) return "";
+    const when = c.age_days === 1 ? "yesterday" : c.age_days + " days ago";
+    return " \u00b7 analyst read carried from " + when + " (" + c.from_run + ")";
+  };
+
   const rangeMeta = (rc, o, modeWord, prefix) => {
     const bits = [];
     if (rc && rc.hitRate != null) bits.push("wide/narrow hit " + Math.round(rc.hitRate * 100) + "% vs base " + Math.round((rc.baseRate || 0.5) * 100) + "% (n=" + rc.n + ")");
@@ -132,7 +143,7 @@
       el("div", { class: "nq-col-top" },
         el("span", { class: "nq-sym" }, "MNQ ", el("span", { class: "nq-sym-name" }, "Micro E-mini Nasdaq-100")),
         el("span", { class: "nq-call " + rangeClass(rangeWord(o.range_call)) }, rangeWord(o.range_call))),
-      el("div", { class: "nq-col-meta" }, rangeMeta(o.range_call, o, modeWord, "NQ analyzer")),
+      el("div", { class: "nq-col-meta" }, rangeMeta(o.range_call, o, modeWord, "NQ analyzer") + carriedNote(nq)),
       rangeScreen(o.range_forecast, "pts"),
       el("p", { class: "nq-one" }, el("span", { class: "wa-analyst-k" }, "Analyst · "), o.one_line || "—", el("span", { class: "wa-analyst-dir" }, " (lean " + String((o.direction_call || {}).call || o.call || "—").replace(/_/g, " ").toLowerCase() + " · not tradeable)")),
       el("div", { class: "nq-gates" }, gates("MNQ")));
@@ -143,7 +154,7 @@
       el("div", { class: "nq-col-top" },
         el("span", { class: "nq-sym" }, "MGC ", el("span", { class: "nq-sym-name" }, "Micro Gold")),
         el("span", { class: "nq-call " + rangeClass(rangeWord(mgc.range_call)) }, rangeWord(mgc.range_call))),
-      el("div", { class: "nq-col-meta" }, rangeMeta(mgc.range_call, mgc, modeWord, "gold analyzer") + (mgcLive ? "" : " · analyst layer off")),
+      el("div", { class: "nq-col-meta" }, rangeMeta(mgc.range_call, mgc, modeWord, "gold analyzer") + (mgcLive || nq.carried ? carriedNote(nq) : " · analyst layer off")),
       rangeScreen(mgc.range_forecast, "$/oz≈pts"),
       el("p", { class: "nq-one" }, el("span", { class: "wa-analyst-k" }, "Analyst · "), mgc.one_line || "—", el("span", { class: "wa-analyst-dir" }, " (lean " + String((mgc.direction_call || {}).call || mgc.call || "—").replace(/_/g, " ").toLowerCase() + " · not tradeable)")),
       el("div", { class: "nq-gates" }, gates("MGC")));
@@ -297,7 +308,7 @@
         el("div", { class: "wa-half" },
           el("div", { class: "wa-inst" }, el("span", { class: "wa-inst-sym" }, "MNQ"), el("span", { class: "wa-inst-name" }, "Micro E-mini Nasdaq-100")),
           el("div", { class: "wa-bigcall " + rangeClass(rangeWord(mnq.rangeCall)) }, rangeWord(mnq.rangeCall)),
-          el("div", { class: "wa-callmeta" }, rangeMeta(mnq.rangeCall, mnq, (meta.mode || "") + " run", "NQ analyzer") + (mnq.status === "fallback" ? " · ANALYST LAYER OFF — rule labels only" : "")),
+          el("div", { class: "wa-callmeta" }, rangeMeta(mnq.rangeCall, mnq, (meta.mode || "") + " run", "NQ analyzer") + (mnq.status === "fallback" ? " · ANALYST LAYER OFF — rule labels only" : carriedNote(d))),
           rangeScreen(mnq.rangeForecast, "pts"),
           el("div", { class: "wa-gateline" }, "Strategy gates · ", gateLine("MNQ")),
           el("p", { class: "wa-analyst" }, el("span", { class: "wa-analyst-k" }, "Analyst · "), mnq.oneLiner || "—", el("span", { class: "wa-analyst-dir" }, " (lean " + String((mnq.directionCall || {}).call || mnq.call || "—").replace(/_/g, " ").toLowerCase() + " · not tradeable)"), " ", chips(mnq.oneLinerFacts))),

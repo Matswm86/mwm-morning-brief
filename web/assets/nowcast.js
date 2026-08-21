@@ -194,6 +194,16 @@
     return ticks + now;
   }
 
+  /* The blended 252-session precision hides a real year-over-year decay
+     (MNQ TREND at 11:00: 0.702 in 2025, 0.613 in 2026). Show the recent year
+     next to the blend rather than quoting the flattering average alone. */
+  function recentYearFoot(d, own) {
+    const ry = d.holdout_recent_year;
+    const v = ry ? precisionFor(d.call, ry) : null;
+    if (v == null) return (d.holdout_at_checkpoint || {}).n_sessions || "—";
+    return ry.year + " " + pct(v) + (v < own - 0.02 ? " \u2193" : "");
+  }
+
   function reliability(el, d) {
     const h = d.holdout_at_checkpoint || {};
     const own = precisionFor(d.call, h);
@@ -212,7 +222,7 @@
       '<div class="nowcast-rel-bar"><div class="nowcast-rel-fill" style="width:' +
       (clamp01(own) * 100).toFixed(1) + '%"></div>' +
       '<div class="nowcast-rel-base" style="left:50%" title="coin flip"></div></div>' +
-      '<div class="nowcast-rel-foot"><span>' + (h.n_sessions || "—") + " sessions</span><span>abstains " +
+      '<div class="nowcast-rel-foot"><span>' + recentYearFoot(d, own) + "</span><span>abstains " +
       pct(h.unknown_rate) + "</span></div>";
   }
 
@@ -296,9 +306,16 @@
         ? "First checkpoint at 10:00 ET. The walk builds as the session prints."
         : d.grey_reason || "No live read.";
     } else {
+      const ry = d.holdout_recent_year || null;
+      const ryOwn = ry ? precisionFor(d.call, ry) : null;
       q(".nowcast-body").innerHTML = own != null
         ? "<strong>" + pct(own) + "</strong> of calls like this one were right at " + d.checkpoint +
-          " ET across " + (h.n_sessions || "—") + " held-out sessions."
+          " ET across " + (h.n_sessions || "—") + " held-out sessions." +
+          (ryOwn != null
+            ? " In " + ry.year + " alone (" + (ry.n_sessions || "—") + " sessions) it was <strong>" +
+              pct(ryOwn) + "</strong>" +
+              (ryOwn < own - 0.02 ? " — the edge has been decaying, read the lower number." : ".")
+            : "")
         : "The model abstains on " + pct(h.unknown_rate) +
           " of sessions at this checkpoint — today's read is one of them.";
       const reg = prev && REGIMES && REGIMES[inst.code];
