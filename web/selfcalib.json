@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-10",
+  "as_of": "2026-08-22",
   "target_state": "Self-calibrating research organism",
   "target_state_no": "Selvkalibrerende forskningsorganisme",
   "subtitle": "Opus as disposable cognition, re-instantiated per cron tick or session",
@@ -72,7 +72,7 @@
         "Force confidence variance (model still states ≥0.9 on 48/60, base rate 0.367 — calibration starved of signal)",
         "B1 falsification check (Scope C) — wire `compute_counterfactual_credit` LOO math to F4.5 conformal residuals so scout-disable replay becomes evaluable on weekly D_i ticks"
       ],
-      "last_shipped": "2026-07-18"
+      "last_shipped": "2026-08-17"
     },
     {
       "id": "D3",
@@ -112,20 +112,23 @@
       "id": "D4",
       "label": "Autonomous prioritization",
       "weight": 15,
-      "pct": 25,
-      "status_badge": "thin",
+      "pct": 65,
+      "status_badge": "partial",
       "done": [
         "MASTER_TODO curated by hand",
         "R1-R13 deep research informs T3 priority-bandit design (LinUCB context = regime + query_type + recent_drift)",
         "Agent system audit + expansion 05-11..12 — 14 workspace agents got explicit `model:` frontmatter (9 sonnet + 5 haiku); mats-voice split into sonnet everyday + opus craft; 3 new agents (backtest-auditor, security-reviewer, prompt-engineer); subagent env-override removed; routing rules sharper",
         "leverage-hunt-duo SHIPPED 05-11 — hunter+skeptic agent pair scouts frameworks/papers/architectures for the MWM-AI stack on a 2×/week cron schedule; structured candidate-per-fire format with falsifiable kill-test",
         "Math/DL adversarial-review duo wired into routing — math-research-scientist + applied-dl-engineer + 2-judge synthesis; first audit (Napolitano) shipped 05-11 with 30.8% judge disagreement",
-        "D1 paired-ablation methodology codified + commit-msg lint LIVE 2026-05-18 (commit e219ea8) — first machine-enforced discipline on the prioritization side: PRs adding new SCCS eval gates without baseline coverage are now blocked at commit-msg pre-commit (canonical YAML wired into 8 project repos + mwm-infra). 14/14 bash scenario tests pass. Lints the priority queue without yet picking from it."
+        "D1 paired-ablation methodology codified + commit-msg lint LIVE 2026-05-18 (commit e219ea8) — first machine-enforced discipline on the prioritization side: PRs adding new SCCS eval gates without baseline coverage are now blocked at commit-msg pre-commit (canonical YAML wired into 8 project repos + mwm-infra). 14/14 bash scenario tests pass. Lints the priority queue without yet picking from it.",
+        "D4 audit + staged plan 2026-08-15 (`plans/d4-autonomous-prioritization-audit-and-plan-2026-08-15.md`, ledger before learner). P0 reward-channel repair: swarm utility join fixed `0dcdf0f` (first `useful` verdicts since 05-03: 31 on 08-16), finance/finnhub scout timer fixed `8116048`, silent-channel alarm `utility_channel_silent` (2 zero-useful sweeps → typed WARN + CIP flag) shipped 08-16. P1 machine-readable queue LIVE 08-16: steward writes `data/queue/items.jsonl` (134 open items from MASTER_TODO + combined-queue tables + ACTIVE_HANDOFFS; kill-test recall 100% on 3 hand-counted sections)",
+        "P2 outcome ledger LIVE 08-16: steward writes `data/queue/outcomes.jsonl` daily (`core/pipelines/outcome_ledger.py`; 346 rows over 188 items: commit 131 by ID/cited-SHA, handoff_citation 195, f18_kept 20, cip_applied 0; swarm `useful` per domain channel-level only). Kill-test PASS at first run: 12/18 items closed in 60d carry ≥1 linked outcome (67%; hard commit/F18/CIP 9/18 = 50%) vs bar 30%. P4 learner has no write path to it (reward immutable). Report §8",
+        "P3 proposer LIVE 08-16: `core/pipelines/proposer.py` + `mwm-proposer.timer` (Sun 07:00 CEST after CIP+steward), one Sonnet call over queue + ledger + killed registers → `notes/inbox/priority-<date>.md` top-5 with evidence, no auto-apply; ID whitelist + killed/gated exclusion + FALLBACK ranking; first fire 08-16 (0 hallucinated IDs). Kill-test clock 08-16→09-13: `picked_from_proposer` in handoff frontmatter, ≥50% keeps / <25% kills"
       ],
       "next": [
-        "T3 priority-bandit code (still blocked on policy_state cell diversity)",
-        "MDP formulation of project queue",
-        "Replace hand-edit with Thompson over CIP rewards"
+        "P0 remainder (Mats): flip 68 false-negative `stale` verdicts → `useful` + compensate beta (MASTER_TODO P0.10); kill-test = saas/sccs threshold < 0.55 after 2 sweeps",
+        "P3 kill-test: 4 weeks of `picked_from_proposer: yes|no|n/a` handoff headers (08-16→09-13); `python3 core/pipelines/proposer.py --score`; ≥50% SURVIVES → build P4, <25% KILL proposer keep ledger",
+        "P4 learner (Thompson/LinUCB over queue items, reward = P2 ledger, reorder only) only if P3 survives. T3 'cell diversity' blocker is STALE (policy_state has 20 distinct regime×tier); the real blocker was the missing reward ledger. MDP formulation is a non-goal (no transition model)"
       ],
       "last_shipped": "2026-08-03"
     },
@@ -177,7 +180,7 @@
       "last_shipped": null
     }
   ],
-  "aggregate_pct": 63.3,
+  "aggregate_pct": 69.3,
   "judge_score_ci": {
     "status": "sccs_unavailable",
     "method": "disabled",
