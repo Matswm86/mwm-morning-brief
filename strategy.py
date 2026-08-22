@@ -49,7 +49,7 @@ EVIDENCE = (
     "the leader account, nightly 17:15 ET — GREEN full size / YELLOW half / "
     "RED stand down. Sizes mirror the 2026-08-14 TV exports (QCS 4ct MNQ / "
     "QC Trend 3ct MNQ / QC Trend 2ct MGC). Display only — you flip the "
-    "QuantCrawler switch, not this page."
+    "switch, not this page."
 )
 
 # play-card row -> watchdog strategy key in qcs.mwmai.no/data.json

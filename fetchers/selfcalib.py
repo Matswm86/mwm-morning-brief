@@ -223,8 +223,10 @@ def fetch() -> dict:
             "weight": dim["weight"],
             "pct": dim["pct"],
             "status_badge": _badge_from_pct(int(dim["pct"])),
-            "done": list(dim.get("done", [])),
-            "next": list(dim.get("next", [])),
+            # Counts only: the underlying entries are an internal work log
+            # (names, file paths) and never belong in the public artifact.
+            "done_n": len(dim.get("done", [])),
+            "next_n": len(dim.get("next", [])),
             "last_shipped": last,
         }
         enriched_dims.append(out)

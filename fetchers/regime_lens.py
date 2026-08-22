@@ -140,7 +140,7 @@ def fetch() -> dict:
         "decision_time_et": "09:25",
         "session": d.get("last_session"),
         "read_type": d.get("read_type"),
-        "data_source": d.get("data_source"),
+        "data_source": "session bars",  # internal feed names stay off the public artifact
         "lens_status": d.get("status"),
         "grey_reason": d.get("grey_reason"),
         "age_hours": round(age_h, 1) if age_h is not None else None,

@@ -116,7 +116,7 @@
 
   function dimTip(d) {
     return esc(d.id + " — " + (d.label || "") + "\n" + Math.round(d.pct || 0) + "% grown · weight " + (d.weight || 0) +
-      "\n" + (d.done || []).length + " shipped · " + (d.next || []).length + " next");
+      "\n" + (d.done_n || 0) + " shipped · " + (d.next_n || 0) + " next");
   }
 
   const panel = (w, h, body, pid) =>
