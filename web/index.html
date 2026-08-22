@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
 <title>The Morning Brief</title>
+<meta name="description" content="Daily pre-open brief for Nasdaq (MNQ) and gold (MGC) futures: expected session size, which prior-day level is reached first, macro calendar and news.">
+<link rel="alternate" type="application/json" href="brief.json" title="The Morning Brief as structured data">
+<meta property="og:title" content="The Morning Brief">
+<meta property="og:description" content="Daily pre-open brief for Nasdaq and gold futures: expected session size and which prior-day level is reached first.">
+<meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Patrick+Hand&display=swap" rel="stylesheet">
@@ -31,6 +36,23 @@
       <span class="bar-cell bar-right">Price: Gratis</span>
     </div>
   </header>
+
+<!-- NOSCRIPT:START (generated, do not hand-edit) -->
+<noscript>
+  <section id="noscript-summary">
+    <p>The Morning Brief. Generated 2026-08-22T08:28:01Z.</p>
+    <p>MNQ: expected range 381 pts; 8 days in 10 land under 590 pts; recent norm 531 pts; call NARROW.</p>
+    <p>MGC: expected range 90 pts; 8 days in 10 land under 136 pts; recent norm 84 pts; call WIDE.</p>
+    <p>Size of the day, not a direction call and not a profit claim.</p>
+    <p>Pre-open read for 2026-08-21, taken 15:25 Oslo.</p>
+    <p>Range: NARROW. today&#x27;s RTH range lands BELOW the trailing-20-session median Right 65% of the time over 5 years.</p>
+    <p>Which level first: PDH. PDH is touched before PDL during RTH Yesterday&#x27;s high 29470.25, low 29202.75. Right 78% of the time on days like this over the past five years. 65% if you also count days that never reach either level.</p>
+    <p>Size of the day and which prior level comes first. Not a direction call.</p>
+    <p>Full structured data: <a href="brief.json">brief.json</a></p>
+  </section>
+</noscript>
+<!-- NOSCRIPT:END -->
+
 
   <!-- The Week Ahead · Master Analysis (lead board). NQ analyzer week run
        (Sun) refreshed by the weekday pre-open run; MNQ outlook + strategy gates,
@@ -90,6 +112,40 @@
   <main class="grid" id="grid">
     <!-- cards injected by app.js -->
   </main>
+
+  <!-- Pre-open expansion + ORB go/no-go. Read at 08:00 Oslo (02:00 ET) off the
+       range model that already ships here (HAR+VOL+EVENT). Answers "will today's
+       range beat its 26-day median", never direction, never ORB P&L. Tiered:
+       calls only when the forecast is >=1.15x or <=0.80x the median and abstains
+       between, which is what takes the called days from 63.9% to 87%/70%.
+       Display only. Mats flips the switch, not this page. -->
+  <section class="regime-section preopen-section" id="preopen-section">
+    <div class="regime-head">
+      <div class="regime-title">
+        <span class="eyebrow">Pre-open &middot; today's expansion</span>
+        <span class="eyebrow-soft" id="preopen-meta">loading&hellip;</span>
+      </div>
+      <span class="edge-badge" id="preopen-orb" data-flag="unknown">ORB &mdash;</span>
+    </div>
+    <div class="preopen-grid" id="preopen-grid"></div>
+    <p class="preopen-foot" id="preopen-foot"></p>
+  </section>
+
+  <!-- Regime Lens v1 — the 09:25 ET (15:25 Oslo) pre-open read. Two
+       pre-registered survivors: next-RTH range regime (65.2% 5y vs 58.9%
+       persistence) and PDH/PDL first-touch draw geometry. Trend/chop and
+       direction are deliberately absent: both measured null. -->
+  <section class="regime-section lens-section" id="lens-section">
+    <div class="regime-head">
+      <div class="regime-title">
+        <span class="eyebrow">Pre-open &middot; 15:25 Oslo read</span>
+        <span class="eyebrow-soft" id="lens-meta">loading&hellip;</span>
+      </div>
+      <span class="edge-badge" id="lens-status" data-flag="unknown">&mdash;</span>
+    </div>
+    <div class="lens-grid" id="lens-grid"></div>
+    <p class="lens-foot" id="lens-foot"></p>
+  </section>
 
   <!-- Intraday regime nowcast (15-min VPS producer, validated 252d holdout) -->
   <section class="regime-section nowcast-section" id="nowcast-section">
@@ -289,6 +345,8 @@
 <script src="assets/chart.js" defer></script>
 <script src="assets/regime.js" defer></script>
 <script src="assets/selfcalib.js" defer></script>
+<script src="assets/preopen.js" defer></script>
+<script src="assets/lens.js" defer></script>
 <script src="assets/nowcast.js" defer></script>
 <script src="assets/wire.js" defer></script>
 <script src="assets/play.js" defer></script>

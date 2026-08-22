@@ -235,6 +235,14 @@ def build(use_llm: bool = True) -> dict:
     # the Week Ahead edition page (web/nq/weekahead-latest.json). Advisory only.
     try:
         brief["nq"] = f_nq.fetch(web_dir=WEB_DIR)
+        from fetchers import preopen_expansion as f_preopen
+        brief["preopen"] = f_preopen.fetch()
+        log.info("preopen expansion: %s", {k: v.get("orb") for k, v in (brief["preopen"].get("instruments") or {}).items()})
+        # Regime Lens v1 — the 09:25 ET read. Two pre-registered survivors only
+        # (vol regime + DOL draw geometry); trend/chop and direction are absent
+        # by measurement, not by omission.
+        from fetchers import regime_lens as f_lens
+        brief["lens"] = f_lens.fetch()
         log.info("nq analyzer: %s run %s (%s) stale=%s audit=%s",
                  brief["nq"].get("status"), brief["nq"].get("run_date"), brief["nq"].get("mode"),
                  brief["nq"].get("stale"), (brief["nq"].get("audit") or {}).get("verdict"))
@@ -376,6 +384,16 @@ def main() -> int:
 
     log.info("brief written: %s", BRIEF_JSON)
 
+    # Machine-readable surface: llms.txt / robots.txt / sitemap.xml plus a
+    # <noscript> text summary in index.html. The page renders client-side, so a
+    # fetcher without JS saw only "loading..." placeholders. None of this is
+    # visible to a human in any JS-enabled browser.
+    try:
+        import machine_readable
+        machine_readable.emit_all(WEB_DIR, brief)
+    except Exception:
+        log.error("machine-readable emit failed:\n%s", traceback.format_exc())
+
     # Selfcalib bar writes to its own artifact so JS can fetch it
     # independently of the heavier brief.json.
     sc = brief.get("_selfcalib") or {}
@@ -408,6 +426,7 @@ def _rsync_to_vps() -> None:
         "rsync", "-az", "--delete",
         "--exclude=.*",
         "--filter=protect nowcast.json",
+        "--filter=protect preopen_update.json",
         f"{WEB_DIR}/",
         VPS_TARGET,
     ]

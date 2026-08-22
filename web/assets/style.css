@@ -1190,3 +1190,53 @@ body:not(.wa-chips-on) #wa-root .nq-chip { display: none; }
   .wa-day { grid-template-columns: 1fr; }
   .wa-bigcall { font-size: 36px; }
 }
+
+/* ---- Pre-open expansion + ORB go/no-go -------------------------------- */
+.preopen-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: 1rem; }
+.preopen-card { border: 1px solid var(--rule, #d8d2c4); padding: .85rem 1rem; background: var(--card, transparent); }
+.preopen-top { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+.preopen-sym { font-weight: 700; letter-spacing: .04em; }
+.preopen-call { font-family: var(--mono, monospace); font-size: .95rem; letter-spacing: .06em; }
+.preopen-call.is-green { color: #1d6b3a; } .preopen-call.is-red { color: #9d2727; }
+.preopen-call.is-unknown { color: var(--muted, #6d6659); }
+.preopen-verdict { margin-left: auto; font-family: var(--mono, monospace); font-size: .8rem;
+  letter-spacing: .08em; padding: .12rem .5rem; border: 1px solid currentColor; }
+.preopen-verdict.is-green { color: #1d6b3a; } .preopen-verdict.is-red { color: #9d2727; }
+.preopen-verdict.is-unknown, .preopen-verdict.is-none { color: var(--muted, #6d6659); }
+.preopen-meaning { margin: .5rem 0 .7rem; font-size: .92rem; line-height: 1.45; }
+.preopen-rows { display: grid; gap: .28rem; }
+.preopen-row { display: grid; grid-template-columns: 9.5rem auto 1fr; gap: .5rem;
+  font-family: var(--mono, monospace); font-size: .82rem; align-items: baseline; }
+.preopen-row .k { color: var(--muted, #6d6659); }
+.preopen-row .v { font-weight: 600; }
+.preopen-row .n { color: var(--muted, #6d6659); text-align: right; }
+.preopen-acc { margin: .7rem 0 0; font-size: .82rem; color: var(--muted, #6d6659); line-height: 1.4; }
+.preopen-foot { margin: .8rem 0 0; font-size: .8rem; color: var(--muted, #6d6659); line-height: 1.45; }
+.preopen-update { margin-top: .8rem; padding-top: .7rem; border-top: 1px dashed var(--rule, #d8d2c4); }
+.preopen-update-top { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+.preopen-update-tag { font-family: var(--mono, monospace); font-size: .72rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted, #6d6659); font-weight: 700; }
+@media (max-width: 34rem) { .preopen-row { grid-template-columns: 8rem auto; } .preopen-row .n { display: none; } }
+
+/* --- Regime Lens v1 panel (09:25 ET read) -------------------------------- */
+.lens-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; }
+.lens-card { border: 1px solid var(--rule, #d8d2c4); padding: .85rem 1rem; background: var(--card, transparent); }
+.lens-top { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+.lens-sym { font-weight: 700; letter-spacing: .04em; font-size: .82rem; }
+.lens-call { font-family: var(--mono, monospace); font-size: .95rem; letter-spacing: .06em; }
+.lens-call.is-green { color: #1d6b3a; } .lens-call.is-red { color: #9d2727; }
+.lens-verdict { margin-left: auto; font-family: var(--mono, monospace); font-size: .72rem;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--muted, #6d6659); }
+.lens-verdict[data-clean="yes"] { color: #1d6b3a; }
+.lens-verdict[data-clean="no"] { color: #9d6b1f; }
+.lens-meaning { margin: .45rem 0 .7rem; font-size: .85rem; line-height: 1.45; }
+.lens-row { display: grid; grid-template-columns: 12rem auto 1fr; gap: .5rem;
+  align-items: baseline; padding: .18rem 0; font-size: .82rem; }
+.lens-row .k { color: var(--muted, #6d6659); }
+.lens-row .v { font-family: var(--mono, monospace); font-weight: 600; }
+.lens-row .n { color: var(--muted, #6d6659); font-size: .76rem; }
+.lens-caveat { margin: .6rem 0 0; font-size: .78rem; line-height: 1.45;
+  color: var(--muted, #6d6659); border-left: 2px solid var(--rule, #d8d2c4); padding-left: .6rem; }
+.lens-none { color: var(--muted, #6d6659); font-size: .85rem; margin: 0; }
+.lens-foot { margin: .8rem 0 0; font-size: .8rem; color: var(--muted, #6d6659); line-height: 1.45; }
+@media (max-width: 34rem) { .lens-row { grid-template-columns: 9rem auto; } .lens-row .n { display: none; } }

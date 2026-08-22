@@ -5,6 +5,14 @@
 (function () {
   const $ = (id) => document.getElementById(id);
 
+  function safeU(u) {
+    if (!u) return null;
+    try {
+      const p = new URL(String(u), window.location.origin);
+      return (p.protocol === "https:" || p.protocol === "http:") ? p.href : null;
+    } catch (e) { return null; }
+  }
+
   function hhmm(iso) {
     if (!iso) return "";
     const d = new Date(iso);
@@ -34,8 +42,11 @@
     list.innerHTML = s.items
       .map((it) => {
         const tag = it.instrument || "BOTH";
-        const head = it.url
-          ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.headline)}</a>`
+        // esc() stops attribute breakout but not a javascript:/data: scheme.
+        // safeU keeps http(s) only, so a poisoned feed URL cannot become a sink.
+        const u = safeU(it.url);
+        const head = u
+          ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(it.headline)}</a>`
           : esc(it.headline);
         return (
           `<li class="wire-item">` +

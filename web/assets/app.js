@@ -46,6 +46,14 @@ function renderFreshness(generatedAt) {
   el.className = "pill " + cls;
 }
 
+function safeUrl(u) {
+  if (!u) return null;
+  try {
+    const p = new URL(String(u), window.location.origin);
+    return (p.protocol === "https:" || p.protocol === "http:") ? p.href : null;
+  } catch (e) { return null; }
+}
+
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, ch => (
     { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch]
@@ -76,13 +84,19 @@ function renderCard(sectionKey, label, icon, data) {
     items.slice(0, 6).forEach(b => {
       const li = document.createElement("li");
       if (typeof b === "string") {
-        li.innerHTML = b;
+        // Bullets originate in scraped news + LLM summaries, i.e. untrusted
+        // text. Never assign it raw; CSP blocks script execution but not
+        // attribute or markup injection.
+        li.textContent = b;
       } else if (b && typeof b === "object") {
         const parts = [];
         if (b.headline) parts.push(`<strong>${escapeHtml(b.headline)}</strong>`);
         if (b.body)     parts.push(escapeHtml(b.body));
         let html = parts.join(" — ");
-        if (b.url) html += ` <a href="${b.url}" target="_blank" rel="noopener">↗</a>`;
+        // safeUrl rejects anything that is not http(s), so a javascript: or
+        // data: href from a poisoned feed cannot reach the DOM.
+        const u = safeUrl(b.url);
+        if (u) html += ` <a href="${escapeHtml(u)}" target="_blank" rel="noopener noreferrer">↗</a>`;
         li.innerHTML = html;
       }
       ul.appendChild(li);
