@@ -53,6 +53,10 @@ def fetch() -> dict:
             "orb_thresholds": v.get("orb_thresholds"),
             "yesterday_pts": v.get("yesterday_pts"),
             "events": v.get("events") or [],
+            # Rolling P(wide) that drives the MNQ tight-day call. Public-safe:
+            # a probability, a threshold and a measured hit rate, no paths or
+            # internal model names.
+            "contraction_prob": v.get("contraction_prob"),
             # "accuracy" carries internal validation basis strings; keep it out
             # of the public artifact.
 

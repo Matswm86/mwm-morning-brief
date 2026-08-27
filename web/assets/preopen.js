@@ -41,12 +41,20 @@
       ? el("span", { class: "preopen-verdict is-" + orbFlag(d.orb) }, ["ORB " + d.orb])
       : el("span", { class: "preopen-verdict is-none" }, ["range only"]);
     var ry = d.recent_year;
-    var note = g && g.hit != null
-      ? "Calls at this distance from the median were right " + pct(g.hit) + " of the time ("
-        + g.n + " sessions, 2019-2026)."
+    var cp = d.contraction_prob || null;
+    var note;
+    if (g && g.hit != null) {
+      note = "Calls like this one were right " + pct(g.hit) + " of the time ("
+        + g.n + " sessions)."
         + (ry ? " In " + ry.year + " alone: " + pct(ry.expansion_hit) + " expansion, "
-            + pct(ry.contraction_hit) + " contraction." : "")
-      : "No range forecast for this session.";
+            + pct(ry.contraction_hit) + " contraction." : "");
+    } else if (cp && cp.p_wide != null) {
+      note = "Chance of a wider-than-normal day: " + pct(cp.p_wide)
+        + ". A tight-day call needs " + pct(cp.rung) + " or lower, and those calls were right "
+        + pct(cp.measured_hit) + " of the time (" + cp.measured_n + " sessions).";
+    } else {
+      note = "No range forecast for this session.";
+    }
     return el("article", { class: "preopen-card" }, [
       el("div", { class: "preopen-top" }, [
         el("span", { class: "preopen-sym" }, [code]),
