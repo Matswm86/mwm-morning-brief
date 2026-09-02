@@ -1,9 +1,15 @@
-# Selfcalib Bar v2 — Signals→Pct Rubric
-# Spec: ~/MWM-AI/plans/selfcalib-bar-v2-rubric-2026-05-05.md
+# Selfcalib Bar v3 — outcome signals against a null (2026-09-02)
+# Spec lineage: ~/MWM-AI/plans/selfcalib-bar-v2-rubric-2026-05-05.md (v2, existence signals)
+#               ~/MWM-AI/memory/reference/reference_selfcalib_audit_2026-09-02.md (v3 rationale)
 # Each dim's pct = sum(signal_score × signal_weight). Signal weights per dim sum to 1.0.
 # Signal scores are 0-100. Signal returns None → frozen (use prior pct, mark frozen_reason).
+#
+# v3 change of principle: a signal must read an OUTCOME against a null, not the
+# existence of an artifact. v2 saturated on degenerate data (constant calibration
+# predictor at ~1.0, a killed proposer's leftover files, 0/51 real gate accepts,
+# 9 failed user units invisible). Every v3 signal names the file it reads.
 
-schema_version: 1
+schema_version: 3
 generated_by: recompute_selfcalib.py
 canonical_source: ~/MWM-AI/plans/selfcalib-bar-v2-rubric-2026-05-05.md
 
@@ -11,104 +17,117 @@ dimensions:
   - id: D1
     label: Closed-loop firing
     weight: 15
+    # "The Sunday chain fired" is necessary, not sufficient: 08-30 every unit
+    # reported rc=0 while the Pro Max window was exhausted and Ollama was off.
     signals:
       - name: cip_fires_landed
-        weight: 0.35
+        weight: 0.25
         params: {window_days: 30, target: 4}
       - name: automation_chain_active
-        weight: 0.25
+        weight: 0.20
         params:
-          # Oneshot services triggered by timers — check last-Result + timer freshness
           services:
             - mwm-cip.service
             - mwm-research-swarm.service
             - mwm-swarm-synthesis.service
           fresh_days: 8
-      - name: bocpd_subsystem_health
+      - name: failed_user_units
+        weight: 0.20
+        # systemctl --user --failed, mwm-* units; 09-02 audit found 9
+        params: {prefix: "mwm-", per_unit: 12}
+      - name: anomaly_kinds_absent
         weight: 0.15
-        params: {db_relpath: data/sccs/bocpd_state.db, fresh_days: 8}
-      - name: synthesis_freshness
-        weight: 0.15
-        params: {fresh_days: 8}
-      - name: memento_judge_active
+        signal_id: backend_outage_events_7d
+        # typed by optimizer.py / sccs_f18_production.py / anthropic_via_claude_cli.py since 09-02
+        params:
+          window_days: 7
+          per_event: 25
+          kinds: [session_aborted_backend_failed, cycle_aborted_backend, claude_cli_failed, claude_cli_usage_limit]
+      - name: local_llm_live
         weight: 0.10
-        params: {fresh_days: 8, window_days: 30}
+        # Ollama on :11434 — the fallback every weekly loop needs when the Pro Max window closes
+        params: {url: "http://localhost:11434/api/tags", timeout_s: 3}
+      - name: synthesis_freshness
+        weight: 0.10
+        params: {fresh_days: 8}
 
   - id: D2
     label: Outcome-grounded learning
     weight: 25
-    # F23 ratification 2026-05-06: honeypot_abstain_rate added (weight 0.10).
-    # Rebalance: policy_state_rows 0.25 → 0.20, eval_gold_runs 0.20 → 0.15.
-    # Floor/ceiling on the new signal: 0.20 → 0, 0.80 → 100 (matches the
-    # F23 acceptance gate, which is the load-bearing test for the entire
-    # hallucination-control track).
+    # Does the reward channel carry information? Row counts dropped (they
+    # saturate); each signal below has a null it must beat.
     signals:
-      - name: policy_state_rows
+      - name: gstudy_G
         weight: 0.20
-        params: {db_relpath: data/sccs/policy_state.db, table: policy_state, floor: 30, ceiling: 100}
-      - name: conformal_cal_rows
-        weight: 0.25
-        params: {jsonl_relpath: data/sccs/judge_calibration.jsonl, target: 30}
-      - name: eval_gold_runs
+        # data/sccs/f18_gstudy.jsonl (weekly): best skill G, 0 at 0.30 → 100 at 0.55
+        params: {lo: 0.30, hi: 0.55, aggregate: max, exclude_skills: [source-evaluation]}
+      - name: gstudy_keep_z
         weight: 0.15
-        params: {window_days: 30, target_runs: 4}
-      - name: bernstein_gate_fires
+        # observed F18 keeps vs null-keep bootstrap through the legacy gate; z 1 → 0, z 3 → 100
+        params: {which: null_keeps_legacy, lo: 1.0, hi: 3.0}
+      - name: gate_real_accepts
         weight: 0.15
-        params: {window_days: 30, target_fires: 5}
-      - name: forward_sufficiency_active
+        # mutation_decision rows (30d) kept with a real bound pass (ok / heavy_tail_mom_ok)
+        params: {window_days: 30, target: 2}
+      - name: calibration_predictor_sd
         weight: 0.15
-        params: {rubric_relpath: core/memento/rubrics/scientific_method.json, min_dims: 6, min_threshold: 42}
+        # sd of predicted/max in judge_calibration.jsonl (90d); constant predictor = 0
+        params: {window_days: 90, hi: 0.15, min_rows: 10}
+      - name: sqlite_recent_positive
+        weight: 0.15
+        signal_id: reward_channel_alive
+        # last 2 weekly utility sweeps produced citation-class useful>0
+        params: {db_relpath: core/research-swarm/db/adaptive.db, table: sweep_log, column: useful, order_col: id, n: 2}
       - name: honeypot_abstain_rate
         weight: 0.10
         params: {jsonl_relpath: data/sccs/honeypot_results.jsonl, floor: 0.20, ceiling: 0.80}
+      - name: eval_gold_runs
+        weight: 0.10
+        params: {window_days: 30, target_runs: 4}
 
   - id: D3
     label: Bounded self-modification
     weight: 20
+    # A mutation counts when its gain SURVIVES the next re-baseline and the
+    # gate that admitted it was honest (rubric-derived support, typed failures).
     signals:
-      - name: memento_acceptance_curve
-        weight: 0.20
-        params: {window_days: 30}
-      - name: file_grep_present
+      - name: gstudy_persistence
+        weight: 0.25
+        # share of applied F18 gains still present at the next cycle's baseline (±1 pt)
+        params: {}
+      - name: boundary_flux_axes
         weight: 0.15
-        signal_id: f4_bernstein_in_dispatcher
-        params:
-          path_relpath: core/cip/dispatcher.py
-          patterns: [bernstein]
-      - name: file_grep_present
-        weight: 0.15
-        signal_id: f4_5_conformal_wired
-        params:
-          path_relpath: core/sccs/__init__.py
-          patterns: [wrap_metric, MIN_N_CAL]
-      - name: file_grep_present
-        weight: 0.15
-        signal_id: f6_bocpd_actuation
-        params:
-          path_relpath: core/cip/dispatcher.py
-          patterns: [rejected_bocpd_gate]
-      - name: f3_dowhy_status
-        weight: 0.15
-        params: {path_relpath: core/sccs/causal_gate.py}
+        # F19 axes passing on the latest data/sccs/boundary_flux.jsonl row
+        params: {}
       - name: file_grep_present
         weight: 0.10
+        signal_id: gate_value_range_wired
+        params:
+          path_relpath: core/skills/optimizer.py
+          patterns: [_delta_support_width]
+      - name: file_grep_present
+        weight: 0.10
+        signal_id: typed_backend_failures_wired
+        params:
+          path_relpath: core/skills/optimizer.py
+          patterns: [session_aborted_backend_failed]
+      - name: memento_acceptance_curve
+        weight: 0.15
+        params: {window_days: 30}
+      - name: f3_dowhy_status
+        weight: 0.10
+        params: {path_relpath: core/sccs/causal_gate.py}
+      - name: file_grep_present
+        weight: 0.15
         signal_id: c2_invariant_test
         params:
           path_relpath: core/skills/tests/test_optimizer.py
           patterns: [test_optimizer_invariant_C2, invariant_C2]
-      - name: f18_dry_run_active
-        weight: 0.10
-        params: {env_var: SCCS_F18_DRY_RUN, expected: "1"}
 
   - id: D4
     label: Autonomous prioritization
     weight: 15
-    frozen_reason: "D4 gated on the P2 outcome ledger (the reward), not on cell diversity — plans/d4-autonomous-prioritization-audit-and-plan-2026-08-15.md"
-    # REDESIGNED 2026-08-16 (D4 audit): the T3 "policy_state cell diversity" blocker was
-    # stale (20 distinct regime×tier already; signal saturated at 100 and stopped
-    # discriminating). Real blocker = no reward channel. Staged plan P0 reward repair →
-    # P1 machine queue → P2 outcome ledger → P3 proposer → P4 learner; score path
-    # P0+P1 ≈35, P2 ≈50, P3 ≈65, P4 ≈80. Weights below reproduce that path.
+    frozen_reason: "D4 gated on the P2 outcome ledger (the reward); P3 proposer KILLED 08-30 (pick_rate 0.0), P4 learner unbuilt — plans/d4-autonomous-prioritization-audit-and-plan-2026-08-15.md"
     signals:
       - name: file_fresh
         weight: 0.10
@@ -117,30 +136,33 @@ dimensions:
       - name: file_fresh
         weight: 0.20
         signal_id: queue_items_fresh
-        # P1: steward writes data/queue/items.jsonl daily (06:30)
         params: {path_relpath: data/queue/items.jsonl, fresh_days: 2, stale_days: 7}
-      - name: sqlite_recent_positive
-        weight: 0.15
-        signal_id: reward_channel_alive
-        # P0: last 2 weekly utility sweeps produced useful>0 (utility_channel_silent otherwise)
-        params: {db_relpath: core/research-swarm/db/adaptive.db, table: sweep_log, column: useful, order_col: id, n: 2}
       - name: file_fresh
         weight: 0.30
         signal_id: outcomes_ledger_fresh
-        # P2: data/queue/outcomes.jsonl refreshed weekly by the Sunday steward
         params: {path_relpath: data/queue/outcomes.jsonl, fresh_days: 8, stale_days: 21}
-      - name: file_present
+      - name: timer_enabled_and_output_fresh
         weight: 0.25
-        signal_id: proposer_output_present
-        # P3: weekly proposer writes notes/inbox/priority-<date>.md (+ 4-week pick-rate kill-test)
-        params: {glob_relpath: "notes/inbox/priority-2*.md"}
+        signal_id: proposer_live
+        # credited only while mwm-proposer.timer is ENABLED and its newest file is fresh
+        params: {timer_unit: mwm-proposer.timer, glob_relpath: "notes/inbox/priority-2*.md", fresh_days: 8, stale_days: 21}
+      - name: file_present
+        weight: 0.15
+        signal_id: learner_present
+        params: {candidate_paths: [core/pipelines/learner.py, core/pipelines/queue_learner.py]}
 
   - id: D5
     label: Cost & resource governance
     weight: 10
+    # 08-30: the Sunday loops share Mats's Pro Max window; 82 `claude -p` calls
+    # exited 1 with duration_api_ms=0 in 7 minutes. That is the cost gap.
     signals:
+      - name: anomaly_kinds_absent
+        weight: 0.25
+        signal_id: usage_limit_events_7d
+        params: {window_days: 7, per_event: 50, kinds: [claude_cli_usage_limit]}
       - name: any_file_grep
-        weight: 0.15
+        weight: 0.10
         signal_id: groq_ollama_split
         params:
           candidate_paths:
@@ -150,18 +172,18 @@ dimensions:
           patterns: [groq, ollama]
           require_all: true
       - name: prompt_cache_active
-        weight: 0.15
+        weight: 0.10
         params: {root_relpath: core, pattern: cache_control}
       - name: rtk_proxy_live
-        weight: 0.15
+        weight: 0.10
       - name: file_grep_present
-        weight: 0.20
+        weight: 0.15
         signal_id: f18_soft_rate_cap
         params:
           path_relpath: core/skills/optimizer.py
           patterns: ["0.15"]
       - name: file_grep_present
-        weight: 0.20
+        weight: 0.15
         signal_id: f18_hard_day_cap
         params:
           path_relpath: core/skills/optimizer.py
@@ -176,14 +198,19 @@ dimensions:
     weight: 15
     signals:
       - name: file_fresh
-        weight: 0.20
+        weight: 0.25
+        signal_id: rolling_sccs_handoff_fresh
+        # the ONE rolling handoff for this stream; 08-23 kill-test PASS sat unrecorded 10 days
+        params: {path_relpath: memory/handoff-sccs-infra-research-organism.md, fresh_days: 7, stale_days: 21}
+      - name: file_fresh
+        weight: 0.15
         signal_id: memory_md_index
         params: {path_relpath: memory/MEMORY.md, fresh_days: 7}
       - name: handoff_files_count
-        weight: 0.15
+        weight: 0.10
         params: {target: 30}
       - name: file_present
-        weight: 0.15
+        weight: 0.10
         signal_id: mem0_sqlite
         params: {candidate_paths: [data/db/.mem0/world_model.db, data/db/mem0/world_model.db]}
       - name: cip_synthesis_writeback
@@ -193,9 +220,9 @@ dimensions:
         weight: 0.10
         params: {fresh_days: 3, stale_days: 7}
       - name: file_fresh
-        weight: 0.15
+        weight: 0.10
         signal_id: master_queue_unified
         params: {path_relpath: plans/sccs-master-queue.md, fresh_days: 14}
       - name: book_summaries_handoff_indexed
-        weight: 0.10
+        weight: 0.05
         params: {target_count: 70}

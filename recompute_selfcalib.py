@@ -643,6 +643,263 @@ def signal_book_summaries_handoff_indexed(p: dict, ctx: dict) -> int | None:
     return min(100, int(count / max(1, target) * 100))
 
 
+# ----- v3 outcome signals (2026-09-02) -----
+# The v2 signals mostly count that an artifact EXISTS (rows, files, grep
+# hits); the 09-02 audit showed those saturate on degenerate data (constant
+# calibration predictor, dead proposer's leftover files, 0/51 gate accepts).
+# The signals below read OUTCOMES against a null: reliability G, keep z-score
+# vs a noise bootstrap, mutation persistence, real gate accepts, failed
+# units, backend outages, timers that are actually enabled.
+
+
+def _read_jsonl_rows(path: Path) -> list[dict]:
+    rows: list[dict] = []
+    if not path.exists():
+        return rows
+    try:
+        with path.open(encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    rows.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    except OSError as e:
+        log.warning("jsonl read failed %s: %s", path, e)
+    return rows
+
+
+def _latest_gstudy(p: dict) -> dict | None:
+    rows = _read_jsonl_rows(MWM_ROOT / p.get("jsonl_relpath", "data/sccs/f18_gstudy.jsonl"))
+    return rows[-1] if rows else None
+
+
+def _linear(x: float, lo: float, hi: float) -> int:
+    """0 at lo, 100 at hi, clamped, linear between."""
+    if hi == lo:
+        return 100 if x >= hi else 0
+    return int(round(max(0.0, min(1.0, (x - lo) / (hi - lo))) * 100))
+
+
+def signal_failed_user_units(p: dict, ctx: dict) -> int | None:
+    """100 minus `per_unit` per failed mwm-* user unit (D1). Reads the same
+    `systemctl --user --failed` the 09-02 audit found 9 units on."""
+    try:
+        out = subprocess.run(
+            ["systemctl", "--user", "--failed", "--plain", "--no-legend"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except Exception:
+        return None
+    prefix = p.get("prefix", "mwm-")
+    n = sum(1 for ln in out.stdout.splitlines() if ln.strip().startswith(prefix))
+    ctx["failed_user_units"] = n
+    return max(0, 100 - int(p.get("per_unit", 12)) * n)
+
+
+def signal_anomaly_kinds_absent(p: dict, ctx: dict) -> int | None:
+    """100 when none of `kinds` appears in anomalies.jsonl within
+    `window_days`; minus `per_event` per occurrence (floored at 0)."""
+    path = MWM_ROOT / p.get("jsonl_relpath", "data/runners/anomalies.jsonl")
+    if not path.exists():
+        return None
+    kinds = set(p.get("kinds", []))
+    cutoff = datetime.now(timezone.utc) - timedelta(days=float(p.get("window_days", 7)))
+    n = 0
+    try:
+        with path.open(encoding="utf-8") as fh:
+            for line in fh:
+                if not any(f'"{k}"' in line for k in kinds):
+                    continue
+                try:
+                    r = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if r.get("kind") not in kinds:
+                    continue
+                try:
+                    ts = datetime.fromisoformat(str(r.get("ts", "")).replace("Z", "+00:00"))
+                except ValueError:
+                    continue
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=timezone.utc)
+                if ts >= cutoff:
+                    n += 1
+    except OSError:
+        return None
+    ctx[f"anomaly_count:{p.get('signal_note', ','.join(sorted(kinds)))}"] = n
+    return max(0, 100 - int(p.get("per_event", 25)) * n)
+
+
+def signal_local_llm_live(p: dict, ctx: dict) -> int | None:
+    """Ollama answering on its port (the fallback every weekly loop relies on
+    when the Pro Max window is exhausted). 100 up / 0 down; never frozen."""
+    import urllib.request
+
+    url = p.get("url", "http://localhost:11434/api/tags")
+    try:
+        with urllib.request.urlopen(url, timeout=float(p.get("timeout_s", 3))) as r:
+            return 100 if r.status == 200 else 0
+    except Exception:
+        return 0
+
+
+def signal_gstudy_G(p: dict, ctx: dict) -> int | None:
+    """Best F18 reliability coefficient across active skills, linear from
+    `lo` (0) to `hi` (100). Source: latest data/sccs/f18_gstudy.jsonl row."""
+    row = _latest_gstudy(p)
+    if row is None:
+        return 0
+    exclude = set(p.get("exclude_skills", []))
+    gs = [v.get("G", 0.0) for k, v in (row.get("skills") or {}).items() if k not in exclude]
+    if not gs:
+        return 0
+    stat = max(gs) if p.get("aggregate", "max") == "max" else sum(gs) / len(gs)
+    ctx["gstudy_G"] = stat
+    return _linear(float(stat), float(p.get("lo", 0.30)), float(p.get("hi", 0.55)))
+
+
+def signal_gstudy_keep_z(p: dict, ctx: dict) -> int | None:
+    """z of observed F18 keeps against the null-keep bootstrap through the
+    gate named by `which` (legacy floor or honest range). z <= lo → 0,
+    z >= hi → 100. A null that never accepts (sd 0) with observed keeps > 0
+    cannot be scored on z; that case returns 0 (the keeps happened under a
+    gate the null says accepts nothing → they are not evidence)."""
+    row = _latest_gstudy(p)
+    if row is None:
+        return 0
+    nk = row.get(p.get("which", "null_keeps_legacy")) or row.get("null_keeps") or {}
+    z = nk.get("z")
+    ctx["gstudy_keep_z"] = z
+    if z is None:
+        return 0
+    return _linear(float(z), float(p.get("lo", 1.0)), float(p.get("hi", 3.0)))
+
+
+def signal_gstudy_persistence(p: dict, ctx: dict) -> int | None:
+    """Share of applied F18 gains that survived to the next cycle's baseline."""
+    row = _latest_gstudy(p)
+    if row is None:
+        return 0
+    pers = row.get("persistence") or {}
+    rate = pers.get("persistence_rate")
+    ctx["gstudy_persistence"] = rate
+    if rate is None:
+        return 0
+    return int(round(float(rate) * 100))
+
+
+def signal_gate_real_accepts(p: dict, ctx: dict) -> int | None:
+    """mutation_decision rows in `window_days` whose gate verdict was a real
+    bound pass (reason in `ok_reasons`), not the naive-delta or
+    range-floor artifact. 0 accepts → 0; `target` accepts → 100."""
+    path = MWM_ROOT / "data" / "runners" / "anomalies.jsonl"
+    if not path.exists():
+        return None
+    cutoff = datetime.now(timezone.utc) - timedelta(days=float(p.get("window_days", 30)))
+    ok = set(p.get("ok_reasons", ["ok", "heavy_tail_mom_ok"]))
+    n = 0
+    try:
+        with path.open(encoding="utf-8") as fh:
+            for line in fh:
+                if '"mutation_decision"' not in line or '"gate_verdict"' not in line:
+                    continue
+                try:
+                    r = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                try:
+                    ts = datetime.fromisoformat(str(r.get("ts", "")).replace("Z", "+00:00"))
+                except ValueError:
+                    continue
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=timezone.utc)
+                if ts < cutoff:
+                    continue
+                gv = r.get("gate_verdict") or (r.get("extra") or {}).get("gate_verdict") or {}
+                if r.get("kept") and gv.get("reason") in ok:
+                    n += 1
+    except OSError:
+        return None
+    ctx["gate_real_accepts"] = n
+    return min(100, int(n / max(1, int(p.get("target", 2))) * 100))
+
+
+def signal_calibration_predictor_sd(p: dict, ctx: dict) -> int | None:
+    """Spread of the first-pass predictor (predicted_score/max_total) in
+    judge_calibration.jsonl over `window_days`. A constant predictor (sd≈0,
+    the 09-02 finding) carries no calibration information → 0; sd >= `hi`
+    → 100."""
+    path = MWM_ROOT / p.get("jsonl_relpath", "data/sccs/judge_calibration.jsonl")
+    rows = _read_jsonl_rows(path)
+    if not rows:
+        return 0
+    cutoff = datetime.now(timezone.utc) - timedelta(days=float(p.get("window_days", 90)))
+    xs: list[float] = []
+    for r in rows:
+        try:
+            ts = datetime.fromisoformat(str(r.get("timestamp") or r.get("ts") or "").replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        if ts < cutoff:
+            continue
+        mt = r.get("max_total") or 0
+        if mt:
+            xs.append(float(r.get("predicted_score") or 0) / float(mt))
+    if len(xs) < int(p.get("min_rows", 10)):
+        return 0
+    mean = sum(xs) / len(xs)
+    sd = (sum((x - mean) ** 2 for x in xs) / (len(xs) - 1)) ** 0.5
+    ctx["calibration_predictor_sd"] = round(sd, 4)
+    return _linear(sd, 0.0, float(p.get("hi", 0.15)))
+
+
+def signal_timer_enabled_and_output_fresh(p: dict, ctx: dict) -> int | None:
+    """A weekly producer is only credited while its timer is ENABLED and its
+    newest output is fresh. Disabled timer → 0 regardless of leftover files
+    (the 08-30 proposer kill left three priority-*.md files that the v2
+    `file_present` signal kept scoring at 100)."""
+    unit = p["timer_unit"]
+    try:
+        out = subprocess.run(
+            ["systemctl", "--user", "is-enabled", unit],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        enabled = out.stdout.strip() == "enabled"
+    except Exception:
+        return None
+    if not enabled:
+        return 0
+    matches = list(MWM_ROOT.glob(p["glob_relpath"]))
+    if not matches:
+        return 25
+    newest = max(matches, key=lambda f: f.stat().st_mtime)
+    age = _file_age_days(newest)
+    return _ramp_fresh(age, p.get("fresh_days", 8), stale=p.get("stale_days", 21))
+
+
+def signal_boundary_flux_axes(p: dict, ctx: dict) -> int | None:
+    """Share of applicable F19 boundary-flux axes passing on the latest row."""
+    rows = _read_jsonl_rows(MWM_ROOT / p.get("jsonl_relpath", "data/sccs/boundary_flux.jsonl"))
+    if not rows:
+        return 0
+    axes = (rows[-1].get("axes") or {}).values()
+    applicable = [a for a in axes if a.get("applicable")]
+    if not applicable:
+        return 0
+    passed = sum(1 for a in applicable if a.get("pass"))
+    ctx["boundary_flux_axes"] = f"{passed}/{len(applicable)}"
+    return int(round(passed / len(applicable) * 100))
+
+
 # ============================================================
 # Registry + dispatcher
 # ============================================================
@@ -675,6 +932,17 @@ SIGNAL_REGISTRY = {
     # D5
     "prompt_cache_active": signal_prompt_cache_active,
     "rtk_proxy_live": signal_rtk_proxy_live,
+    # v3 outcome signals (2026-09-02)
+    "failed_user_units": signal_failed_user_units,
+    "anomaly_kinds_absent": signal_anomaly_kinds_absent,
+    "local_llm_live": signal_local_llm_live,
+    "gstudy_G": signal_gstudy_G,
+    "gstudy_keep_z": signal_gstudy_keep_z,
+    "gstudy_persistence": signal_gstudy_persistence,
+    "gate_real_accepts": signal_gate_real_accepts,
+    "calibration_predictor_sd": signal_calibration_predictor_sd,
+    "timer_enabled_and_output_fresh": signal_timer_enabled_and_output_fresh,
+    "boundary_flux_axes": signal_boundary_flux_axes,
     # D6
     "handoff_files_count": signal_handoff_files_count,
     "cip_synthesis_writeback": signal_cip_synthesis_writeback,
