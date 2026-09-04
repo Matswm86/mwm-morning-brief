@@ -1240,3 +1240,92 @@ body:not(.wa-chips-on) #wa-root .nq-chip { display: none; }
 .lens-none { color: var(--muted, #6d6659); font-size: .85rem; margin: 0; }
 .lens-foot { margin: .8rem 0 0; font-size: .8rem; color: var(--muted, #6d6659); line-height: 1.45; }
 @media (max-width: 34rem) { .lens-row { grid-template-columns: 9rem auto; } .lens-row .n { display: none; } }
+
+/* ——— session liquidity pools on the MNQ chart ——— */
+.pool-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px dotted var(--rule-soft);
+}
+.pool-bar.is-off .pool-chip,
+.pool-bar.is-off .pool-count,
+.pool-bar.is-off .pool-opt { opacity: 0.4; }
+.pool-master, .pool-chip {
+  font-family: var(--serif);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--rule);
+  padding: 4px 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pool-master { font-weight: 700; box-shadow: inset 0 0 0 2px var(--paper), inset 0 0 0 3px var(--rule-soft); }
+.pool-chip.is-off { opacity: 0.42; border-style: dashed; }
+.pool-chip.is-off .pool-swatch { opacity: 0.35; }
+.pool-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(37, 30, 16, 0.35);
+  display: inline-block;
+  flex: none;
+}
+.pool-count, .pool-opt {
+  font-family: var(--serif);
+  font-size: 11.5px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+.pool-count { background: transparent; border: 1px solid var(--rule-soft); padding: 3px 6px; cursor: pointer; }
+.pool-opt { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.pool-table { margin-top: 12px; overflow-x: auto; }
+.pool-table table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.pool-table th {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  text-align: left;
+  font-weight: 400;
+  padding: 6px 10px 6px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.pool-table td { padding: 4px 10px 4px 0; border-bottom: 1px dotted var(--rule-soft); vertical-align: baseline; white-space: nowrap; }
+.pool-table .pool-name { display: flex; align-items: center; gap: 7px; font-family: var(--serif); }
+.pool-table .pool-px { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+.pool-table .pool-state { font-family: var(--serif); font-style: italic; font-size: 11.5px; color: var(--faint); }
+.pool-table tr.is-live .pool-name { font-style: italic; }
+.pool-caption, .pool-empty { font-family: var(--serif); font-style: italic; font-size: 12px; color: var(--faint); margin: 8px 0 0; }
+
+/* label layer over the chart canvas */
+.pool-chart-wrap { position: relative; }
+.pool-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.pool-tag {
+  position: absolute;
+  transform: translateY(-50%);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  background: rgba(242, 236, 223, 0.92);
+  padding: 0 3px;
+  border-radius: 1px;
+  line-height: 1.35;
+}
+.pool-tag.is-swept { opacity: 0.62; }

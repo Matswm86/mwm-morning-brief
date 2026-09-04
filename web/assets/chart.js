@@ -52,6 +52,12 @@
       window.addEventListener('resize', () => {
         chart.applyOptions({ width: container.clientWidth });
       });
+      // Publish the series so overlay scripts (session_levels.js) can draw on
+      // it. Late listeners read window.MWMCharts directly; early ones wait for
+      // the event, which fires once per symbol when its first data arrives.
+      window.MWMCharts = window.MWMCharts || {};
+      window.MWMCharts[cfg.label] = { chart, candles, container };
+      window.dispatchEvent(new CustomEvent('mwm:chart-ready', { detail: { label: cfg.label } }));
     }
 
     async function load() {

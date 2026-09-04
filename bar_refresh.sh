@@ -28,9 +28,23 @@ refresh_symbol() {
   return 0
 }
 
+# Prior-session highs/lows (the liquidity pools drawn on the MNQ chart).
+# Needs ~16 days of bars, so it fetches its own history rather than reusing
+# the 1-day bars above.
+refresh_session_levels() {
+  local out="web/session_levels_mnq.json"
+  if [[ -x "$PXPY" ]] && "$PXPY" -m fetchers.session_levels --source pxpy --write "$out"; then
+    return 0
+  fi
+  echo "session_levels pxpy path failed; falling back to Yahoo" >&2
+  "$YAHOO" -m fetchers.session_levels --source yahoo --write "$out" || return 1
+}
+
 rc=0
 refresh_symbol MNQ NQ=F  web/bars_mnq.json || rc=1
 refresh_symbol MGC MGC=F web/bars_mgc.json || rc=1
+refresh_session_levels || rc=1
 
-rsync -az web/bars_mnq.json web/bars_mgc.json mats@204.168.244.173:/var/www/brief/ || rc=1
+rsync -az web/bars_mnq.json web/bars_mgc.json web/session_levels_mnq.json \
+  mats@204.168.244.173:/var/www/brief/ || rc=1
 exit $rc
