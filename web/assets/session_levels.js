@@ -5,17 +5,17 @@
  *  fetchers/session_levels.py:
  *      Asia 02:00-07:00 · London 09:00-15:30 · New York 15:30-22:00
  *
- *  A level still untouched is drawn solid — that is a pool price can reach
- *  for. A level later price has already traded back to is drawn dashed and
- *  faded: the stops there are gone.
+ *  Only closed sessions produce levels, and a level is removed outright once
+ *  price trades back to it: the resting orders are filled, so it is no longer
+ *  a pool. What stays on the chart is only what is still untaken.
  *
  *  Colours are the dataviz categorical slots 1/2/7 (blue, orange, violet),
  *  chosen so they stay separable AFTER the .price-chart sepia filter and
  *  never collide with the green/red candles. Validated all-pairs on the
  *  post-filter surface #fff4e0: worst CVD deltaE 13.6 deutan, normal-vision
  *  15.2. The orange sits at 2.96:1 contrast, just under the 3:1 gate, so the
- *  legend chips and the level table below the chart are required relief —
- *  do not remove them.
+ *  legend chips and the level table below the chart are required relief.
+ *  Do not remove them.
  */
 (function () {
   const URL = 'session_levels_mnq.json';
@@ -32,7 +32,6 @@
   const DEFAULTS = {
     on: true,
     count: 10,
-    hideSwept: false,
     fit: true,
     labels: true,
     enabled: { asia: true, london: true, ny: true },
@@ -52,7 +51,6 @@
       return {
         on: s.on !== false,
         count: COUNTS.includes(s.count) ? s.count : DEFAULTS.count,
-        hideSwept: !!s.hideSwept,
         fit: s.fit !== false,
         labels: s.labels !== false,
         enabled: { ...DEFAULTS.enabled, ...(s.enabled || {}) },
@@ -74,14 +72,23 @@
   const fmt = (v) =>
     Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  /** The blocks to draw: the last `count` COMPLETED sessions, plus the one
-   *  still forming (drawn dotted) so the live range is visible too. */
+  /** The levels to draw, newest first: one entry per surviving high or low.
+   *
+   *  A session only qualifies once it has closed — a high that is still being
+   *  made is not a level yet. And a level price has already traded back to is
+   *  dropped outright rather than dimmed: the resting orders there are filled,
+   *  so it is no longer a pool and no longer belongs on the chart. */
   function selection() {
-    if (!payload || !payload.sessions) return { done: [], live: [] };
-    const on = (s) => state.enabled[s.session];
-    const live = payload.sessions.filter((s) => !s.complete && on(s));
-    const done = payload.sessions.filter((s) => s.complete && on(s)).slice(0, state.count);
-    return { done, live };
+    if (!payload || !payload.sessions) return [];
+    const blocks = payload.sessions
+      .filter((s) => s.complete && state.enabled[s.session])
+      .slice(0, state.count);
+    const out = [];
+    blocks.forEach((b) => {
+      if (!b.high_swept) out.push({ block: b, side: 'high', price: b.high });
+      if (!b.low_swept) out.push({ block: b, side: 'low', price: b.low });
+    });
+    return out;
   }
 
   function clearLines() {
@@ -96,26 +103,21 @@
     lines = [];
   }
 
-  function addLine(block, side) {
-    const price = side === 'high' ? block.high : block.low;
-    const swept = side === 'high' ? block.high_swept : block.low_swept;
-    if (state.hideSwept && swept) return;
-    const meta = SESSIONS[block.session];
-    const LS = LightweightCharts.LineStyle;
-    const day = block.date.slice(5); // MM-DD
+  function addLine(level) {
+    const meta = SESSIONS[level.block.session];
+    const day = level.block.date.slice(5); // MM-DD
     lines.push({
-      price: price,
+      price: level.price,
       color: meta.color,
-      swept: swept,
       // The price line's own `title` only ever renders inside the price-axis
-      // label, and 20+ axis labels bury the scale. So the labels below are
-      // drawn as HTML over the pane instead, and the axis label stays off.
-      text: `${day} ${meta.short} ${side === 'high' ? 'H' : 'L'} ${fmt(price)}`,
+      // label, which buries the scale once several are drawn. So the labels
+      // below are drawn as HTML over the pane instead, axis label off.
+      text: `${day} ${meta.short} ${level.side === 'high' ? 'H' : 'L'} ${fmt(level.price)}`,
       line: series.createPriceLine({
-        price: price,
-        color: swept ? meta.color + '73' : meta.color, // 73 = 45% alpha
+        price: level.price,
+        color: meta.color,
         lineWidth: 1,
-        lineStyle: !block.complete ? LS.Dotted : swept ? LS.Dashed : LS.Solid,
+        lineStyle: LightweightCharts.LineStyle.Solid,
         axisLabelVisible: false,
       }),
     });
@@ -124,16 +126,10 @@
   function draw() {
     if (!series || !payload) return;
     clearLines();
-    if (state.on) {
-      const { done, live } = selection();
-      [...done, ...live].forEach((b) => {
-        addLine(b, 'high');
-        addLine(b, 'low');
-      });
-    }
-    // A 10-session span is ~3x a single day's range, so most levels sit
-    // outside the candles' own autoscale. Widen the price scale to take in
-    // whatever is drawn, otherwise the lines exist but are off-screen.
+    if (state.on) selection().forEach(addLine);
+    // Untaken levels are by definition ones price has not reached, so they
+    // sit outside the candles' own autoscale almost by construction. Widen
+    // the price scale to take them in, or the lines exist but are off-screen.
     series.applyOptions({
       autoscaleInfoProvider: (original) => {
         const base = original();
@@ -149,8 +145,9 @@
       },
     });
     if (chartObj) {
-      // 20 levels across a 10-session span need vertical room; give it back
-      // when the scale is only carrying today's candles again.
+      // Surviving levels can sit ~800 points apart on MNQ; the taller pane
+      // keeps them from stacking. Give the height back when the scale is
+      // only carrying today's candles again.
       chartObj.applyOptions({ height: state.on && state.fit ? 500 : 340 });
     }
     positionLabels();
@@ -188,7 +185,7 @@
         if (!side) return;
         placed[side].push(l.y);
 
-        const tag = el('span', 'pool-tag' + (l.swept ? ' is-swept' : ''), l.text);
+        const tag = el('span', 'pool-tag', l.text);
         tag.style.top = Math.round(l.y) + 'px';
         tag.style.color = l.color;
         if (side === 'right') tag.style.right = Math.round(axisW + 6) + 'px';
@@ -275,7 +272,6 @@
     // scale to reach a 10-session span shrinks today's candles, so it has to
     // be switchable rather than assumed.
     [
-      ['hideSwept', 'hide swept'],
       ['fit', 'fit levels'],
       ['labels', 'price tags'],
     ].forEach(([key, text]) => {
@@ -310,43 +306,39 @@
     section.appendChild(table);
   }
 
-  /** The table view. It is the readable fallback for the levels — exact
-   *  prices, session named in words, sweep state in words. */
+  /** The table view: the same surviving levels the chart draws, in price
+   *  order so it reads as a ladder above and below the current price. */
   function renderTable() {
     const host = document.getElementById('pool-table');
     if (!host) return;
     host.innerHTML = '';
     if (!state.on || !payload) return;
-    const { done, live } = selection();
-    const rows = [...live, ...done];
+    const rows = selection().slice().sort((a, b) => b.price - a.price);
     if (!rows.length) {
-      host.appendChild(el('p', 'pool-empty', 'No sessions selected.'));
+      host.appendChild(
+        el('p', 'pool-empty', 'Every level in this range has been traded back to. Nothing left to draw.')
+      );
       return;
     }
 
     const t = el('table');
     const head = el('tr');
-    ['Session', 'High', '', 'Low', ''].forEach((h) => head.appendChild(el('th', null, h)));
+    ['Level', 'Session', 'Side'].forEach((h) => head.appendChild(el('th', null, h)));
     t.appendChild(head);
 
-    rows.forEach((b) => {
-      const meta = SESSIONS[b.session];
+    rows.forEach((lv) => {
+      const meta = SESSIONS[lv.block.session];
       const tr = el('tr');
-      if (!b.complete) tr.className = 'is-live';
+      tr.appendChild(el('td', 'pool-px', fmt(lv.price)));
 
       const name = el('td', 'pool-name');
       const sw = el('span', 'pool-swatch');
       sw.style.background = meta.color;
       name.appendChild(sw);
-      name.appendChild(
-        el('span', null, `${b.date.slice(5)} ${meta.label}${b.complete ? '' : ' · forming'}`)
-      );
+      name.appendChild(el('span', null, `${lv.block.date.slice(5)} ${meta.label}`));
       tr.appendChild(name);
 
-      tr.appendChild(el('td', 'pool-px', fmt(b.high)));
-      tr.appendChild(el('td', 'pool-state', b.high_swept ? 'swept' : 'open'));
-      tr.appendChild(el('td', 'pool-px', fmt(b.low)));
-      tr.appendChild(el('td', 'pool-state', b.low_swept ? 'swept' : 'open'));
+      tr.appendChild(el('td', 'pool-state', lv.side === 'high' ? 'high' : 'low'));
       t.appendChild(tr);
     });
     host.appendChild(t);
@@ -359,8 +351,8 @@
       el(
         'p',
         'pool-caption',
-        `${caption} Oslo. Solid line = pool still open, dashed = already swept. ` +
-          `Source ${payload.source || 'n/a'}.`
+        `${caption} Oslo. Only closed sessions count, and a level disappears the ` +
+          `moment price trades back to it. Source ${payload.source || 'n/a'}.`
       )
     );
   }
