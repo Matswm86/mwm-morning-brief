@@ -37,9 +37,11 @@
         el("span", { class: "n" }, [r[2]])
       ]);
     });
+    // ORB is an MNQ-only system. Gold gets a range read and nothing else.
+    if (code !== "MNQ") d.orb = null;
     var verdict = d.orb
       ? el("span", { class: "preopen-verdict is-" + orbFlag(d.orb) }, ["ORB " + d.orb])
-      : el("span", { class: "preopen-verdict is-none" }, ["range only"]);
+      : el("span", { class: "preopen-verdict is-none" }, [code === "MNQ" ? "range only" : "range only · no ORB on gold"]);
     var ry = d.recent_year;
     var cp = d.contraction_prob || null;
     var note;
@@ -58,7 +60,7 @@
     return el("article", { class: "preopen-card" }, [
       el("div", { class: "preopen-top" }, [
         el("span", { class: "preopen-sym" }, [code]),
-        el("span", { class: "preopen-call is-" + orbFlag(d.orb) }, [(d.expansion || d.call || "—") + (g ? " · " + g.strength : "")]),
+        el("span", { class: "preopen-call is-" + (code === "MNQ" ? orbFlag(d.orb) : "none") }, [(d.expansion || d.call || "—") + (g ? " · " + g.strength : "")]),
         verdict
       ]),
       el("p", { class: "preopen-meaning" }, [d.meaning || ""]),

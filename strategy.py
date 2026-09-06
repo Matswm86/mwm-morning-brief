@@ -2,9 +2,10 @@
 
 Two generations live here:
 
-pick_play() — CURRENT (2026-08-09). "Today's Play" for the QuantCrawler pair
-(QCS-Preset / QC Trend Strat), gated by the scheduled-macro calendar the brief
-already fetches. The rule and every number come from the 1-year TradingView
+pick_play() — CURRENT (2026-09-06). "Today's Play" for the live pair (Drift
+VWAP Pullback on MNQ, Tokyo Drift on MGC, one contract each). Holiday/weekend
+aware via fetchers/holidays.py; calendar rows are shown, not gated (unmeasured
+for these two). The 2026-08-09 QuantCrawler-pair text below is history: The rule and every number come from the 1-year TradingView
 List-of-Trades exports measured 2026-08-09 (handoff-strategy-selector-not-
 regime-label-2026-08-08, Phase B): the preset shows NO news penalty (87% win on
 event days vs 80% off them) so it always runs; QC Trend Strat earns 4% of its
@@ -29,8 +30,10 @@ from zoneinfo import ZoneInfo
 
 ET = ZoneInfo("America/New_York")
 
-# Families whose event-day cost to QC Trend Strat was MEASURED (tier>=1 in the
-# 2026-08-09 study). Anything outside this set does not gate — unmeasured.
+# Tier-1 US releases the desk watches. For the current live pair (Drift VWAP,
+# Tokyo Drift) the event-day effect is UNMEASURED, so these rows are shown on the
+# card as information and never flip a verdict. FOMC decision days are the one
+# exception: the desk sits both out by house rule, not by measurement.
 GATE_FAMILIES = {
     "CPI · inflation",
     "Nonfarm payrolls",
@@ -42,211 +45,134 @@ GATE_FAMILIES = {
 FOMC_DECISION = "FOMC rate decision"
 
 EVIDENCE = (
-    "Calendar basis: 1-yr TV exports measured 2026-08-09 — preset event days "
-    "win 87% (never gate it); QC MNQ event days = 20% of trades but 4% of net; "
-    "gate set = CPI/NFP/PCE/PPI/GDP/retail + FOMC (calendar effect on MGC "
-    "unmeasured — not gated). Edge basis: qcs.mwmai.no watchdog, real fills on "
-    "the leader account, nightly 17:15 ET — GREEN full size / YELLOW half / "
-    "RED stand down. Sizes mirror the 2026-08-14 TV exports (QCS 4ct MNQ / "
-    "QC Trend 3ct MNQ / QC Trend 2ct MGC). Display only — you flip the "
-    "switch, not this page."
+    "Live book since 2026-09-06: Drift VWAP Pullback v3.4.1 on MNQ and Tokyo "
+    "Drift v1.5.1 on MGC, one contract each, one 50K account. Calendar effect "
+    "on either strategy is unmeasured, so tier-1 releases are listed, not "
+    "gated; FOMC decision days are a house-rule SKIP. Backtest numbers live on "
+    "the Strategy Desk page. Display only: you flip the switch, not this page."
 )
 
-# play-card row -> watchdog strategy key in qcs.mwmai.no/data.json
-EDGE_STALE_HOURS = 80  # Friday 17:15 ET verdict must survive the weekend
+LIVE_ROWS = [
+    {
+        "strategy": "Drift VWAP Pullback",
+        "instrument": "MNQ",
+        "size": "1ct MNQ",
+        "session": "US session, VWAP pullback with a fixed 85-point stop",
+    },
+    {
+        "strategy": "Tokyo Drift",
+        "instrument": "MGC",
+        "size": "1ct MGC",
+        "session": "Asia session drift on Micro Gold, flat by session end",
+    },
+]
 
 
-def _edge_status(payload: dict | None, key: str) -> dict | None:
-    """Reduce one watchdog strategy block to {status, why-fragment, asof}.
-
-    Mirrors the dashboard's verdictOf(): danger on WR-30 < red / streak >= red /
-    21d net <= red / month <= red; watch on the yellow versions + winner shrink.
-    Fail-open to None (row renders without an edge chip, never a fake GREEN).
-    """
-    if not payload:
-        return None
-    s = (payload.get("strategies") or {}).get(key)
-    th = payload.get("thresholds")
-    gen = payload.get("generated_at")
-    if not s or not th or not gen:
-        return None
-    try:
-        age_h = (
-            datetime.now(tz=ZoneInfo("UTC"))
-            - datetime.strptime(gen, "%Y-%m-%d %H:%M UTC").replace(
-                tzinfo=ZoneInfo("UTC")
-            )
-        ).total_seconds() / 3600
-    except ValueError:
-        return None
-    if age_h > EDGE_STALE_HOURS:
-        return {"status": "STALE", "asof": gen, "detail": f"payload {age_h:.0f}h old"}
-    wr, streak = s.get("wr30"), s.get("streak", 0)
-    net21, netm = s.get("net21", 0), s.get("net_month", 0)
-    shrink = s.get("win_shrink_pct")
-    if (
-        (wr is not None and s.get("trades_total", 0) >= 30 and wr < th["wr_red"] * 100)
-        or streak >= th["streak_red"]
-        or net21 <= th["net21_red"]
-        or netm <= th["month_red"]
-    ):
-        status = "RED"
-    elif (
-        (wr is not None and wr < th["wr_yellow"] * 100)
-        or streak >= th["streak_yellow"]
-        or net21 <= th["net21_yellow"]
-        or (shrink is not None and shrink < th["winner_shrink"] * 100)
-    ):
-        status = "YELLOW"
-    else:
-        status = "GREEN"
-    detail = f"WR-30 {wr}%, streak {streak}, 21d ${net21:+,.0f}"
-    return {"status": status, "asof": gen, "detail": detail}
-
-
-def _apply_edge(row: dict, edge: dict | None) -> dict:
-    """Merge the edge-health verdict into a calendar-verdict row."""
-    if edge is None:
-        row["edge"] = None
-        return row
-    row["edge"] = edge
-    st = edge["status"]
-    if st in ("STALE",):
-        row["why"] += " Edge data stale — verdict is calendar-only."
-        return row
-    if row["verdict"] == "SKIP":
-        return row  # calendar already sat it out; edge chip still shown
-    if st == "RED":
-        row["verdict"] = "SKIP"
-        row["why"] += f" EDGE RED ({edge['detail']}) — watchdog says stand down."
-    elif st == "YELLOW":
-        if row["verdict"] == "RUN":
-            row["verdict"] = "HALF"
-            row["why"] += f" Edge YELLOW ({edge['detail']}) — half size."
-        else:
-            row["why"] += f" Edge YELLOW ({edge['detail']})."
-    else:
-        row["why"] += f" Edge GREEN ({edge['detail']})."
-    return row
+def _evt(it: dict) -> dict:
+    return {
+        "family": it.get("family"),
+        "detail": it.get("detail"),
+        "time_et": it.get("time_et"),
+        "time_oslo": it.get("time_oslo"),
+        "impact": it.get("impact"),
+    }
 
 
 def pick_play(
-    event_section: dict, now: datetime | None = None, edge_payload: dict | None = None
+    event_section: dict,
+    now: datetime | None = None,
+    edge_payload: dict | None = None,
+    holidays: dict | None = None,
 ) -> dict:
-    """Today's Play from the already-fetched event_calendar section.
+    """Today's Play for the live pair.
 
-    On weekends the card previews the NEXT session instead of rendering a
-    dead CLOSED row — Mats reads the brief on Sunday too, and "closed" tells
-    him nothing he doesn't know.
+    Weekend or holiday: the card says CLOSED for that date and previews the
+    next real session underneath. The edge watchdog is NOT consulted: it
+    tracks the retired strategies on an account that no longer trades, so its
+    GREEN/YELLOW would be a fake signal on these rows.
     """
     now_et = (now or datetime.now(tz=ET)).astimezone(ET)
-    weekend = now_et.weekday() >= 5
-    target = now_et
-    if weekend:
-        target += timedelta(days=7 - now_et.weekday())  # Sat +2 / Sun +1 -> Monday
-    today = target.strftime("%Y-%m-%d")
+    today_d = now_et.date()
+    hol = holidays or {}
+    h_today = hol.get("today") or {}
+    closed_today = bool(h_today.get("closed")) if h_today else now_et.weekday() >= 5
+    holiday_name = h_today.get("holiday")
+
+    if closed_today:
+        target = hol.get("next_trading_day")
+        if not target:
+            t = today_d + timedelta(days=7 - now_et.weekday() if now_et.weekday() >= 5 else 1)
+            target = t.isoformat()
+    else:
+        target = today_d.isoformat()
 
     items = event_section.get("items") or []
     calendar_ok = event_section.get("status") == "ok" and not event_section.get("error")
-    todays = [it for it in items if it.get("date_et") == today]
-    gate_hits = [
-        it
-        for it in todays
-        if it.get("family") in GATE_FAMILIES or it.get("family") == FOMC_DECISION
-    ]
+    todays = [it for it in items if it.get("date_et") == target]
+    gate_hits = [it for it in todays if it.get("family") in GATE_FAMILIES]
     fomc_today = any(it.get("family") == FOMC_DECISION for it in todays)
-    other = [it for it in todays if it not in gate_hits]
+    other = [it for it in todays if it not in gate_hits and it.get("family") != FOMC_DECISION]
 
-    def _evt(it: dict) -> dict:
-        return {
-            "family": it.get("family"),
-            "detail": it.get("detail"),
-            "time_et": it.get("time_et"),
-            "time_oslo": it.get("time_oslo"),
-            "impact": it.get("impact"),
+    rows = []
+    for base in LIVE_ROWS:
+        row = dict(base)
+        row["edge"] = None
+        if not calendar_ok:
+            row["verdict"] = "UNKNOWN"
+            row["why"] = (
+                "Calendar fetch FAILED, so the desk cannot see what is scheduled. "
+                "Check the release schedule yourself before arming."
+            )
+        elif fomc_today:
+            row["verdict"] = "SKIP"
+            row["why"] = "FOMC decision 14:00 ET. House rule: the live book sits out decision days."
+        else:
+            row["verdict"] = "RUN"
+            why = f"{row['session']}. "
+            if gate_hits:
+                names = ", ".join(f"{g['family']} {g.get('time_et')} ET" for g in gate_hits)
+                why += (
+                    f"Tier-1 release on the slate: {names}. Effect on this strategy is "
+                    "unmeasured, so it is listed, not gated."
+                )
+            else:
+                why += "No tier-1 US release scheduled."
+            if other:
+                why += " Also scheduled: " + ", ".join(
+                    f"{o.get('family')} {o.get('time_et')} ET" for o in other
+                ) + "."
+            row["why"] = why
+        rows.append(row)
+
+    closed_row = None
+    if closed_today:
+        h_tom = hol.get("tomorrow") or {}
+        label = holiday_name or "Weekend"
+        detail = h_today.get("detail")
+        if not holiday_name and h_tom.get("holiday"):
+            label = f"Weekend, then {h_tom['holiday']} on {h_tom.get('weekday')}"
+            detail = h_tom.get("detail")
+        closed_row = {
+            "date_et": today_d.isoformat(),
+            "label": label,
+            "detail": detail,
         }
 
-    preset = {
-        "strategy": "QCS-Preset",
-        "size": "4ct MNQ",
-        "verdict": "RUN",
-        "why": "Event-immune: wins 87% on release days vs 80% off them. Always on.",
-    }
-    qc_mnq = {"strategy": "QC Trend MNQ", "size": "3ct MNQ"}
-    qc_mgc = {
-        "strategy": "QC Trend MGC",
-        "size": "2ct MGC",
-        "verdict": "RUN",
-        "why": "Calendar effect on MGC unmeasured — not calendar-gated.",
-    }
-
-    if not calendar_ok:
-        qc_mnq.update(
-            verdict="UNKNOWN",
-            why=(
-                "Calendar fetch FAILED — cannot confirm a no-event day. "
-                "Treat as an event day (sit out) until the schedule is back."
-            ),
-        )
-    elif fomc_today:
-        qc_mnq.update(
-            verdict="SKIP",
-            why=(
-                "FOMC decision 14:00 ET today. QC on FOMC days: 36 trades, "
-                "33% win, net -$194 over the year."
-            ),
-        )
-        preset["why"] += " FOMC 14:00 ET today: held-through-print evidence is n=2 (both won, triple MAE)."
-    elif gate_hits:
-        names = ", ".join(
-            f"{g['family']} {g['time_et']} ET" for g in map(_evt, gate_hits)
-        )
-        qc_mnq.update(
-            verdict="SKIP",
-            why=(
-                f"Tier-1 release today: {names}. QC event days carry 20% of "
-                "its trades but 4% of its net; sitting out keeps 90% of the "
-                "year's profit at 23% less drawdown."
-            ),
-        )
-    else:
-        qc_mnq.update(
-            verdict="RUN",
-            why=(
-                "No tier-1 release scheduled. No-event days carry 96% of QC's "
-                "annual net."
-                + (
-                    " (Unmeasured events today: "
-                    + ", ".join(f"{o.get('family')} {o.get('time_et')} ET" for o in other)
-                    + " — not gated.)"
-                    if other
-                    else ""
-                )
-            ),
-        )
-
-    # 2026-08-17 (Mats): only the two live strategies on the card — the MNQ preset and the
-    # MGC trend. QC Trend MNQ is still computed (calendar gate) but not shown; keep it in
-    # `hidden_rows` so nothing downstream that reads it breaks.
-    rows = [
-        _apply_edge(preset, _edge_status(edge_payload, "qcs")),
-        _apply_edge(qc_mgc, _edge_status(edge_payload, "mgc")),
-    ]
-    hidden_rows = [_apply_edge(qc_mnq, _edge_status(edge_payload, "mnq"))]
-
     return {
-        "date_et": today,
-        "preview": weekend,  # true = markets closed now; verdicts are for date_et
-        "weekend": weekend,
+        "date_et": target,
+        "preview": closed_today,
+        "weekend": now_et.weekday() >= 5,
+        "closed_today": closed_row,
         "calendar_ok": calendar_ok,
         "fomc_today": fomc_today,
-        "edge_ok": any(r.get("edge") for r in rows),
+        "edge_ok": False,
         "gate_events": [_evt(g) for g in gate_hits],
         "other_events": [_evt(o) for o in other],
         "rows": rows,
-        "hidden_rows": hidden_rows,
+        "hidden_rows": [],
         "evidence": EVIDENCE,
     }
+
 
 NAME_BY_CODE = {
     0: "Stand down",

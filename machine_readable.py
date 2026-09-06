@@ -35,6 +35,15 @@ def _lines(brief: dict) -> list[str]:
     gen = brief.get("generated_at") or "unknown"
     out.append(f"The Morning Brief. Generated {gen}.")
 
+    hl = (brief.get("headlines") or {}).get("lead") or {}
+    if hl.get("headline"):
+        out.append(f"Headline: {hl['headline']}. {hl.get('deck', '')}".strip())
+    hol = brief.get("holidays") or {}
+    for key in ("today", "tomorrow"):
+        row = hol.get(key) or {}
+        if row.get("holiday"):
+            out.append(f"{key.capitalize()} {row.get('date_et')} is {row['holiday']}: markets closed.")
+
     pre = brief.get("preopen") or {}
     for code, v in (pre.get("instruments") or {}).items():
         if v.get("status") != "ok":
@@ -145,7 +154,7 @@ def write_robots_txt(web_dir: Path) -> None:
 
 def write_sitemap(web_dir: Path) -> None:
     today = datetime.now(UTC).date().isoformat()
-    urls = ["https://brief.mwmai.no/", "https://brief.mwmai.no/nq/weekahead-latest.html"]
+    urls = ["https://brief.mwmai.no/", "https://brief.mwmai.no/analyst.html", "https://brief.mwmai.no/week-ahead.html", "https://brief.mwmai.no/nq/weekahead-latest.html"]
     body = "\n".join(
         f"  <url><loc>{u}</loc><lastmod>{today}</lastmod></url>" for u in urls
     )

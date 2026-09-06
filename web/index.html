@@ -21,7 +21,7 @@
 
   <header class="masthead">
     <div class="masthead-ear">
-      <span class="ear-note">&ldquo;All the signal that&rsquo;s fit to print.&rdquo;</span>
+      <span class="ear-note" id="ear-note">&ldquo;All the signal that&rsquo;s fit to print.&rdquo;</span>
       <div class="masthead-right">
         <span class="pill" id="freshness">loading…</span>
         <button class="refresh-btn" id="refresh" title="Refresh">
@@ -40,18 +40,28 @@
 <!-- NOSCRIPT:START (generated, do not hand-edit) -->
 <noscript>
   <section id="noscript-summary">
-    <p>The Morning Brief. Generated 2026-09-04T13:02:37Z.</p>
+    <p>The Morning Brief. Generated 2026-09-06T21:08:30Z.</p>
+    <p>Headline: MARKETS CLOSED TOMORROW. US stock exchanges are shut. CME Globex trades the overnight, then halts: equity index (MNQ) at 13:00 ET / 19:00 Oslo (verified), COMEX metals (MGC) an early halt in the same hour (exact minute unverified). Everything reopens 18:00 ET / 00:00 Oslo for the Tuesday trade date.</p>
+    <p>Tomorrow 2026-09-07 is Labor Day: markets closed.</p>
     <p>MNQ: expected range 332 pts; 8 days in 10 land under 515 pts; recent norm 430 pts; call NARROW.</p>
     <p>MGC: expected range 108 pts; 8 days in 10 land under 163 pts; recent norm 91 pts; call WIDE.</p>
     <p>Size of the day, not a direction call and not a profit claim.</p>
-    <p>Pre-open read for 2026-09-03, taken 15:25 Oslo.</p>
-    <p>Range: WIDE. today&#x27;s RTH range lands ABOVE the trailing-20-session median Right 65% of the time over 5 years.</p>
-    <p>Which level first: no call today. price is already beyond PDH at 09:24, so PDH is touched at the open and the call would be decided before the session starts</p>
+    <p>Pre-open read for 2026-09-04, taken 15:25 Oslo.</p>
+    <p>Range: NARROW. today&#x27;s RTH range lands BELOW the trailing-20-session median Right 65% of the time over 5 years.</p>
+    <p>Which level first: PDH. PDH is touched before PDL during RTH Yesterday&#x27;s high 29584.25, low 29199.5. Right 78% of the time on days like this over the past five years. 65% if you also count days that never reach either level.</p>
     <p>Size of the day and which prior level comes first. Not a direction call.</p>
     <p>Full structured data: <a href="brief.json">brief.json</a></p>
   </section>
 </noscript>
 <!-- NOSCRIPT:END -->
+
+  <!-- Page one. The headline board is composed server-side (headlines.py):
+       a closed market outranks everything, then a tier-1 release, then the
+       range call. Drawn by assets/headlines.js. Satire is hand-written and
+       names nobody. -->
+  <section class="hl-section" id="headlines" data-tone="range">
+    <p class="hl-note">Setting page one&hellip;</p>
+  </section>
 
 
   <!-- The Week Ahead · Master Analysis (lead board). NQ analyzer week run
@@ -172,8 +182,9 @@
        no card. Display only: the reader flips the switch, not this page. -->
   <section class="play-section" id="play-section">
     <div class="play-head">
-      <span class="eyebrow">Today's Play · strategy of the day</span>
+      <span class="eyebrow">Today's Play · the live book</span>
       <span class="eyebrow-soft" id="play-meta">loading…</span>
+      <a class="nq-edition-link" href="analyst.html">the Strategy Desk &rarr;</a>
     </div>
     <div class="play-grid" id="play-grid"></div>
     <p class="play-evidence" id="play-evidence"></p>
@@ -341,6 +352,7 @@
 
 <script src="assets/lightweight-charts.js" defer></script>
 <script src="assets/app.js" defer></script>
+<script src="assets/headlines.js" defer></script>
 <script src="assets/levels.js" defer></script>
 <script src="assets/chart.js" defer></script>
 <script src="assets/session_levels.js" defer></script>

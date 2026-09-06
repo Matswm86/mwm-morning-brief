@@ -28,13 +28,20 @@
       return;
     }
     const stale = p.date_et < etToday(); // preview dates are future — not stale
+    const closed = p.closed_today;
     meta.textContent = stale
       ? "STALE — built for " + p.date_et + ", refresh pending"
       : p.preview
-        ? "markets closed · preview for " + p.date_et
+        ? "markets closed · preview for the next session, " + p.date_et
         : p.date_et + " · verdicts for this session";
 
-    grid.innerHTML = p.rows
+    const banner = closed
+      ? `<div class="play-closed-banner"><span class="play-verdict play-closed">CLOSED</span>` +
+        `<span class="play-closed-text"><strong>${esc(closed.label)}</strong> · ${esc(closed.date_et)}` +
+        (closed.detail ? ` — ${esc(closed.detail)}` : " — no session; the cards below preview the next one.") +
+        `</span></div>`
+      : "";
+    grid.innerHTML = banner + p.rows
       .map((r) => {
         const v = String(r.verdict || "").toLowerCase();
         const e = r.edge;
@@ -43,7 +50,7 @@
             `EDGE ${esc(e.status)}` +
             (e.detail ? ` · ${esc(e.detail)}` : "") +
             ` · as of ${esc(e.asof || "")}</div>`
-          : `<div class="play-edge play-edge-none">edge health unavailable — calendar-only verdict</div>`;
+          : `<div class="play-edge play-edge-none">${esc(r.instrument || "")} · calendar-aware, not calendar-gated · 90-day book on the Strategy Desk</div>`;
         return (
           `<div class="play-card${stale ? " play-stale" : ""}">` +
           `<div class="play-card-top"><span class="play-name">${esc(r.strategy)}</span>` +

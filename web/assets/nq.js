@@ -52,6 +52,16 @@
     bits.push(prefix + " " + modeWord);
     return bits.join(" · ");
   };
+  // The analyzer's "next session" date ignores exchange holidays; the brief's
+  // holiday calendar (brief.holidays) corrects the label on the board.
+  let HOL = null;
+  const nextSessionLabel = (date) => {
+    if (!HOL || !date) return date || "";
+    const t = HOL.today || {}, tm = HOL.tomorrow || {};
+    if (tm.holiday && tm.date_et === date) return HOL.next_trading_day + " (" + date + " is " + tm.holiday + ", closed)";
+    if (t.holiday && t.date_et === date) return HOL.next_trading_day + " (" + date + " is " + t.holiday + ", closed)";
+    return date;
+  };
   // Range screen: model p50/p80/p95 for the next session and the week, $ per micro contract, events.
   const rangeScreen = (rf, unitWord) => {
     if (!rf || rf.status !== "ok") return el("p", { class: "nq-one nq-one-italic" }, "range model unavailable this run");
@@ -62,7 +72,7 @@
       el("span", { class: "nq-range-v" }, "median " + fmt0(w.p50) + " " + unitWord + " · 80% under " + fmt0(w.p80) + " · 95% under " + fmt0(w.p95) +
         (w.median26w ? " · 26-wk median " + fmt0(w.median26w) : "") + (w.events && w.events !== "none" ? " · events: " + w.events : ""))));
     box.append(el("div", { class: "nq-range-row" },
-      el("span", { class: "nq-range-k" }, "Next session " + (d.date || "")),
+      el("span", { class: "nq-range-k" }, "Next session " + nextSessionLabel(d.date)),
       el("span", { class: "nq-range-v" }, "median " + fmt0(d.p50) + " · p80 " + fmt0(d.p80) + " · p95 " + fmt0(d.p95) + " " + unitWord +
         (d.call ? " · " + d.call + " vs 26-day median" : "") + (d.events && d.events !== "none" ? " · events: " + d.events : ""))));
     if (d.usdPerContractP50 != null) box.append(el("div", { class: "nq-range-row" },
@@ -134,12 +144,15 @@
       (nq.age_hours != null ? " · " + nq.age_hours + " h old" : "") +
       (nq.status === "fallback" ? " · analyst layer off, rule labels only" : "");
     const o = nq.outlook || {};
-    const verdicts = nq.strategy_verdicts || [];
-    const gates = (inst) => verdicts.filter((v) => v.instrument === inst).map((v) =>
-      el("span", { class: "nq-gate " + gateClass(v.word || "") },
-        "\u261E " + String(v.name || "").replace(/\s*\(.*\)$/, "") + " — " + (v.word || "—")));
+    HOL = brief.holidays || null;
+    // Gate chips come from the live book (Today's Play), not the analyzer's
+    // strategy_verdicts, which still name the retired QuantCrawler pair.
+    const playRows = ((brief.play || {}).rows) || [];
+    const gates = (inst) => playRows.filter((r) => r.instrument === inst).map((r) =>
+      el("span", { class: "nq-gate " + gateClass(r.verdict || "") },
+        "\u261E " + r.strategy + " " + (r.size || "") + " — " + (r.verdict || "—") + ((brief.play || {}).preview ? " (next session)" : "")));
 
-    const mnqCard = el("a", { class: "nq-col nq-col-mnq" + (stale ? " nq-stale" : ""), href: (nq.hrefs || {}).edition || "week-ahead.html" },
+    const mnqCard = el("a", { class: "nq-col nq-col-mnq" + (stale ? " nq-stale" : ""), href: "analyst.html" },
       el("div", { class: "nq-col-top" },
         el("span", { class: "nq-sym" }, "MNQ ", el("span", { class: "nq-sym-name" }, "Micro E-mini Nasdaq-100")),
         el("span", { class: "nq-call " + rangeClass(rangeWord(o.range_call)) }, rangeWord(o.range_call))),
@@ -150,7 +163,7 @@
 
     const mgc = nq.mgc || {};
     const mgcLive = mgc.status === "ok";
-    const mgcCard = el("a", { class: "nq-col nq-col-mgc" + (stale ? " nq-stale" : ""), href: (nq.hrefs || {}).edition || "week-ahead.html" },
+    const mgcCard = el("a", { class: "nq-col nq-col-mgc" + (stale ? " nq-stale" : ""), href: "analyst.html" },
       el("div", { class: "nq-col-top" },
         el("span", { class: "nq-sym" }, "MGC ", el("span", { class: "nq-sym-name" }, "Micro Gold")),
         el("span", { class: "nq-call " + rangeClass(rangeWord(mgc.range_call)) }, rangeWord(mgc.range_call))),

@@ -42,7 +42,7 @@ def fetch() -> dict:
             "status": v.get("status"),
             "session": v.get("session"),
             "call": v.get("call"),
-            "orb": v.get("orb"),
+            "orb": v.get("orb") if code == "MNQ" else None,  # ORB is MNQ-only; MGC shows range only
             "meaning": v.get("meaning"),
             "expected_range_pts": v.get("expected_range_pts"),
             "median26d_pts": v.get("median26d_pts"),

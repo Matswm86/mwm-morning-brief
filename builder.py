@@ -58,7 +58,6 @@ from fetchers import system as f_system
 from fetchers import gold as f_gold
 from fetchers import selfcalib as f_selfcalib
 from fetchers import nq_analyzer as f_nq
-import http_util
 import strategy as strategy_picker
 import llm
 
@@ -219,18 +218,33 @@ def build(use_llm: bool = True) -> dict:
                 sections[k] = empty_section(status="err")
 
     brief = build_brief(regime=regime, sections=sections)
+    # Holidays first: the play card, the headline board and the noscript text
+    # all need to know whether today / tomorrow has a session.
     try:
-        edge_payload = None
-        try:
-            edge_payload = http_util.get_json("https://qcs.mwmai.no/data.json")
-        except Exception:
-            log.warning("qcs watchdog fetch failed — play card is calendar-only")
+        from fetchers import holidays as f_holidays
+        brief["holidays"] = f_holidays.fetch()
+    except Exception as e:
+        log.exception("holidays fetch failed")
+        brief["holidays"] = {"status": "error", "error": f"{e.__class__.__name__}: {e}"}
+    try:
+        # The qcs edge watchdog is no longer consulted (2026-09-06): it tracks
+        # the retired QuantCrawler pair on an account that no longer trades.
         brief["play"] = strategy_picker.pick_play(
-            sections.get("event_calendar") or {}, edge_payload=edge_payload
+            sections.get("event_calendar") or {}, holidays=brief["holidays"]
         )
     except Exception as e:
         log.exception("pick_play failed")
         brief["play"] = {"error": f"{e.__class__.__name__}: {e}", "rows": []}
+    # The Strategy Desk: 90-day book for the live pair + bench + retired, from
+    # the TradingView exports in data/tv_exports/. Also written to web/book.json
+    # so the analyst page can load it without the full brief.
+    try:
+        from fetchers import book as f_book
+        brief["book"] = f_book.fetch()
+        atomic_write(WEB_DIR / "book.json", brief["book"])
+    except Exception as e:
+        log.exception("book fetch failed")
+        brief["book"] = {"status": "error", "error": f"{e.__class__.__name__}: {e}"}
     # NQ analyzer (weekly Sunday + daily pre-open runs) → lead board on the front page +
     # the Week Ahead edition page (web/nq/weekahead-latest.json). Advisory only.
     try:
@@ -251,6 +265,20 @@ def build(use_llm: bool = True) -> dict:
         brief["nq"] = {"status": "unavailable", "error": f"{e.__class__.__name__}: {e}"}
     if regimes:
         brief["regimes"] = regimes
+    # Page-one headlines, composed last so every input above is available.
+    try:
+        import headlines as _headlines
+        brief["headlines"] = _headlines.compose(
+            brief.get("holidays") or {},
+            sections.get("event_calendar") or {},
+            brief.get("preopen") or {},
+            sections.get("trading_news") or {},
+            brief.get("play") or {},
+        )
+        log.info("headline: %s", (brief["headlines"].get("lead") or {}).get("headline"))
+    except Exception as e:
+        log.exception("headline compose failed")
+        brief["headlines"] = {"status": "error", "error": f"{e.__class__.__name__}: {e}"}
     brief["_selfcalib"] = selfcalib  # kept on brief for diagnostics; web reads /selfcalib.json
     brief["_sccs"] = _sccs_brief_block()
     return brief
