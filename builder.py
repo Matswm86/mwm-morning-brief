@@ -265,6 +265,16 @@ def build(use_llm: bool = True) -> dict:
         brief["nq"] = {"status": "unavailable", "error": f"{e.__class__.__name__}: {e}"}
     if regimes:
         brief["regimes"] = regimes
+    # Yesterday and the week, reviewed (analyst page). Needs the wire (ledger)
+    # and the preopen medians; narration is cached per session date.
+    try:
+        from fetchers import review as f_review
+        brief["review"] = f_review.fetch(sections.get("trading_news") or {}, preopen=brief.get("preopen") or {})
+        atomic_write(WEB_DIR / "review.json", brief["review"])
+        log.info("review: %s yesterday=%s byline=%s", brief["review"].get("status"), brief["review"].get("yesterday_date"), brief["review"].get("byline"))
+    except Exception as e:
+        log.exception("review failed")
+        brief["review"] = {"status": "error", "error": f"{e.__class__.__name__}: {e}"}
     # Page-one headlines, composed last so every input above is available.
     try:
         import headlines as _headlines

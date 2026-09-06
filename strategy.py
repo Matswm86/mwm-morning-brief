@@ -113,6 +113,17 @@ def pick_play(
     fomc_today = any(it.get("family") == FOMC_DECISION for it in todays)
     other = [it for it in todays if it not in gate_hits and it.get("family") != FOMC_DECISION]
 
+    # Early Globex halt (Labor Day pattern): the book trades the morning; the
+    # halt is a note on the row, not a stand-down.
+    h_target = h_today if target == today_d.isoformat() else (hol.get("tomorrow") if (hol.get("tomorrow") or {}).get("date_et") == target else {})
+    early = h_target or {}
+    halt_note = ""
+    if early.get("early_halt"):
+        halt_note = (
+            f" {early.get('holiday')}: MNQ halts {early.get('mnq_halt_et')} ET / "
+            f"{early.get('mnq_halt_oslo')} Oslo, metals early in the same hour. Shortened session."
+        )
+
     rows = []
     for base in LIVE_ROWS:
         row = dict(base)
@@ -141,7 +152,9 @@ def pick_play(
                 why += " Also scheduled: " + ", ".join(
                     f"{o.get('family')} {o.get('time_et')} ET" for o in other
                 ) + "."
-            row["why"] = why
+            row["why"] = why + halt_note
+            if halt_note:
+                row["verdict"] = "RUN · EARLY HALT"
         rows.append(row)
 
     closed_row = None

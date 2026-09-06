@@ -1,10 +1,10 @@
 [Unit]
-Description=Fire morning brief every 12h (05:30 + 17:30 UTC)
+Description=Morning brief editions: 06:40 Oslo (the 07:00 paper) + 17:30 UTC
 
 [Timer]
-OnCalendar=*-*-* 05:30:00 UTC
+OnCalendar=*-*-* 06:40:00 Europe/Oslo
 OnCalendar=*-*-* 17:30:00 UTC
-RandomizedDelaySec=120
+RandomizedDelaySec=60
 Persistent=true
 Unit=mwm-morning-brief.service
 

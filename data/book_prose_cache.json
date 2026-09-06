@@ -1,0 +1,72 @@
+{
+ "drift_vwap": {
+  "ident": "drift_vwap|Drift_VWAP_Pullback_Strategy_v3.4.1_CME_MINI_MNQ1!_2026-09-06_f80c6.csv|1788728145|CLEARS THE BAR|v3",
+  "paragraphs": [
+   "The ninety-day file for Drift VWAP Pullback v3.4.1 shows a worst day of $-172, on 2026-08-13, a fraction of the $1,000 daily loss limit this account lives under, though the account has never lived through it yet. Across 189 trades over 62 sessions it won 83.1% of the time, profit factor 2.99, net $7,843, average win $75 against an average loss of $123, max drawdown $291. These are TradingView strategy-tester fills at one contract, not broker fills, though the desk found take-profits traded through on 87 to 92 percent of exits against real MNQ data, narrowing the gap to live reality.",
+   "Stretch back to 2026-04-30 and little changes. Full export: 272 trades over 88 days, win rate 84.9%, profit factor 3.12, net $11,121, expectancy $40.9 a trade against $41.5 for ninety days. Worst day $-260 on 2026-05-04 and max drawdown $513, both larger than the recent window but still inside the account's $2,000 ceiling. The strategy clears the house bar, 62% win rate and 1.4 profit factor together, on both cuts.",
+   "This strategy went live today, 2026-09-06, at one contract, so everything above is pre-live evidence. Watch the take-profit fill-through rate: if live fills start missing that 87 to 92 percent band, the tester's honesty claim stops holding. Watch win rate for a slide toward 62%, worst day for a close approach to $1,000, and drawdown for a march toward the $2,000 ceiling."
+  ],
+  "by": "the strategy desk",
+  "written": "2026-09-06T21:30:39+00:00"
+ },
+ "tokyo_drift": {
+  "ident": "tokyo_drift|Tokyo_Drift_v1.5.1_COMEX_MINI_MGC1!_2026-09-06_a9a89.csv|1788728145|CLEARS THE BAR|v3",
+  "paragraphs": [
+   "Tokyo Drift v1.5.1's worst day in the last ninety fell on 2026-07-10, a loss of $254, well inside the $1,000 daily limit. Over 206 trades across 65 sessions it won 72.8 percent of the time with a profit factor of 3.74, clearing the house bar of 62 percent and 1.4. Net gain: $19,740, or $304 a trading day. Closed-trade drawdown stayed under $524.",
+   "The full export, 2026-04-30 through 2026-09-04, adds 286 trades over 92 days. The edge softens. Win rate falls to 67.5 percent, profit factor to 2.75, expectancy to $75.6 a trade from $95.8. Drawdown widens to $726, under the $2,000 ceiling. The worst day of the full run, $354 on 2026-05-22, predates the 90-day window and stayed under the daily limit. The desk notes fills confirmed against real live orders. The figures still come from TradingView's List of Trades export, not a broker statement, at one contract.",
+   "This strategy trades live. Watch the win rate: a drift toward the low sixties trips the house bar and the edge is gone by the desk's own rule. Watch the daily figure too: a session near the $1,000 loss limit, not yet seen in either window, marks a real break from form. A drawdown pushing past $726 toward the $2,000 ceiling is the harder stop. Until then the drift script is still drifting the right way, which, for a strategy named after a car-chase film, counts as dry irony."
+  ],
+  "by": "the strategy desk",
+  "written": "2026-09-06T21:32:03+00:00"
+ },
+ "crt_sniper": {
+  "ident": "crt_sniper|CRT_SNIPER_v3.2.8_CME_MINI_MNQ1!_2026-09-06_49c58.csv|1788728145|BELOW THE BAR|v3",
+  "paragraphs": [
+   "The 90-day window's loudest fact is a single loss: $-408, the dollar side of a 203-point stop from 2026-07-30. Alone it sits under the $1,000 daily cap, but the desk notes a 50K account cannot wear two such stops in a day. Win rate stands at 48.6%, profit factor 1.69 over 107 trades, net $3,156, expectancy $29.5 per trade. Max drawdown $612, worst day $-363, both inside account limits. Figures come from TradingView's strategy tester at one contract per trade, not broker fills, and that gap matters most where the stop size does.",
+   "The full export, 2026-04-30 through 2026-09-03, adds 148 trades over 73 days, and the picture softens, not breaks. Win rate falls to 46.6%, profit factor to 1.54, net climbs to $3,505 only because six extra weeks added trades, not edge. Per-day profit drops from $61 to $48. Drawdown widens to $946, worst day to $-482, both still inside the $2,000 ceiling. The worst trade stays at $-408: the same range-sized stop, in either window.",
+   "CRT Sniper v3.2.8 single-leg on MNQ is benched, not buried. The one condition for return is stated plainly in the verdict: a filter that lifts win rate to 62% alongside a profit factor of 1.4, proven on a window this export has not seen. Until that run exists, the strategy stays on paper. Dry comfort: a 203-point stop makes fine bar-room talk and poor daily risk management, especially twice in one day."
+  ],
+  "by": "the strategy desk",
+  "written": "2026-09-06T21:33:47+00:00"
+ },
+ "magic_hour": {
+  "ident": "magic_hour|Magic_Hour_Blueprint_v1.9.1_—_PROP_FRIENDLY_CME_MINI_MNQ1!_2026-09-06_b753b.csv|1788728145|BELOW THE BAR|v3",
+  "paragraphs": [
+   "Ninety days of Magic Hour Blueprint v1.9.1 prop-friendly on MNQ turn on the win rate: 55.8%, the number keeping it off the desk. Ninety-five trades, fifty-eight trading days, profit factor 2.52, net $5,333, $92 a day. Worst day $-308 on 2026-07-13, well inside the $1,000 daily loss limit. Max drawdown $793 on closed-trade equity, a real bite of the $2,000 ceiling. Figures are TradingView strategy-tester fills at one contract, not broker fills.",
+   "The full export, 2026-05-01 to 2026-09-03, holds rather than improves: 134 trades, 82 days, win rate down to 54.5%, profit factor down to 2.15, net $5,969, $73 a day. Average win $153, average loss $85, close to the 90-day split. Worst day and max drawdown are unchanged, both dated 2026-07-13. Tail risk has not grown with more data. Win rate has not grown either, still short of 62% in both windows.",
+   "This is a BENCH strategy, not deployed. The desk note says take-profits traded through 95% of the time in the fill check, dry-desk shorthand for a strategy that rarely gets to keep its own profits. Whether it returns rests on one fact: win rate must clear 62% while profit factor holds above 1.4, together, on a window this export has not produced. Until a fresh sample clears both, Magic Hour Blueprint v1.9.1 prop-friendly on MNQ stays on the bench."
+  ],
+  "by": "the strategy desk",
+  "written": "2026-09-06T21:35:03+00:00"
+ },
+ "qcs_preset": {
+  "ident": "qcs_preset|QCS-Preset_CME_MINI_MNQ1!_2026-08-19_ab94e.csv|1788728145|CLEARS THE BAR|v3",
+  "paragraphs": [
+   "The last 90 days for QCS-Preset flatter the ledger more than the account rules would like. Worst day was $-551, on 2026-07-23, more than half the desk's $1,000 daily loss limit, at the export's four-contract size. Win rate ran 90.2 percent, profit factor 3.89, net $6,337 across 41 trades. Max drawdown, closed-trade equity, sat at $551. Numbers this clean rarely survive a full sample.",
+   "They did not survive here. TradingView's List of Trades, fills at four contracts, not broker fills, covers 418 trades over two years to 2026-08-17. Win rate fell to 78.2 percent, profit factor to 1.62, expectancy to $69.9 a trade from $154.6. Max drawdown widened from $551 to $6,019, three times the account's $2,000 ceiling. Worst day, $-1,092 on 2024-11-21, exceeded the $1,000 daily loss limit outright at that contract size. The 90-day window was the strategy's best face, not its default one.",
+   "QCS-Preset sits retired since early September, moved off the desk when its edge watchdog turned yellow: rolling win rate 70, three straight losses. The verdict clears the house bar on the 90-day figures alone. Return is possible on paper, but only on the desk's own condition: one contract on a practice account first, given the full export's $1,092 worst day and $6,019 drawdown at four-contract size."
+  ],
+  "by": "the strategy desk",
+  "written": "2026-09-06T21:35:45+00:00"
+ },
+ "qc_trend_mgc": {
+  "ident": "qc_trend_mgc|QC_Trend_Strat_COMEX_MINI_MGC1!_2026-09-04_9c739.csv|1788728145|CLEARS THE BAR|v3",
+  "paragraphs": [
+   "QC Trend MGC's worst day in the last 90 was $258, on 2026-06-26, well under the account's $1,000 daily loss limit. Across 80 trades over 27 trading days the strategy won 88.8% of the time, profit factor 2.38, net $1,646. Average win $40 against average loss $133: frequent small wins, occasional larger losses. Max drawdown $436 on closed-trade equity, comfortably inside the $2,000 ceiling.",
+   "The full export is the 90-day window, nothing more: 2026-06-05 to 2026-09-02, 80 trades, 27 trading days, same win rate, same profit factor, same net $1,646. Short history, as the desk note says outright, three months only. No older sample exists to test whether June's pace holds past September. These are TradingView strategy-tester fills at one contract per trade, not broker fills, and three months is thin ground for firm conclusions.",
+   "QC Trend MGC ran beside QCS-Preset before Tokyo Drift took the gold slot, not for these figures failing but for a desk swap. On the numbers it clears the house bar of 62% win rate and 1.4 profit factor together, posting 88.8% and 2.38, good enough to make the desk wonder aloud why it was pulled at all. Eligible for a return, then, on the desk's own condition: one contract on a practice account before any funded size returns. Whether a fresh trial repeats three good months, the figures cannot say."
+  ],
+  "by": "the strategy desk",
+  "written": "2026-09-06T21:36:27+00:00"
+ },
+ "liqsweep_ifvg": {
+  "ident": "liqsweep_ifvg|LiqSweep+iFVG_S3_CME_MINI_MNQ1!_2026-09-01_c675b.csv|1788728145|LOSING|v3",
+  "paragraphs": [
+   "The last 90 days close the book plainly: on 2026-06-24 this system lost $1,701 in one session, well past the account's $1,000 daily loss limit. Across 228 trades over 65 days, LiqSweep + iFVG S3 on MNQ won 46.1% of the time against a profit factor of 0.88, nowhere near the house bar of 62% win rate and 1.4 profit factor required for a sub-year backtest. Net result: $-3,276, or $-50 per trading day, with a max drawdown of $6,468 in closed-trade equity, more than triple the account's $2,000 maximum drawdown ceiling, a feat achieved for all the wrong reasons.",
+   "The full export, one trade longer at 229 across the same 65 days, tells the same story: win rate 46.3%, profit factor 0.88, net $-3,207. The extra trade barely matters. Average win $225 against average loss $-220, expectancy $-14.0 per trade, figures drawn from TradingView strategy-tester fills at two contracts per trade, not broker fills. Worst day and worst trade are unchanged from the 90-day window: the wider sample rescues nothing.",
+   "This strategy is RETIRED. The desk's research arc closed NULL on 2026-09-03: every variant landed below the bar. For it to return, the figures would need a profit factor above 1.4 and a win rate above 62% on a fresh sample. Nothing here is close: 0.88 and 46.1% is not a rounding error from the bar, it is a different strategy. File this one under lessons, not watchlist."
+  ],
+  "by": "the strategy desk",
+  "written": "2026-09-06T21:37:53+00:00"
+ }
+}

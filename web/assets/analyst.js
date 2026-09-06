@@ -110,7 +110,9 @@
     if (e.status !== "ok") {
       return el("article", { class: "wa-card ad-card" }, [head, meta, el("p", { class: "wa-note" }, [e.error || "no export"])]);
     }
-    var p = prose(e).map(function (t, i) { return el("p", { class: "ad-p" + (i === 0 ? " ad-drop" : "") }, [t]); });
+    var paras = (e.prose && e.prose.length) ? e.prose : prose(e);
+    var p = paras.map(function (t, i) { return el("p", { class: "ad-p" + (i === 0 ? " ad-drop" : "") }, [t]); });
+    p.push(el("p", { class: "ad-byline" }, ["By " + (e.prose_by || "the strategy desk")]));
     return el("article", { class: "wa-card ad-card" }, [
       head, meta,
       el("p", { class: "ad-note" }, [e.note || ""]),
@@ -141,13 +143,60 @@
       "The paper runs two strategies, one contract each, on one account: " + names + ". " +
       "Their 90-day trade logs sum to " + usd(net) + " of backtest net with a worst single day of " + usd(worst) + ". " +
       (clears ? "Both clear the house bar. " : "Not both clear the house bar; see the cards. ") +
-      "Below them sits the bench, and below the bench the retired, each asked the same question: is there a way back?"
+      "The bench and the retired follow, each with the same three questions: what the last 90 days show, what the full export shows, and what would have to be true for it to trade again."
     ]);
+  }
+
+  function sessionTable(week) {
+    var rows = (week || []).map(function (d) {
+      var m = d.mnq || {}, g = d.mgc || {};
+      return el("div", { class: "rv-row" + (d.mattered ? " is-hot" : "") }, [
+        el("span", { class: "rv-day" }, [d.weekday || d.date]),
+        el("span", { class: "rv-cell" }, ["MNQ " + (m.move_pct == null ? "—" : (m.move_pct > 0 ? "+" : "") + m.move_pct + "%") + " · " + (m.range_pts == null ? "—" : m.range_pts + " pts") + (m.range_x_median != null ? " (" + m.range_x_median + "×)" : "")]),
+        el("span", { class: "rv-cell" }, ["MGC " + (g.move_pct == null ? "—" : (g.move_pct > 0 ? "+" : "") + g.move_pct + "%") + " · " + (g.range_pts == null ? "—" : g.range_pts + " pts") + (g.range_x_median != null ? " (" + g.range_x_median + "×)" : "")]),
+        el("span", { class: "rv-verdict " + (d.mattered ? "green" : "faint") }, [d.mattered ? "MATTERED" : "NOISE"]),
+        el("span", { class: "rv-stories" }, [(d.stories || []).length + " stories"])
+      ]);
+    });
+    return el("div", { class: "rv-table" }, rows);
+  }
+
+  function renderReview(r) {
+    var sec = el("section", { class: "wa-section ad-review" });
+    sec.appendChild(h2("Yesterday, reviewed", r && r.yesterday_date ? "session of " + r.yesterday_date + " · did the news move anything?" : ""));
+    if (!r || r.status !== "ok") {
+      sec.appendChild(el("p", { class: "wa-note" }, ["No review this edition: " + ((r && r.error) || "review.json unavailable")]));
+      return sec;
+    }
+    var y = r.yesterday || {};
+    var stories = (y.stories || []).map(function (s) {
+      return el("li", { class: "rv-story" }, [
+        el("span", { class: "wire-tag", "data-tag": s.instrument || "BOTH" }, [s.instrument || "BOTH"]),
+        el("span", {}, [s.headline || ""]),
+        el("span", { class: "rv-story-src" }, [" · " + (s.driver || "") + (s.source ? " · " + s.source : "")])
+      ]);
+    });
+    sec.appendChild(el("div", { class: "ad-body" }, [
+      el("div", { class: "ad-prose" }, r.yesterday_text.split(/\n\n+/).map(function (t, i) { return el("p", { class: "ad-p" + (i === 0 ? " ad-drop" : "") }, [t]); }).concat([
+        el("div", { class: "wa-sub" }, ["The week, reviewed"]),
+        el("p", { class: "ad-p" }, [r.week_text]),
+        el("p", { class: "ad-byline" }, [r.byline || "By the analyst desk"])
+      ])),
+      el("div", { class: "ad-stats" }, [
+        el("div", { class: "wa-sub" }, ["What the wire ran on " + (y.weekday || "") ]),
+        stories.length ? el("ul", { class: "rv-stories-list" }, stories) : el("p", { class: "wa-note" }, ["No stories on file."]),
+        el("div", { class: "wa-sub" }, ["The week's sessions"]),
+        sessionTable(r.week),
+        el("p", { class: "wa-bt-cap" }, [r.basis || ""])
+      ])
+    ]));
+    return sec;
   }
 
   function render(b) {
     var root = $("ad-root");
     root.replaceChildren();
+    root.appendChild(renderReview(window.__review || null));
     if (!b || b.status !== "ok") {
       root.appendChild(el("p", { class: "wa-note" }, ["The desk has no book to show: " + ((b && b.error) || "book.json unavailable")]));
       return;
@@ -166,12 +215,12 @@
     ]));
     root.appendChild(el("section", { class: "wa-section" }, [
       h2("The bench", "candidates with a fill check, not a deployment"),
-      el("p", { class: "ad-lede" }, ["Two models the desk audited this month and did not deploy. The question for each is not \"does it make money on paper\"; most things do. It is whether its worst day fits inside a 50K account's daily loss limit with room to be wrong twice."]),
+      el("p", { class: "ad-lede" }, ["Two models the desk audited this month and did not deploy. Each is profitable in its own export. Each fails the win-rate half of the house bar, and each carries a stop large enough that two bad trades in a day would use most of a 50K account's $1,000 daily loss limit."]),
       el("div", { class: "wa-cards" }, (b.bench || []).map(function (e) { return card(e, bar); }))
     ]));
     root.appendChild(el("section", { class: "wa-section" }, [
       h2("The retired", "can any of them come back?"),
-      el("p", { class: "ad-lede" }, ["The former main strategy, its gold partner, and the research arc that ended in a null. Retired is not dead; a strategy comes back when a new export clears the bar on a window it has not seen. Until then they sit here, where the paper can keep an eye on them."]),
+      el("p", { class: "ad-lede" }, ["The former main strategy, its gold partner, and the sweep model whose research closed without a result. A retired strategy returns when a new export clears the bar on a window the desk has not seen; the numbers below are the record it would have to beat."]),
       el("div", { class: "wa-cards" }, (b.retired || []).map(function (e) { return card(e, bar); }))
     ]));
     root.appendChild(el("section", { class: "wa-section ad-fine" }, [
@@ -180,8 +229,8 @@
     ]));
   }
 
-  fetch("book.json", { cache: "no-store" })
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .then(render)
-    .catch(function () { render(null); });
+  Promise.all([
+    fetch("review.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+    fetch("book.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
+  ]).then(function (res) { window.__review = res[0]; render(res[1]); });
 })();

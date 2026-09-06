@@ -5,8 +5,10 @@ deck, three sub-headlines from the trading wire, and the small satirical
 furniture an old broadsheet carried (the ear, the weather, the corrections
 box). Priority for the lead:
 
-  1. market closed today (holiday or weekend)  -> MARKETS CLOSED
-  2. market closed tomorrow                     -> MARKETS CLOSED TOMORROW
+  1. holiday today      -> MARKETS CLOSED, or MARKETS CLOSING EARLY on a
+                          Globex early-halt day (the Monday-holiday pattern)
+  2. holiday tomorrow   -> the same, with TOMORROW
+  2b. weekend           -> MARKETS CLOSED
   3. a tier-1 US release today                  -> the release, its time
   4. the pre-open range call                    -> expected size of the day
 
@@ -77,17 +79,27 @@ def _fmt_date(iso: str) -> str:
 
 
 def _closed_lead(row: dict, when: str) -> dict:
+    """Holiday or weekend lead. Early Globex halt reads CLOSING EARLY, never CLOSED."""
     name = row.get("holiday")
     day = _fmt_date(row["date_et"])
-    if name:
-        head = "MARKETS CLOSED" if when == "today" else "MARKETS CLOSED TOMORROW"
+    suffix = "" if when == "today" else " TOMORROW"
+    if name and row.get("early_halt"):
+        halt = row.get("mnq_halt_et") or "13:00"
+        head = f"MARKETS CLOSING EARLY{suffix}"
+        kicker = f"{name} · {day} · MNQ halts {halt} ET / {row.get('mnq_halt_oslo') or ''} Oslo"
+        deck = row.get("detail") or f"{name}. Shortened session."
+        tone = "early"
+    elif name:
+        head = f"MARKETS CLOSED{suffix}"
         kicker = f"{name} · {day}"
-        deck = row.get("detail") or f"{name}. No regular session on {day}."
+        deck = row.get("detail") or f"{name}. No session on {day}."
+        tone = "closed"
     else:
         head = "MARKETS CLOSED"
         kicker = f"Weekend · {day}"
         deck = "No session. Globex reopens Sunday 18:00 ET / 00:00 Oslo."
-    return {"kicker": kicker, "headline": head, "deck": deck, "tone": "closed"}
+        tone = "closed"
+    return {"kicker": kicker, "headline": head, "deck": deck, "tone": tone}
 
 
 def _event_lead(events: list[dict], today: str) -> dict | None:
@@ -141,14 +153,13 @@ def compose(
     h_today = (holidays or {}).get("today") or {}
     h_tom = (holidays or {}).get("tomorrow") or {}
 
-    if h_today.get("closed") and (h_today.get("holiday") or h_tom.get("holiday")):
-        # Weekend before a Monday holiday: the holiday IS the news.
-        lead = _closed_lead(h_tom if (not h_today.get("holiday") and h_tom.get("holiday")) else h_today,
-                            "today" if h_today.get("holiday") else "tomorrow")
-    elif h_today.get("closed"):
+    if h_today.get("holiday"):
         lead = _closed_lead(h_today, "today")
-    elif h_tom.get("closed") and h_tom.get("holiday"):
+    elif h_tom.get("holiday"):
+        # Sunday before a Monday holiday, or any eve: the holiday is the news.
         lead = _closed_lead(h_tom, "tomorrow")
+    elif h_today.get("weekend"):
+        lead = _closed_lead(h_today, "today")
     else:
         lead = _event_lead((event_section or {}).get("items") or [], today) or _range_lead(preopen, today)
 
@@ -165,18 +176,19 @@ def compose(
     # Weather = the range call, read as a forecast. Closed days get a calm front.
     insts = (preopen or {}).get("instruments") or {}
     call = ((insts.get("MNQ") or {}).get("expansion") or (insts.get("MNQ") or {}).get("call") or "NO CALL").upper()
-    weather = (
-        "Calm. Nothing is open, so nothing can chop you. Enjoy it."
-        if lead["tone"] == "closed"
-        else WEATHER.get(call, WEATHER["NO CALL"])
-    )
+    if lead["tone"] == "closed":
+        weather = "Calm. Nothing is open, so nothing can chop you. Enjoy it."
+    elif lead["tone"] == "early":
+        weather = "A short day. Thin book after the New York lunch, then the halt. Whatever the range model says, it has fewer hours to say it in."
+    else:
+        weather = WEATHER.get(call, WEATHER["NO CALL"])
 
     nxt = (holidays or {}).get("next_holiday") or {}
     notice = None
-    if nxt and lead["tone"] != "closed":
+    if lead["tone"] in ("closed", "early"):
+        notice = f"Next full session: {_fmt_date((holidays or {}).get('next_full_session') or (holidays or {}).get('next_trading_day') or '')}."
+    elif nxt:
         notice = f"Next closure: {nxt.get('name')}, {_fmt_date(nxt.get('date_et'))} ({nxt.get('days_away')} days)."
-    elif h_today.get("closed"):
-        notice = f"Next session: {_fmt_date((holidays or {}).get('next_trading_day') or '')}."
 
     live = [r.get("strategy") for r in (play or {}).get("rows") or []]
     return {

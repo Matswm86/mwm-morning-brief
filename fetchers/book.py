@@ -17,7 +17,9 @@ Public-site rule: strategy names only. No account ids, no usernames, no paths.
 from __future__ import annotations
 
 import csv
+import json
 import logging
+import re
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -214,11 +216,11 @@ def _verdict(s90: dict, sfull: dict, role: str) -> dict:
     if role == "live":
         comeback = None
     elif word == "CLEARS THE BAR":
-        comeback = "Comeback? The numbers say yes; the desk says one contract on a practice account first."
+        comeback = "Eligible for a return on these numbers; the desk's condition is one contract on a practice account first."
     elif word == "BELOW THE BAR":
-        comeback = "Comeback? Not on these numbers. It needs a stop it can afford or a filter that lifts the win rate."
+        comeback = "Not eligible on these numbers. The win rate is the problem, and a filter that raises it would have to be measured on a window this export has not seen."
     else:
-        comeback = "Comeback? No. A model that loses in its own backtest is not resting, it is retired."
+        comeback = "Not eligible. The export loses money before slippage."
     return {"word": word, "basis": basis, "line": line, "comeback": comeback}
 
 
@@ -247,8 +249,126 @@ def _entry(meta: dict) -> dict:
     return base
 
 
+PROSE_CACHE = EXPORT_DIR.parent / "book_prose_cache.json"
+
+PROSE_SYSTEM = """You are the strategy correspondent of a small daily trading newspaper set like a 1920s broadsheet. You write about one trading strategy at a time, from its backtest figures, for a reader who runs Micro Nasdaq and Micro Gold futures on a 50,000-dollar prop-firm account with a 1,000-dollar daily loss limit.
+
+Binding rules:
+- Use ONLY the figures and notes in the user message. Never invent a cause, a market event, a fill, or a number. If something cannot be judged from the figures, say so in one clause.
+- Voice: a seasoned wire-desk journalist. Short declarative sentences, concrete nouns, active voice. No hedging filler, no cliches ("at the end of the day", "the numbers speak for themselves", "only time will tell", "navigate", "landscape", "delve", "robust", "game-changer"), no rhetorical questions, no exclamation marks, no bullet points, no headings, no emoji, no second person.
+- Dry wit is allowed once, at the expense of the strategy or the desk, never a person.
+- The house bar for a sub-year backtest is win rate 62% AND profit factor 1.4 together. Use the verdict given; do not overrule it.
+- All figures are TradingView strategy-tester fills at the export's contract size, not broker fills. Say this once, plainly, where it matters.
+- Length: three paragraphs, 170-240 words total. Paragraph one: what the last 90 days show, led by the fact that matters most (worst day against the daily loss limit, or the win rate, or the drawdown). Paragraph two: the full export against the 90 days, and what changed or did not. Paragraph three: for a LIVE strategy, what the reader should watch for as evidence it has stopped working; for a BENCH or RETIRED strategy, whether it can come back and the one condition that would have to be met, stated as a fact about the figures.
+- Call the strategy by the exact name given and nothing else; invent no nicknames or version labels.
+- Typography: no em dashes or en dashes anywhere; use commas, colons or full stops. Never write "essentially", "basically", "robust", "comprehensive", "seems to".
+- Output the three paragraphs separated by blank lines and nothing else."""
+
+
+def _clean(text: str) -> str:
+    """House typography: no dashes as punctuation, no doubled spaces."""
+    text = re.sub(r"\s*[\u2014\u2013]\s*", ", ", text)
+    text = re.sub(r"(\w)\s*--\s*(\w)", r"\1, \2", text)
+    return re.sub(r"[ \t]{2,}", " ", text).strip()
+
+
+def _prose_facts(e: dict) -> str:
+    s, f, v = e["last_90d"], e["full"], e["verdict"]
+
+    def block(name: str, x: dict) -> str:
+        return (
+            f"{name}: {x['from']} to {x['to']}, {x['trades']} trades over {x['trading_days']} trading days, "
+            f"win rate {x['win_rate_pct']}%, profit factor {x['profit_factor']}, net ${x['net_usd']:,}, "
+            f"${x['per_day_usd']:,} per trading day, {x['trades_per_day']} trades per day, "
+            f"average win ${x['avg_win_usd']:,} / average loss ${x['avg_loss_usd']:,}, expectancy ${x['expectancy_usd']} per trade, "
+            f"max drawdown ${x['max_dd_usd']:,} (closed-trade equity), worst trade ${x['biggest_loss_usd']:,}, "
+            f"best trade ${x['biggest_win_usd']:,}, worst day ${x['worst_day']['usd']:,} on {x['worst_day']['date']}, "
+            f"best day ${x['best_day']['usd']:,} on {x['best_day']['date']}."
+        )
+
+    return "\n".join(
+        [
+            f"STRATEGY: {e['name']} {e['version']} on {e['instrument']}. ROLE: {e['role'].upper()}."
+            + (f" Traded live at {e['live_size']}." if e.get("live_size") else ""),
+            f"EXPORT: TradingView List of Trades dated {e.get('export_date')}, {e.get('export_size_contracts')} contract(s) per trade in the log.",
+            f"DESK NOTE (human-written context, may be quoted): {e['note']}",
+            block("LAST 90 DAYS", s),
+            block("FULL EXPORT", f),
+            f"VERDICT: {v['word']} ({v['basis']}). {v['line']}" + (f" {v['comeback']}" if v.get("comeback") else ""),
+            "ACCOUNT CONTEXT: 50K prop-firm account, $1,000 daily loss limit, $2,000 maximum drawdown from the starting balance.",
+        ]
+    )
+
+
+def _load_prose_cache() -> dict:
+    try:
+        return json.loads(PROSE_CACHE.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def _fallback_prose(e: dict) -> list[str]:
+    s, f, v = e["last_90d"], e["full"], e["verdict"]
+    p1 = (
+        f"Over the last {s['trading_days']} trading days the export closed {s['trades']} trades for ${s['net_usd']:,} net, "
+        f"a win rate of {s['win_rate_pct']}% and a profit factor of {s['profit_factor']}. The worst day cost ${abs(s['worst_day']['usd']):,} "
+        f"on {s['worst_day']['date']}, the deepest closed-trade drawdown ${s['max_dd_usd']:,}."
+    )
+    p2 = (
+        f"The full export runs {f['from']} to {f['to']}: {f['trades']} trades, profit factor {f['profit_factor']}, ${f['net_usd']:,} net. "
+        f"Figures are TradingView strategy-tester fills at {e.get('export_size_contracts')} contract(s)."
+    )
+    p3 = v["line"] + (" " + v["comeback"] if v.get("comeback") else "")
+    return [p1, p2, p3]
+
+
+def _write_prose(entries: list[dict]) -> None:
+    """Attach `prose` (list of paragraphs) to each ok entry; Sonnet via claude -p, cached by export identity."""
+    cache = _load_prose_cache()
+    changed = False
+    call = None
+    try:
+        import sys
+
+        core = "/home/mats/MWM-AI/core"
+        if core not in sys.path:
+            sys.path.insert(0, core)
+        from anthropic_via_claude_cli import call_claude_cli as call  # type: ignore
+    except Exception:
+        log.warning("claude cli unavailable; book prose falls back to tables")
+    for e in entries:
+        if e.get("status") != "ok":
+            continue
+        path = _newest(REGISTRY[[m["key"] for m in REGISTRY].index(e["key"])]["file"])
+        ident = f"{e['key']}|{path.name if path else ''}|{int(path.stat().st_mtime) if path else 0}|{e['verdict']['word']}|v3"
+        hit = cache.get(e["key"])
+        if hit and hit.get("ident") == ident and hit.get("paragraphs"):
+            e["prose"], e["prose_by"] = hit["paragraphs"], hit.get("by", "the strategy desk")
+            continue
+        paras: list[str] | None = None
+        if call:
+            text = call(model="sonnet", system_prompt=PROSE_SYSTEM, user_prompt=_prose_facts(e), timeout=180)
+            if text:
+                paras = [_clean(p) for p in text.strip().split("\n\n") if p.strip()]
+                if not (2 <= len(paras) <= 4) or sum(len(p) for p in paras) < 400:
+                    log.warning("book prose rejected for %s: %r", e["key"], text[:100])
+                    paras = None
+        if paras:
+            e["prose"], e["prose_by"] = paras, "the strategy desk"
+            cache[e["key"]] = {"ident": ident, "paragraphs": paras, "by": "the strategy desk", "written": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+            changed = True
+        else:
+            e["prose"], e["prose_by"] = _fallback_prose(e), "the tables (correspondent unavailable this edition)"
+    if changed:
+        try:
+            PROSE_CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=1))
+        except OSError:
+            log.warning("book prose cache not written")
+
+
 def fetch() -> dict:
     entries = [_entry(m) for m in REGISTRY]
+    _write_prose(entries)
     ok = [e for e in entries if e.get("status") == "ok"]
     return {
         "status": "ok" if ok else "error",
