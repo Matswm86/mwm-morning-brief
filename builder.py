@@ -449,6 +449,10 @@ def main() -> int:
         except Exception:
             log.error("rsync to VPS failed (brief.json still local):\n%s", traceback.format_exc())
             return 2
+    elif not args.no_deploy:
+        # Empty target = site goes stale while the unit exits 0 (hit 2026-09-14..20).
+        log.error("BRIEF_VPS_TARGET is empty: brief built locally but NOT deployed")
+        return 2
     return 0
 
 

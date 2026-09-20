@@ -17,10 +17,13 @@ import os
 from pathlib import Path
 
 HOME = Path.home()
-MWM_ROOT = HOME / "MWM-AI"
+MWM_ROOT = HOME / "MWM"
 ENV_FILE = MWM_ROOT / ".env"
 
-if ENV_FILE.exists():
+if not ENV_FILE.exists():
+    # A missing .env silently disabled deploy + LLM for 6 days (2026-09-14..20).
+    raise FileNotFoundError(f"morning-brief: env file missing: {ENV_FILE}")
+else:
     for line in ENV_FILE.read_text().splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
