@@ -19,7 +19,7 @@ GIT_REPOS: list[tuple[str, Path]] = [
     ("mwm-sentinel",    MWM_ROOT / "projects" / "mwm-sentinel"),
     ("mwm-lab",         MWM_ROOT / "projects" / "mwm-lab"),
     ("mwm-infra",       MWM_ROOT / "mwm-infrastructure"),
-    ("morning-brief",   Path.home() / "services" / "morning-brief"),
+    ("morning-brief",   Path.home() / "MWM" / "projects" / "mwm-morning-brief"),
     ("oso-sync",        MWM_ROOT / "projects" / "oso-sync"),
     ("vibeos",          MWM_ROOT / "projects" / "vibeos"),
     ("knowledge-viz",   MWM_ROOT / "projects" / "knowledge-viz"),

@@ -1,10 +1,10 @@
 """Morning-brief config — env loading + paths.
 
-Env is read from ~/MWM-AI/.env (single source of truth). Required keys:
+Env is read from ~/MWM/.env (single source of truth). Required keys:
   GROQ_API_KEY  FINNHUB_API_KEY  FRED_API_KEY
 
 Optional:
-  BRIEF_OUT_DIR     default ~/services/morning-brief/web
+  BRIEF_OUT_DIR     default ~/MWM/projects/mwm-morning-brief/web
   BRIEF_VPS_TARGET  rsync target, e.g. user@vps:/srv/brief
   GROQ_MODEL_BRIEF  override summariser model (default openai/gpt-oss-120b)
 
@@ -39,7 +39,7 @@ FINNHUB_API_KEY = os.environ.get("FINNHUB_API_KEY", "").strip()
 FRED_API_KEY = os.environ.get("FRED_API_KEY", "").strip()
 # ORB_REGIME_URL: deprecated 2026-04-27 (TradingView decommissioned).
 # Kept as empty default so legacy fetcher import doesn't break; regime.py
-# now reads ~/MWM-AI/projects/mwm-trading/data/market_regime/*.json instead.
+# now reads ~/MWM/projects/mwm-trading/data/market_regime/*.json instead.
 ORB_REGIME_URL = os.environ.get("ORB_REGIME_URL", "").strip()
 
 VPS_TARGET = os.environ.get("BRIEF_VPS_TARGET", "").strip()  # user@host:/srv/brief

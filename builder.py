@@ -20,10 +20,10 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # SCCS F1 — path-import shim. morning-brief lives outside the MWM-AI
-# workspace (~/services/morning-brief), so we expose MWM-AI/core/ to
+# workspace (~/MWM/projects/mwm-morning-brief), so we expose MWM-AI/core/ to
 # resolve `from sccs import ...`. Failure is non-fatal — the import
 # block below tolerates a missing sccs install.
-_MWM_CORE = "/home/mats/MWM-AI/core"
+_MWM_CORE = "/home/mm/MWM/core"
 if os.path.isdir(_MWM_CORE) and _MWM_CORE not in sys.path:
     sys.path.insert(0, _MWM_CORE)
 try:
@@ -316,7 +316,7 @@ def _sccs_brief_block() -> dict:
     if not _SCCS_CONFORMAL_AVAILABLE:
         return {"judge_score_ci": {"method": "unavailable"}}
     try:
-        cal_path = "/home/mats/MWM-AI/data/sccs/judge_calibration.jsonl"
+        cal_path = "/home/mm/MWM/data/sccs/judge_calibration.jsonl"
         if not os.path.isfile(cal_path):
             return {"judge_score_ci": {"method": "no_cal_log"}}
         residuals: list[float] = []

@@ -11,7 +11,7 @@ tree to the Hetzner VPS.
 ```
 morning-brief/
 ├── builder.py           # orchestrator — fetch, summarise, atomic write, rsync
-├── config.py            # env/paths (reads ~/MWM-AI/.env)
+├── config.py            # env/paths (reads ~/MWM/.env)
 ├── schema.py            # brief.json shape + empty-section helpers
 ├── strategy.py          # regime → strategy picker (ORB / LiqSweep / FLAT)
 ├── llm.py               # Groq summarisation wrapper (reuses core/llm_backends)
@@ -41,7 +41,7 @@ gitignored — they're regenerated each build.
 ## Build manually
 
 ```bash
-cd ~/services/morning-brief
+cd ~/MWM/projects/mwm-morning-brief
 python3 builder.py                 # build + rsync
 python3 builder.py --no-llm        # skip Groq
 python3 builder.py --dry-run       # stdout only
@@ -51,7 +51,7 @@ python3 builder.py --no-deploy     # build locally, don't rsync
 ## Dependencies
 
 Python 3.11, `requests`, `pandas` (via the shared `projects/mwm-trading`
-venv is fine). Also reads `~/MWM-AI/core/llm_backends.py` for the Groq
+venv is fine). Also reads `~/MWM/core/llm_backends.py` for the Groq
 client.
 
 ## Quality layer (Memento)
@@ -83,14 +83,14 @@ SCCS Foundation track: M0/M1 closed 04-26..27, M2 closed 05-01, M3 opened (regim
 
 ## SCCS F1 — policy_state logging
 
-Each build records one row to `~/MWM-AI/data/sccs/policy_state.db` with
+Each build records one row to `~/MWM/data/sccs/policy_state.db` with
 `entry_point=morning_brief`, `regime_label`, `rubric_weights` (strategy
 picker decision), `model_tier`, and `retrieval_config` (sections + LLM toggles).
 Best-effort — missing `sccs` package or DB errors are logged at DEBUG and never
 break the build. Disable with `SCCS_OFF=1`. See `core/sccs/` in the
 [`mwm-infrastructure`](https://github.com/Matswm86/mwm-infrastructure) repo.
 
-Env (from `~/MWM-AI/.env`):
+Env (from `~/MWM/.env`):
 
 - `GROQ_API_KEY` — summariser (openai/gpt-oss-120b → llama-3.3-70b fallback)
 - `FINNHUB_API_KEY` — market news
@@ -110,7 +110,7 @@ Env (from `~/MWM-AI/.env`):
   (market-news Track B tools) — verdict + risk bars + ORB handoff via `fetchers/trade_guard_daily.py`
 - **Live Trades**: today + this-week trade counts from the **50K Combine account `22484767`**
   via `fetchers/trade_tracker.py` — counts `entry_market_placed` + `entry_limit_placed`
-  engine events from the 3 Combine service dirs in `~/MWM-AI/data/vps_logs/` (must stay in
+  engine events from the 3 Combine service dirs in `~/MWM/data/vps_logs/` (must stay in
   sync with `per_cell_tracker.COMBINE_SERVICES`). Practice (19907662) cells are excluded.
 - **Strategy Performance**: mirrors the **trading.mwmai.no strategy showcase** (the 2 strategies
   live on the Combine fleet — Liquidity Sweep MNQ+MGC, ORB Breakout MNQ) via

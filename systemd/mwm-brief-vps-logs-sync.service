@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/home/mats/MWM-AI/mwm-infrastructure/core/heartbeat/wrap.sh run --name=mwm-brief-vps-logs-sync --interval=43200 -- /home/mats/services/morning-brief/scripts/sync_vps_logs.sh
+ExecStart=/home/mm/MWM/mwm-infrastructure/core/heartbeat/wrap.sh run --name=mwm-brief-vps-logs-sync --interval=43200 -- /home/mm/MWM/projects/mwm-morning-brief/scripts/sync_vps_logs.sh
 StandardOutput=journal
 StandardError=journal
 Nice=15

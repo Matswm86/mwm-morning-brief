@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/home/mats/services/morning-brief/bar_refresh.sh
+ExecStart=/home/mm/MWM/projects/mwm-morning-brief/bar_refresh.sh
 StandardOutput=journal
 StandardError=journal
 Nice=10

@@ -5,9 +5,9 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=/home/mats/services/morning-brief
+WorkingDirectory=/home/mm/MWM/projects/mwm-morning-brief
 Environment=SCCS_CONFORMAL_ENABLED=true
-ExecStart=/usr/bin/python3 /home/mats/services/morning-brief/builder.py
+ExecStart=/usr/bin/python3 /home/mm/MWM/projects/mwm-morning-brief/builder.py
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=mwm-morning-brief
