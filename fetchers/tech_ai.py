@@ -1,9 +1,10 @@
 """Tech + AI + Claude + LLM fetcher — HN Algolia + Reddit + arXiv."""
 
 from __future__ import annotations
+
 import logging
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from http_util import get_json
 
@@ -33,7 +34,7 @@ REDDIT_SUBS = [
     ("MachineLearning", 2),
 ]
 
-REDDIT_UA = "mwm-morning-brief/0.1 (by /u/matswm86)"
+REDDIT_UA = "mwm-morning-brief/0.1 (+https://mwmai.no)"
 
 
 def _hn(query: str, cap: int) -> list[dict]:
@@ -55,9 +56,7 @@ def _hn(query: str, cap: int) -> list[dict]:
         title = h.get("title")
         if not title:
             continue
-        url = (
-            h.get("url") or f"https://news.ycombinator.com/item?id={h.get('objectID')}"
-        )
+        url = h.get("url") or f"https://news.ycombinator.com/item?id={h.get('objectID')}"
         out.append(
             {
                 "headline": title[:180],
@@ -86,15 +85,13 @@ def _reddit(sub: str, cap: int) -> list[dict]:
     except Exception as e:
         log.warning("reddit %s fail: %s", sub, e)
         return []
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     cutoff = now - timedelta(days=REDDIT_MAX_AGE_DAYS)
     out = []
     for entry in re.findall(r"<entry>(.*?)</entry>", text, re.DOTALL):
         title_m = re.search(r"<title>(.*?)</title>", entry, re.DOTALL)
         link_m = re.search(r'<link[^>]*href="([^"]+)"', entry)
-        date_m = re.search(
-            r"<(?:updated|published)>(.*?)</(?:updated|published)>", entry
-        )
+        date_m = re.search(r"<(?:updated|published)>(.*?)</(?:updated|published)>", entry)
         if not (title_m and link_m):
             continue
         title = re.sub(r"\s+", " ", title_m.group(1)).strip()[:180]
@@ -105,7 +102,7 @@ def _reddit(sub: str, cap: int) -> list[dict]:
             try:
                 posted = datetime.fromisoformat(date_m.group(1).strip())
                 if posted.tzinfo is None:
-                    posted = posted.replace(tzinfo=timezone.utc)
+                    posted = posted.replace(tzinfo=UTC)
             except ValueError:
                 posted = None
         if posted is not None and posted < cutoff:
@@ -127,6 +124,7 @@ def _reddit(sub: str, cap: int) -> list[dict]:
 def _arxiv_ai(cap: int = 3) -> list[dict]:
     """arXiv cs.AI + cs.CL new submissions (pseudo-Atom -> plain text)."""
     import re
+
     from http_util import get_text
 
     text = get_text(
@@ -176,5 +174,5 @@ def fetch() -> dict:
         "count": len(items),
         "source": "HN · Reddit · arXiv",
         "status": "ok" if items else "warn",
-        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }

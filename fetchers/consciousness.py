@@ -1,12 +1,14 @@
 """Consciousness & Resonance fetcher — arXiv (q-bio.NC, physics.gen-ph) + r/consciousness + local science synthesis."""
+
 from __future__ import annotations
+
 import logging
 import re
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 
 from config import SYNTHESIS_DIR
 from http_util import get_text
+
 from fetchers.research import _recent_md
 
 log = logging.getLogger("morning-brief.consciousness")
@@ -17,7 +19,8 @@ def _arxiv_conscious(cap: int = 4) -> list[dict]:
         "http://export.arxiv.org/api/query",
         params={
             "search_query": "cat:q-bio.NC OR cat:physics.gen-ph OR (cat:cs.AI AND abs:consciousness)",
-            "sortBy": "submittedDate", "sortOrder": "descending",
+            "sortBy": "submittedDate",
+            "sortOrder": "descending",
             "max_results": str(cap * 2),
         },
         timeout=30,
@@ -34,12 +37,14 @@ def _arxiv_conscious(cap: int = 4) -> list[dict]:
             continue
         t = re.sub(r"\s+", " ", title_m.group(1)).strip()
         s = re.sub(r"\s+", " ", (summary_m.group(1) if summary_m else ""))[:240].strip()
-        out.append({
-            "headline": t[:180],
-            "body": s,
-            "url": link_m.group(1).strip(),
-            "source": "arxiv",
-        })
+        out.append(
+            {
+                "headline": t[:180],
+                "body": s,
+                "url": link_m.group(1).strip(),
+                "source": "arxiv",
+            }
+        )
         if len(out) >= cap:
             break
     return out
@@ -47,11 +52,13 @@ def _arxiv_conscious(cap: int = 4) -> list[dict]:
 
 def _reddit_consciousness(cap: int = 2) -> list[dict]:
     import requests
+
     try:
         r = requests.get(
             "https://www.reddit.com/r/consciousness/hot.json",
-            headers={"User-Agent": "mwm-morning-brief/0.1 (by /u/matswm86)"},
-            timeout=15, params={"limit": cap * 3},
+            headers={"User-Agent": "mwm-morning-brief/0.1 (+https://mwmai.no)"},
+            timeout=15,
+            params={"limit": cap * 3},
         )
         r.raise_for_status()
         data = r.json()
@@ -65,12 +72,14 @@ def _reddit_consciousness(cap: int = 2) -> list[dict]:
         ups = int(p.get("ups", 0) or 0)
         if ups < 20:
             continue
-        out.append({
-            "headline": p.get("title", "")[:180],
-            "body": f"r/consciousness · {ups} ↑ · {p.get('num_comments', 0)} comments",
-            "url": "https://www.reddit.com" + p.get("permalink", ""),
-            "source": "reddit:consciousness",
-        })
+        out.append(
+            {
+                "headline": p.get("title", "")[:180],
+                "body": f"r/consciousness · {ups} ↑ · {p.get('num_comments', 0)} comments",
+                "url": "https://www.reddit.com" + p.get("permalink", ""),
+                "source": "reddit:consciousness",
+            }
+        )
         if len(out) >= cap:
             break
     return out
@@ -86,5 +95,5 @@ def fetch() -> dict:
         "count": len(items),
         "source": "arXiv · r/consciousness · science synthesis",
         "status": "ok" if items else "warn",
-        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }

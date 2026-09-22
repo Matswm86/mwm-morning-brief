@@ -5,10 +5,10 @@ bars pulled through the ProjectX REST History endpoint. Same output JSON
 shape so web/assets/chart.js needs no change.
 
 Runs under the mwm-trading venv (py3.12, project-x-py 3.5.9):
-  /home/mats/MWM-AI/projects/mwm-trading/.venv/bin/python \
+  ~/MWM/projects/mwm-trading/.venv/bin/python \
       -m fetchers.bars_pxpy --write web/bars_mnq.json
 
-Required env (loaded from ~/MWM-AI/projects/mwm-trading/.env):
+Required env (loaded from ~/MWM/projects/mwm-trading/.env):
   PROJECT_X_API_KEY
   PROJECT_X_USERNAME
 
@@ -16,14 +16,15 @@ Exit codes:
   0 success (file written)
   2 auth or fetch failure — caller should fall back
 """
+
 from __future__ import annotations
+
 import argparse
 import asyncio
 import json
 import logging
 import os
-import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 log = logging.getLogger("morning-brief.bars_pxpy")
@@ -31,7 +32,7 @@ log = logging.getLogger("morning-brief.bars_pxpy")
 DEFAULT_SYMBOL = "MNQ"
 DEFAULT_INTERVAL_MIN = 5
 DEFAULT_DAYS = 1
-PXPY_ENV_FILE = Path.home() / "MWM-AI" / "projects" / "mwm-trading" / ".env"
+PXPY_ENV_FILE = Path.home() / "MWM" / "projects" / "mwm-trading" / ".env"
 
 
 def _load_env(path: Path) -> None:
@@ -57,20 +58,20 @@ async def _fetch_bars(symbol: str, days: int, interval_min: int) -> dict:
 
     import polars as pl  # type: ignore
 
-    df = df.with_columns(
-        pl.col("timestamp").dt.epoch("s").alias("time_epoch")
-    ).sort("time_epoch")
+    df = df.with_columns(pl.col("timestamp").dt.epoch("s").alias("time_epoch")).sort("time_epoch")
 
     bars: list[dict] = []
     for row in df.iter_rows(named=True):
-        bars.append({
-            "time": int(row["time_epoch"]),
-            "open": round(float(row["open"]), 2),
-            "high": round(float(row["high"]), 2),
-            "low": round(float(row["low"]), 2),
-            "close": round(float(row["close"]), 2),
-            "volume": int(row["volume"] or 0),
-        })
+        bars.append(
+            {
+                "time": int(row["time_epoch"]),
+                "open": round(float(row["open"]), 2),
+                "high": round(float(row["high"]), 2),
+                "low": round(float(row["low"]), 2),
+                "close": round(float(row["close"]), 2),
+                "volume": int(row["volume"] or 0),
+            }
+        )
 
     prev_close = _compute_prev_close(bars)
 
@@ -80,7 +81,7 @@ async def _fetch_bars(symbol: str, days: int, interval_min: int) -> dict:
         "range": f"{days}d",
         "bars": bars,
         "prev_close": prev_close,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "source": "project-x-py",
         "count": len(bars),
     }
@@ -119,11 +120,16 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     ap = argparse.ArgumentParser()
     ap.add_argument("--symbol", default=DEFAULT_SYMBOL)
-    ap.add_argument("--interval", type=int, default=DEFAULT_INTERVAL_MIN,
-                    help="bar interval in minutes (default 5)")
+    ap.add_argument(
+        "--interval",
+        type=int,
+        default=DEFAULT_INTERVAL_MIN,
+        help="bar interval in minutes (default 5)",
+    )
     ap.add_argument("--days", type=int, default=DEFAULT_DAYS)
-    ap.add_argument("--write", type=Path,
-                    default=Path(__file__).resolve().parents[1] / "web" / "bars_mnq.json")
+    ap.add_argument(
+        "--write", type=Path, default=Path(__file__).resolve().parents[1] / "web" / "bars_mnq.json"
+    )
     ap.add_argument("--stdout", action="store_true")
     args = ap.parse_args()
 
@@ -144,10 +150,13 @@ def main() -> int:
 
     _write(args.write, payload)
     last = payload["bars"][-1] if payload["bars"] else None
-    log.info("wrote %d bars → %s  (last=%s @ %s)",
-             payload["count"], args.write,
-             f"{last['close']:.2f}" if last else "n/a",
-             datetime.fromtimestamp(last["time"], tz=timezone.utc).isoformat() if last else "n/a")
+    log.info(
+        "wrote %d bars → %s  (last=%s @ %s)",
+        payload["count"],
+        args.write,
+        f"{last['close']:.2f}" if last else "n/a",
+        datetime.fromtimestamp(last["time"], tz=UTC).isoformat() if last else "n/a",
+    )
     return 0
 
 

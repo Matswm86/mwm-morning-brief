@@ -7,10 +7,10 @@ Do not hand-edit those numbers here — re-run the platform showcase generator
 and this fetcher picks the new values up on the next build.
 
 Two showcase cards:
-  - PDHR MNQ  (cell pdhr-mnq-funded-24154823 — MNQ 5ct, the live funded fleet)
+  - PDHR MNQ  (the funded PDHR cell — MNQ 5ct)
   - ORB c5    (cell orbaron-orbc5-practice — MNQ 2ct, RTH; LOCKED Ironclad)
 
-LiqSweep was RETIRED fleet-wide 2026-06-22 (overnight loss blew XFA 24154823)
+LiqSweep was RETIRED fleet-wide 2026-06-22 (an overnight loss blew the funded account)
 and PARKED for a future save-attempt; the funded fleet now runs PDHR
 (Prior-Day H/L break-and-retest, RTH-only) on all three funded accounts. The
 second card (orb_br slot) shows ORB c5 — the best-performing locked ORB
@@ -27,9 +27,7 @@ from config import MWM_ROOT
 
 log = logging.getLogger("morning-brief.backtest_stats")
 
-SHOWCASE_TS = (
-    MWM_ROOT / "projects/mwm-trading/platform/frontend-rr7/app/lib/strategy-showcase.ts"
-)
+SHOWCASE_TS = MWM_ROOT / "projects/mwm-trading/platform/frontend-rr7/app/lib/strategy-showcase.ts"
 
 REF_CAPITAL = 50_000.0
 

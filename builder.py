@@ -10,7 +10,9 @@ Exit codes:
   0 success (brief.json replaced atomically)
   1 unexpected error (brief.json untouched)
 """
+
 from __future__ import annotations
+
 import argparse
 import logging
 import os
@@ -23,11 +25,13 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # workspace (~/MWM/projects/mwm-morning-brief), so we expose MWM-AI/core/ to
 # resolve `from sccs import ...`. Failure is non-fatal — the import
 # block below tolerates a missing sccs install.
-_MWM_CORE = "/home/mm/MWM/core"
+_MWM_CORE = os.path.expanduser("~/MWM/core")
 if os.path.isdir(_MWM_CORE) and _MWM_CORE not in sys.path:
     sys.path.insert(0, _MWM_CORE)
 try:
-    from sccs import PolicyState as _SccsPolicyState, record as _sccs_record  # type: ignore
+    from sccs import PolicyState as _SccsPolicyState  # type: ignore
+    from sccs import record as _sccs_record
+
     _SCCS_AVAILABLE = True
 except Exception:
     _SccsPolicyState = None  # type: ignore
@@ -36,30 +40,31 @@ except Exception:
 
 try:
     from sccs.conformal import wrap_metric as _sccs_wrap_metric  # type: ignore
+
     _SCCS_CONFORMAL_AVAILABLE = True
 except Exception:
     _sccs_wrap_metric = None  # type: ignore
     _SCCS_CONFORMAL_AVAILABLE = False
 
 # Local
-from config import BRIEF_JSON, LOG_DIR, VPS_TARGET, WEB_DIR
-from schema import build_brief, atomic_write, empty_section, now_utc_iso
-from fetchers import regime as f_regime
-from fetchers import trading_news as f_trading_news
-from fetchers import event_calendar as f_event_calendar
-from fetchers import regime_derived as f_regime_derived
-from fetchers import calibration as f_calibration
-from fetchers import market as f_market
-from fetchers import geopolitics as f_geo
-from fetchers import tech_ai as f_tech
-from fetchers import research as f_research
-from fetchers import consciousness as f_conscious
-from fetchers import system as f_system
-from fetchers import gold as f_gold
-from fetchers import selfcalib as f_selfcalib
-from fetchers import nq_analyzer as f_nq
-import strategy as strategy_picker
 import llm
+import strategy as strategy_picker
+from config import BRIEF_JSON, LOG_DIR, VPS_TARGET, WEB_DIR
+from fetchers import calibration as f_calibration
+from fetchers import consciousness as f_conscious
+from fetchers import event_calendar as f_event_calendar
+from fetchers import geopolitics as f_geo
+from fetchers import gold as f_gold
+from fetchers import market as f_market
+from fetchers import nq_analyzer as f_nq
+from fetchers import regime as f_regime
+from fetchers import regime_derived as f_regime_derived
+from fetchers import research as f_research
+from fetchers import selfcalib as f_selfcalib
+from fetchers import system as f_system
+from fetchers import tech_ai as f_tech
+from fetchers import trading_news as f_trading_news
+from schema import atomic_write, build_brief, empty_section, now_utc_iso
 
 logging.basicConfig(
     level=logging.INFO,
@@ -73,15 +78,15 @@ log = logging.getLogger("morning-brief.builder")
 
 
 SECTIONS = [
-    ("trading_news",  "Trading News · 24h",       f_trading_news),
-    ("event_calendar", "Scheduled · US macro",    f_event_calendar),
-    ("market",        "Market",                   f_market),
-    ("gold",          "Gold & Metals",            f_gold),
-    ("geopolitics",   "Geopolitics",              f_geo),
-    ("tech_ai",       "Tech & AI / Claude / LLM", f_tech),
-    ("research",      "Research",                 f_research),
+    ("trading_news", "Trading News · 24h", f_trading_news),
+    ("event_calendar", "Scheduled · US macro", f_event_calendar),
+    ("market", "Market", f_market),
+    ("gold", "Gold & Metals", f_gold),
+    ("geopolitics", "Geopolitics", f_geo),
+    ("tech_ai", "Tech & AI / Claude / LLM", f_tech),
+    ("research", "Research", f_research),
     ("consciousness", "Consciousness & Resonance", f_conscious),
-    ("system",        "System Health",            f_system),
+    ("system", "System Health", f_system),
 ]
 
 # Sections whose raw items are already card-ready — skipping the LLM keeps
@@ -97,8 +102,10 @@ def _run_section(key: str, label: str, mod, use_llm: bool) -> tuple[str, dict]:
         raw = mod.fetch()
     except Exception as e:
         log.exception("fetch failed for %s", key)
-        return key, {**empty_section(source=f"err:{type(e).__name__}", status="err"),
-                     "lede": f"fetch failed: {e.__class__.__name__}"}
+        return key, {
+            **empty_section(source=f"err:{type(e).__name__}", status="err"),
+            "lede": f"fetch failed: {e.__class__.__name__}",
+        }
 
     items = raw.get("items") or []
     payload = {
@@ -160,18 +167,30 @@ def build(use_llm: bool = True) -> dict:
     except Exception as e:
         log.exception("regime fetch failed")
         regime = {
-            "tier": None, "tier_caption": f"error: {e.__class__.__name__}",
-            "session_label": "Market Detector v3", "strategy_code": None, "volatility": "—",
-            "direction": "—", "regime": None, "score": None, "contracts": 0,
-            "age_hours": None, "generated_at": "", "raw": {},
+            "tier": None,
+            "tier_caption": f"error: {e.__class__.__name__}",
+            "session_label": "Market Detector v3",
+            "strategy_code": None,
+            "volatility": "—",
+            "direction": "—",
+            "regime": None,
+            "score": None,
+            "contracts": 0,
+            "age_hours": None,
+            "generated_at": "",
+            "raw": {},
         }
     try:
         strategy = strategy_picker.pick(regime)
     except Exception as e:
         log.exception("strategy pick failed")
-        strategy = {"name": "Error", "subtitle": str(e)[:80],
-                    "why": "Strategy picker raised. Check builder logs.",
-                    "contracts": 0, "symbol": "MNQ"}
+        strategy = {
+            "name": "Error",
+            "subtitle": str(e)[:80],
+            "why": "Strategy picker raised. Check builder logs.",
+            "contracts": 0,
+            "symbol": "MNQ",
+        }
 
     regimes: dict[str, dict] = {}
     for code, sym in (("MNQ", "NQ=F"), ("MGC", "MGC=F")):
@@ -204,14 +223,18 @@ def build(use_llm: bool = True) -> dict:
 
     sections: dict[str, dict] = {}
     with ThreadPoolExecutor(max_workers=len(SECTIONS)) as pool:
-        futures = {pool.submit(_run_section, k, lbl, mod, use_llm): k
-                   for k, lbl, mod in SECTIONS}
+        futures = {pool.submit(_run_section, k, lbl, mod, use_llm): k for k, lbl, mod in SECTIONS}
         for fut in as_completed(futures):
             try:
                 k, payload = fut.result()
                 sections[k] = payload
-                log.info("%-14s count=%-3d status=%-4s bullets=%d",
-                         k, payload["count"], payload["status"], len(payload["bullets"]))
+                log.info(
+                    "%-14s count=%-3d status=%-4s bullets=%d",
+                    k,
+                    payload["count"],
+                    payload["status"],
+                    len(payload["bullets"]),
+                )
             except Exception:
                 k = futures[fut]
                 log.exception("section %s raised at future level", k)
@@ -222,6 +245,7 @@ def build(use_llm: bool = True) -> dict:
     # all need to know whether today / tomorrow has a session.
     try:
         from fetchers import holidays as f_holidays
+
         brief["holidays"] = f_holidays.fetch()
     except Exception as e:
         log.exception("holidays fetch failed")
@@ -240,6 +264,7 @@ def build(use_llm: bool = True) -> dict:
     # so the analyst page can load it without the full brief.
     try:
         from fetchers import book as f_book
+
         brief["book"] = f_book.fetch()
         atomic_write(WEB_DIR / "book.json", brief["book"])
     except Exception as e:
@@ -250,16 +275,26 @@ def build(use_llm: bool = True) -> dict:
     try:
         brief["nq"] = f_nq.fetch(web_dir=WEB_DIR)
         from fetchers import preopen_expansion as f_preopen
+
         brief["preopen"] = f_preopen.fetch()
-        log.info("preopen expansion: %s", {k: v.get("orb") for k, v in (brief["preopen"].get("instruments") or {}).items()})
+        log.info(
+            "preopen expansion: %s",
+            {k: v.get("orb") for k, v in (brief["preopen"].get("instruments") or {}).items()},
+        )
         # Regime Lens v1 — the 09:25 ET read. Two pre-registered survivors only
         # (vol regime + DOL draw geometry); trend/chop and direction are absent
         # by measurement, not by omission.
         from fetchers import regime_lens as f_lens
+
         brief["lens"] = f_lens.fetch()
-        log.info("nq analyzer: %s run %s (%s) stale=%s audit=%s",
-                 brief["nq"].get("status"), brief["nq"].get("run_date"), brief["nq"].get("mode"),
-                 brief["nq"].get("stale"), (brief["nq"].get("audit") or {}).get("verdict"))
+        log.info(
+            "nq analyzer: %s run %s (%s) stale=%s audit=%s",
+            brief["nq"].get("status"),
+            brief["nq"].get("run_date"),
+            brief["nq"].get("mode"),
+            brief["nq"].get("stale"),
+            (brief["nq"].get("audit") or {}).get("verdict"),
+        )
     except Exception as e:
         log.exception("nq analyzer fetch failed")
         brief["nq"] = {"status": "unavailable", "error": f"{e.__class__.__name__}: {e}"}
@@ -269,15 +304,24 @@ def build(use_llm: bool = True) -> dict:
     # and the preopen medians; narration is cached per session date.
     try:
         from fetchers import review as f_review
-        brief["review"] = f_review.fetch(sections.get("trading_news") or {}, preopen=brief.get("preopen") or {})
+
+        brief["review"] = f_review.fetch(
+            sections.get("trading_news") or {}, preopen=brief.get("preopen") or {}
+        )
         atomic_write(WEB_DIR / "review.json", brief["review"])
-        log.info("review: %s yesterday=%s byline=%s", brief["review"].get("status"), brief["review"].get("yesterday_date"), brief["review"].get("byline"))
+        log.info(
+            "review: %s yesterday=%s byline=%s",
+            brief["review"].get("status"),
+            brief["review"].get("yesterday_date"),
+            brief["review"].get("byline"),
+        )
     except Exception as e:
         log.exception("review failed")
         brief["review"] = {"status": "error", "error": f"{e.__class__.__name__}: {e}"}
     # Page-one headlines, composed last so every input above is available.
     try:
         import headlines as _headlines
+
         brief["headlines"] = _headlines.compose(
             brief.get("holidays") or {},
             sections.get("event_calendar") or {},
@@ -316,11 +360,12 @@ def _sccs_brief_block() -> dict:
     if not _SCCS_CONFORMAL_AVAILABLE:
         return {"judge_score_ci": {"method": "unavailable"}}
     try:
-        cal_path = "/home/mm/MWM/data/sccs/judge_calibration.jsonl"
+        cal_path = os.path.expanduser("~/MWM/data/sccs/judge_calibration.jsonl")
         if not os.path.isfile(cal_path):
             return {"judge_score_ci": {"method": "no_cal_log"}}
         residuals: list[float] = []
         import json as _json
+
         with open(cal_path) as fh:
             for line in fh:
                 line = line.strip()
@@ -368,29 +413,31 @@ def _log_morning_brief_policy_state(regime: dict, strategy: dict, use_llm: bool)
         )
         if regime.get("volatility") and regime["volatility"] != "—":
             regime_label = f"{regime_label}|vol:{regime['volatility']}"
-        _sccs_record(_SccsPolicyState(
-            entry_point="morning_brief",
-            retrieval_config={
-                "sections": [k for k, _, _ in SECTIONS],
-                "skip_llm_sections": sorted(SKIP_LLM_SECTIONS),
-                "use_llm": bool(use_llm),
-            },
-            rubric_weights={
-                "strategy_name": strategy.get("name"),
-                "strategy_code": regime.get("strategy_code"),
-                "contracts": strategy.get("contracts"),
-                "symbol": strategy.get("symbol"),
-                "tier": regime.get("tier"),
-                "score": regime.get("score"),
-            },
-            model_tier="groq:summarise" if use_llm else "no_llm",
-            regime_label=str(regime_label)[:120],
-            extra={
-                "direction": regime.get("direction"),
-                "age_hours": regime.get("age_hours"),
-                "calibration_n": (regime.get("calibration") or {}).get("n"),
-            },
-        ))
+        _sccs_record(
+            _SccsPolicyState(
+                entry_point="morning_brief",
+                retrieval_config={
+                    "sections": [k for k, _, _ in SECTIONS],
+                    "skip_llm_sections": sorted(SKIP_LLM_SECTIONS),
+                    "use_llm": bool(use_llm),
+                },
+                rubric_weights={
+                    "strategy_name": strategy.get("name"),
+                    "strategy_code": regime.get("strategy_code"),
+                    "contracts": strategy.get("contracts"),
+                    "symbol": strategy.get("symbol"),
+                    "tier": regime.get("tier"),
+                    "score": regime.get("score"),
+                },
+                model_tier="groq:summarise" if use_llm else "no_llm",
+                regime_label=str(regime_label)[:120],
+                extra={
+                    "direction": regime.get("direction"),
+                    "age_hours": regime.get("age_hours"),
+                    "calibration_n": (regime.get("calibration") or {}).get("n"),
+                },
+            )
+        )
     except Exception as e:  # pragma: no cover
         log.debug(f"sccs policy_state log failed (non-fatal): {type(e).__name__}: {e}")
 
@@ -410,6 +457,7 @@ def main() -> int:
 
     if args.dry_run:
         import json as _json
+
         sys.stdout.write(_json.dumps(brief, indent=2, ensure_ascii=False))
         sys.stdout.write("\n")
         return 0
@@ -428,6 +476,7 @@ def main() -> int:
     # visible to a human in any JS-enabled browser.
     try:
         import machine_readable
+
         machine_readable.emit_all(WEB_DIR, brief)
     except Exception:
         log.error("machine-readable emit failed:\n%s", traceback.format_exc())
@@ -438,8 +487,9 @@ def main() -> int:
     if sc.get("dimensions"):
         try:
             atomic_write(WEB_DIR / "selfcalib.json", sc)
-            log.info("selfcalib written: agg=%s  dims=%d",
-                     sc.get("aggregate_pct"), len(sc["dimensions"]))
+            log.info(
+                "selfcalib written: agg=%s  dims=%d", sc.get("aggregate_pct"), len(sc["dimensions"])
+            )
         except Exception:
             log.error("selfcalib atomic_write failed:\n%s", traceback.format_exc())
 
@@ -465,7 +515,9 @@ def _rsync_to_vps() -> None:
     # foreign artifact explicitly; add to this list when a new producer starts
     # writing into the webroot.
     cmd = [
-        "rsync", "-az", "--delete",
+        "rsync",
+        "-az",
+        "--delete",
         "--exclude=.*",
         "--filter=protect nowcast.json",
         "--filter=protect preopen_update.json",

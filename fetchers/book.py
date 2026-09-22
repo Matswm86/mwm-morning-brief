@@ -14,6 +14,7 @@ number.
 
 Public-site rule: strategy names only. No account ids, no usernames, no paths.
 """
+
 from __future__ import annotations
 
 import csv
@@ -21,7 +22,7 @@ import json
 import logging
 import re
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 log = logging.getLogger("morning-brief.book")
@@ -203,7 +204,11 @@ def _verdict(s90: dict, sfull: dict, role: str) -> dict:
     if n == 0:
         return {"word": "NO DATA", "basis": basis, "line": "No closed trades in the export."}
     if pf is None:
-        return {"word": "NO LOSSES", "basis": basis, "line": f"{n} trades, not one loser. Too few trades to believe."}
+        return {
+            "word": "NO LOSSES",
+            "basis": basis,
+            "line": f"{n} trades, not one loser. Too few trades to believe.",
+        }
     if pf < 1.0:
         word = "LOSING"
         line = f"Lost money in its own backtest ({basis}): PF {pf}, win rate {wr}% over {n} trades."
@@ -294,7 +299,8 @@ def _prose_facts(e: dict) -> str:
             f"DESK NOTE (human-written context, may be quoted): {e['note']}",
             block("LAST 90 DAYS", s),
             block("FULL EXPORT", f),
-            f"VERDICT: {v['word']} ({v['basis']}). {v['line']}" + (f" {v['comeback']}" if v.get("comeback") else ""),
+            f"VERDICT: {v['word']} ({v['basis']}). {v['line']}"
+            + (f" {v['comeback']}" if v.get("comeback") else ""),
             "ACCOUNT CONTEXT: 50K prop-firm account, $1,000 daily loss limit, $2,000 maximum drawdown from the starting balance.",
         ]
     )
@@ -328,9 +334,10 @@ def _write_prose(entries: list[dict]) -> None:
     changed = False
     call = None
     try:
+        import os
         import sys
 
-        core = "/home/mats/MWM-AI/core"
+        core = os.path.expanduser("~/MWM/core")
         if core not in sys.path:
             sys.path.insert(0, core)
         from anthropic_via_claude_cli import call_claude_cli as call  # type: ignore
@@ -347,7 +354,9 @@ def _write_prose(entries: list[dict]) -> None:
             continue
         paras: list[str] | None = None
         if call:
-            text = call(model="sonnet", system_prompt=PROSE_SYSTEM, user_prompt=_prose_facts(e), timeout=180)
+            text = call(
+                model="sonnet", system_prompt=PROSE_SYSTEM, user_prompt=_prose_facts(e), timeout=180
+            )
             if text:
                 paras = [_clean(p) for p in text.strip().split("\n\n") if p.strip()]
                 if not (2 <= len(paras) <= 4) or sum(len(p) for p in paras) < 400:
@@ -355,10 +364,18 @@ def _write_prose(entries: list[dict]) -> None:
                     paras = None
         if paras:
             e["prose"], e["prose_by"] = paras, "the strategy desk"
-            cache[e["key"]] = {"ident": ident, "paragraphs": paras, "by": "the strategy desk", "written": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+            cache[e["key"]] = {
+                "ident": ident,
+                "paragraphs": paras,
+                "by": "the strategy desk",
+                "written": datetime.now(UTC).isoformat(timespec="seconds"),
+            }
             changed = True
         else:
-            e["prose"], e["prose_by"] = _fallback_prose(e), "the tables (correspondent unavailable this edition)"
+            e["prose"], e["prose_by"] = (
+                _fallback_prose(e),
+                "the tables (correspondent unavailable this edition)",
+            )
     if changed:
         try:
             PROSE_CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=1))
@@ -372,7 +389,7 @@ def fetch() -> dict:
     ok = [e for e in entries if e.get("status") == "ok"]
     return {
         "status": "ok" if ok else "error",
-        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "window_days": WINDOW_DAYS,
         "bar": {"win_rate_pct": BAR_WR, "profit_factor": BAR_PF},
         "fill_basis": "TradingView List-of-Trades exports, strategy-tester fills, export's own contract size",
@@ -390,5 +407,9 @@ if __name__ == "__main__":
     for grp in ("live", "bench", "retired"):
         for e in d[grp]:
             s = e.get("last_90d") or {}
-            print(f"{grp:8} {e['name']:24} {e['instrument']} n={s.get('trades')} WR={s.get('win_rate_pct')} PF={s.get('profit_factor')} net={s.get('net_usd')} dd={s.get('max_dd_usd')} -> {e.get('verdict',{}).get('word')}")
-    print(json.dumps({k: v for k, v in d.items() if k not in ('live','bench','retired')}, indent=1))
+            print(
+                f"{grp:8} {e['name']:24} {e['instrument']} n={s.get('trades')} WR={s.get('win_rate_pct')} PF={s.get('profit_factor')} net={s.get('net_usd')} dd={s.get('max_dd_usd')} -> {e.get('verdict', {}).get('word')}"
+            )
+    print(
+        json.dumps({k: v for k, v in d.items() if k not in ("live", "bench", "retired")}, indent=1)
+    )

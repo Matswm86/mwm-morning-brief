@@ -1,13 +1,13 @@
 """trade_tracker — Live trade count, sourced from engine event logs.
 
-Counts ONLY the PDHR cell on the XFA Funded account 24154823 (see
-COMBINE_SERVICES below) — the practice (19907662) cells are excluded so the
-Live Trades panel reflects real-money activity only. LiqSweep was retired
+Counts ONLY the PDHR cell on the funded account (see COMBINE_SERVICES
+below); the practice cells are excluded so the Live Trades panel reflects
+real-money activity only. LiqSweep was retired
 fleet-wide 2026-06-22 and replaced by PDHR MNQ @5ct on the funded fleet.
 
 Aligns with cell_activity by counting the SAME events per_cell_tracker
 counts: entry_market_placed + entry_limit_placed emitted by the live
-XFA runners, mirrored to ~/MWM-AI/data/vps_logs/<svc>/ via the
+XFA runners, mirrored to the local vps_logs mirror via the
 mwm-brief-vps-logs-sync.timer (5 min cadence).
 
 Previously this hit TopstepX /api/Trade/search for *closed* trades,
@@ -24,7 +24,8 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timedelta, timezone
+import os
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from config import MWM_ROOT
@@ -36,12 +37,15 @@ VPS_LOGS = MWM_ROOT / "data" / "vps_logs"
 # Must match fetchers/per_cell_tracker.ENTRY_TYPES for alignment.
 ENTRY_TYPES = {"entry_market_placed", "entry_limit_placed"}
 
-# XFA Funded account 24154823 fleet — must stay in sync with the live
-# services in fetchers/per_cell_tracker.CELLS. Live Trades counts this account
-# only, not the practice (19907662) cells. (Name kept as COMBINE_SERVICES for
-# back-compat; the account passed off Combine to XFA Funded 2026-06-11.)
+# Funded-account fleet — must stay in sync with the live services in
+# fetchers/per_cell_tracker.CELLS. Live Trades counts the funded account only,
+# not the practice cells. (Name kept as COMBINE_SERVICES for back-compat.)
 COMBINE_SERVICES = [
-    "pdhr-mnq-funded-24154823",
+    # Carries the broker account id, so it lives in BRIEF_FUNDED_SERVICE in
+    # ~/MWM/.env rather than in the repo. Empty means "no live fleet".
+    s
+    for s in [os.environ.get("BRIEF_FUNDED_SERVICE", "")]
+    if s
 ]
 
 
@@ -70,8 +74,8 @@ def _parse_utc(ts: str | None) -> datetime | None:
         s = str(ts).replace("Z", "+00:00")
         dt = datetime.fromisoformat(s)
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(timezone.utc)
+            dt = dt.replace(tzinfo=UTC)
+        return dt.astimezone(UTC)
     except Exception:
         return None
 
@@ -79,7 +83,7 @@ def _parse_utc(ts: str | None) -> datetime | None:
 def _count_entries(since_utc: datetime) -> int:
     if not VPS_LOGS.exists():
         return 0
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     # Glob today + each day back to since_utc (inclusive) across all services
     total = 0
     day = since_utc.date()
@@ -100,7 +104,7 @@ def _count_entries(since_utc: datetime) -> int:
 
 
 def fetch() -> dict:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     week_start = today_start - timedelta(days=now.weekday())
 

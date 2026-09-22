@@ -31,3 +31,8 @@ web/llms.txt
 web/robots.txt
 web/sitemap.xml
 web/session_levels_mnq.json
+
+# Point-in-time web snapshots kept locally, not published
+web-backup-*/
+web/book.json
+web/review.json

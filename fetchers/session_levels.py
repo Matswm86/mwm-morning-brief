@@ -22,7 +22,7 @@ Two fetch paths, matching bar_refresh.sh:
                   (run under python3.11) — fallback only
 
 Usage:
-  /home/mats/MWM-AI/projects/mwm-trading/.venv/bin/python \
+  ~/MWM/projects/mwm-trading/.venv/bin/python \
       -m fetchers.session_levels --source pxpy --write web/session_levels_mnq.json
 """
 
@@ -31,7 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-from datetime import date, datetime, time, timezone
+from datetime import UTC, date, datetime, time
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -135,9 +135,7 @@ def build(bars: list[dict], keep: int = DEFAULT_KEEP) -> list[dict]:
     order = {k: i for i, (k, _lbl, _s, _e) in enumerate(SESSIONS)}
 
     out: list[dict] = []
-    for (day, key), agg in sorted(
-        buckets.items(), key=lambda kv: (kv[0][0], order[kv[0][1]])
-    ):
+    for (day, key), agg in sorted(buckets.items(), key=lambda kv: (kv[0][0], order[kv[0][1]])):
         start_dt, end_dt = _bounds(day, key)
         complete = now >= end_dt
         end_epoch = int(end_dt.timestamp())
@@ -187,7 +185,7 @@ def fetch(
         "timezone": "Europe/Oslo",
         "interval": "5m",
         "source": src,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "session_defs": {
             k: [s.strftime("%H:%M"), e.strftime("%H:%M")] for k, _lbl, s, e in SESSIONS
         },
@@ -204,9 +202,7 @@ def _write(path: Path, payload: dict) -> None:
 
 
 def main() -> int:
-    logging.basicConfig(
-        level=logging.INFO, format="%(levelname)s %(name)s: %(message)s"
-    )
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     ap = argparse.ArgumentParser()
     ap.add_argument("--source", choices=("pxpy", "yahoo"), default="pxpy")
     ap.add_argument("--symbol", default=DEFAULT_SYMBOL)
@@ -223,9 +219,7 @@ def main() -> int:
     try:
         payload = fetch(args.source, args.symbol, args.days, args.keep)
     except Exception as e:
-        log.error(
-            "session levels (%s) failed: %s: %s", args.source, type(e).__name__, e
-        )
+        log.error("session levels (%s) failed: %s: %s", args.source, type(e).__name__, e)
         return 2
 
     if args.stdout:

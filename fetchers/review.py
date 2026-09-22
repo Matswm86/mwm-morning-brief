@@ -23,13 +23,14 @@ facts, and says so in its byline.
 
 Public-site rule: no names, no accounts, no internal system names.
 """
+
 from __future__ import annotations
 
 import json
 import logging
 import re
 import statistics
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -111,7 +112,13 @@ def _et_date(iso: str | None) -> str | None:
     if not iso:
         return None
     try:
-        return datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).astimezone(ET).date().isoformat()
+        return (
+            datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ")
+            .replace(tzinfo=UTC)
+            .astimezone(ET)
+            .date()
+            .isoformat()
+        )
     except ValueError:
         return None
 
@@ -123,7 +130,7 @@ def _seed_if_empty() -> None:
     try:
         from fetchers import trading_news as tn
 
-        cut = datetime.now(timezone.utc) - timedelta(days=SEED_DAYS)
+        cut = datetime.now(UTC) - timedelta(days=SEED_DAYS)
         orig = tn._cutoff
         tn._cutoff = lambda: cut  # type: ignore[assignment]
         items: list[dict] = []
@@ -154,7 +161,7 @@ def _sessions(symbol: str, median_pts: float | None = None) -> list[dict]:
     prev_close = None
     for b in rows:
         try:
-            day = datetime.fromtimestamp(int(b["time"]), tz=timezone.utc).date()
+            day = datetime.fromtimestamp(int(b["time"]), tz=UTC).date()
             h, lo, c = float(b["high"]), float(b["low"]), float(b["close"])
         except (KeyError, TypeError, ValueError):
             continue
@@ -172,7 +179,10 @@ def _sessions(symbol: str, median_pts: float | None = None) -> list[dict]:
                 "move_pct": round(move, 2) if move is not None else None,
                 "range_pts": round(rng, 1) if rng is not None else None,
                 "range_x_median": round(rng / med, 2) if (med and rng is not None) else None,
-                "mattered": bool((med and rng is not None and rng / med >= RANGE_X) or (move is not None and abs(move) >= MOVE_PCT)),
+                "mattered": bool(
+                    (med and rng is not None and rng / med >= RANGE_X)
+                    or (move is not None and abs(move) >= MOVE_PCT)
+                ),
             }
         )
         if rng is not None:
@@ -211,7 +221,12 @@ def _facts(ledger: list[dict], mnq: list[dict], mgc: list[dict], today: date) ->
                 "mgc": g,
                 "mattered": bool((m and m["mattered"]) or (g and g["mattered"])),
                 "stories": [
-                    {"headline": r["headline"], "driver": r.get("driver"), "instrument": r.get("instrument"), "source": r.get("source")}
+                    {
+                        "headline": r["headline"],
+                        "driver": r.get("driver"),
+                        "instrument": r.get("instrument"),
+                        "source": r.get("source"),
+                    }
                     for r in _stories_for(ledger, d)
                 ],
             }
@@ -226,7 +241,9 @@ def _facts(ledger: list[dict], mnq: list[dict], mgc: list[dict], today: date) ->
 
 
 def _facts_text(f: dict) -> str:
-    lines = ["SESSION TABLE (close-to-close move %, day range in points, range vs trailing-20-session median, mattered = range >= 1.25x median or |move| >= 1.0%)"]
+    lines = [
+        "SESSION TABLE (close-to-close move %, day range in points, range vs trailing-20-session median, mattered = range >= 1.25x median or |move| >= 1.0%)"
+    ]
     for d in f["week"]:
         m, g = d.get("mnq") or {}, d.get("mgc") or {}
         lines.append(
@@ -234,13 +251,17 @@ def _facts_text(f: dict) -> str:
             f"MGC move {g.get('move_pct')}% range {g.get('range_pts')} pts ({g.get('range_x_median')}x median); MATTERED={'YES' if d['mattered'] else 'NO'}"
         )
     lines.append("")
-    lines.append("STORIES THE WIRE RAN, BY DAY (headline · driver family · instrument tag · outlet)")
+    lines.append(
+        "STORIES THE WIRE RAN, BY DAY (headline · driver family · instrument tag · outlet)"
+    )
     for d in f["week"]:
         lines.append(f"{d['weekday']} {d['date']}:")
         if not d["stories"]:
             lines.append("  (no stories on file for this day)")
         for s in d["stories"]:
-            lines.append(f"  - {s['headline']} · {s.get('driver')} · {s.get('instrument')} · {s.get('source')}")
+            lines.append(
+                f"  - {s['headline']} · {s.get('driver')} · {s.get('instrument')} · {s.get('source')}"
+            )
     lines.append("")
     lines.append(f"YESTERDAY = {f['yesterday']['weekday']} {f['yesterday']['date']}.")
     return "\n".join(lines)
@@ -252,14 +273,26 @@ def _fallback_prose(f: dict) -> tuple[str, str]:
     p1 = (
         f"{y['weekday']}: MNQ moved {m.get('move_pct')}% on a {m.get('range_pts')}-point range, "
         f"{m.get('range_x_median')} times its recent median; MGC moved {g.get('move_pct')}% on {g.get('range_pts')} points. "
-        + ("The session mattered by the desk's rule. " if y["mattered"] else "By the desk's rule the session was noise. ")
-        + (f"The wire ran {len(y['stories'])} stories that day, led by: {y['stories'][0]['headline']}." if y["stories"] else "The wire has no stories on file for that day.")
+        + (
+            "The session mattered by the desk's rule. "
+            if y["mattered"]
+            else "By the desk's rule the session was noise. "
+        )
+        + (
+            f"The wire ran {len(y['stories'])} stories that day, led by: {y['stories'][0]['headline']}."
+            if y["stories"]
+            else "The wire has no stories on file for that day."
+        )
     )
     loud = [d for d in f["week"] if d["stories"] and not d["mattered"]]
     moved = [d for d in f["week"] if d["mattered"]]
     p2 = (
         f"The week: {len(moved)} of {len(f['week'])} sessions mattered ({', '.join(d['weekday'] for d in moved) or 'none'}). "
-        + (f"Stories ran on {', '.join(d['weekday'] for d in loud)} without moving the tape past the bar. " if loud else "")
+        + (
+            f"Stories ran on {', '.join(d['weekday'] for d in loud)} without moving the tape past the bar. "
+            if loud
+            else ""
+        )
         + "Ranges and moves are read from daily bars; no story is credited with a move the table does not show."
     )
     return p1, p2
@@ -268,14 +301,17 @@ def _fallback_prose(f: dict) -> tuple[str, str]:
 def _narrate(f: dict) -> tuple[str, str, str]:
     """Returns (part1, part2, byline)."""
     try:
+        import os
         import sys
 
-        core = "/home/mats/MWM-AI/core"
+        core = os.path.expanduser("~/MWM/core")
         if core not in sys.path:
             sys.path.insert(0, core)
         from anthropic_via_claude_cli import call_claude_cli  # type: ignore
 
-        text = call_claude_cli(model="sonnet", system_prompt=SYSTEM_PROMPT, user_prompt=_facts_text(f), timeout=180)
+        text = call_claude_cli(
+            model="sonnet", system_prompt=SYSTEM_PROMPT, user_prompt=_facts_text(f), timeout=180
+        )
         if text and "---" in text:
             a, b = text.split("---", 1)
             a, b = _clean(a), _clean(b)
@@ -295,7 +331,9 @@ def _load_cache() -> dict:
         return {}
 
 
-def fetch(trading_news: dict | None = None, now: datetime | None = None, preopen: dict | None = None) -> dict:
+def fetch(
+    trading_news: dict | None = None, now: datetime | None = None, preopen: dict | None = None
+) -> dict:
     now_et = (now or datetime.now(tz=ET)).astimezone(ET)
     today = now_et.date()
     _seed_if_empty()
@@ -332,7 +370,7 @@ def fetch(trading_news: dict | None = None, now: datetime | None = None, preopen
                 log.warning("review cache not written")
     return {
         "status": "ok",
-        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "yesterday_date": key,
         "byline": by,
         "yesterday_text": p1,
@@ -349,4 +387,8 @@ def fetch(trading_news: dict | None = None, now: datetime | None = None, preopen
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     r = fetch()
-    print(json.dumps({k: v for k, v in r.items() if k not in ("week",)}, indent=1, ensure_ascii=False)[:4000])
+    print(
+        json.dumps(
+            {k: v for k, v in r.items() if k not in ("week",)}, indent=1, ensure_ascii=False
+        )[:4000]
+    )

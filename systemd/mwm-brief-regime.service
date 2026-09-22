@@ -5,9 +5,10 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=/home/mm/MWM/projects/mwm-morning-brief
+WorkingDirectory=%h/MWM/projects/mwm-morning-brief
 ExecStart=/usr/bin/python3 -m fetchers.regime_monitor
-ExecStartPost=/usr/bin/rsync -az web/regime.json mats@204.168.244.173:/var/www/brief/regime.json
+EnvironmentFile=%h/MWM/.env
+ExecStartPost=/usr/bin/rsync -az web/regime.json ${BRIEF_VPS_TARGET}/regime.json
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=mwm-brief-regime

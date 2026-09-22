@@ -1,122 +1,143 @@
-# Morning Brief
+# The Morning Brief
 
-Daily trader's dashboard at [brief.mwmai.no](https://brief.mwmai.no/).
+A pre-open trading page for two futures contracts, MNQ (Micro E-mini Nasdaq-100) and MGC
+(Micro Gold), typeset as a broadsheet newspaper.
 
-Builds a single-page briefing (`web/brief.json` + `web/index.html`) from
-local state + public APIs + Groq-summarised news, then rsyncs the `web/`
-tree to the Hetzner VPS.
+Live at **[brief.mwmai.no](https://brief.mwmai.no/)**.
 
-## Layout
+![The Morning Brief front page](docs/screenshots/front-page.png)
+
+The page answers one question before the bell: how big is today likely to be, and does
+anything on the calendar or the tape argue against trading it. It never calls direction,
+never posts a profit target, and never places an order. Every number on it is either read
+from a public API or computed from a held-out backtest, and the page says which.
+
+## The two pages
+
+### Front page
+
+The lead headline is a range forecast, not a prediction of up or down. Under it:
+
+| Section | What it shows |
+|---|---|
+| Page one | Pre-open range forecast against the 26-day median, the next exchange closure, and the strategies running today |
+| The Week Ahead | A weekly master read on MNQ, refreshed each weekday pre-open, with a second model auditing the first and the audit verdict always printed |
+| Trading wire | The last 24 hours of news filtered to things that move MNQ or MGC, each item tagged MNQ, MGC or BOTH |
+| Live charts | MNQ and MGC 5-minute candles with prior-day and overnight levels in the footer |
+| Pre-open expansion | At 08:00 Oslo, whether today's range beats its 26-day median. It calls only above 1.15x or below 0.80x and abstains between, which is what lifts the called days from 63.9% to 87% and 70% |
+| Regime lens | The 15:25 Oslo read. Two pre-registered survivors: next-session range regime (65.2% over 5 years against 58.9% for persistence) and prior-day high/low first-touch geometry. Trend, chop and direction are deliberately absent because all three measured null |
+| Intraday nowcast | A 15-minute producer scoring the session in flight, validated on 252 held-out sessions |
+| Regime | Structural backdrop over weeks to months: trend, volatility, credit and four tripwires, over a VIX chart back to 2012 |
+| Scheduled | US macro events for the next 7 days, because a regime read that ignores an 08:30 ET CPI print is misleading |
+| Back pages | Tech and AI, research, and a self-calibration progress strip drawn as a comic |
+
+![Intraday nowcast for MNQ and MGC](docs/screenshots/intraday-nowcast.png)
+
+Every nowcast panel carries its own precision from the held-out sample and its abstain
+rate, so a confident-looking arrow can be read against how often that call has been right.
+On the day above the MNQ panel reads 62% precision across 252 held-out sessions while MGC
+abstains, which is what the model does on 35% of sessions at that checkpoint.
+
+### The Strategy Desk (`analyst.html`)
+
+A second page that looks backwards instead of forwards.
+
+![The Strategy Desk reviewing yesterday and last week](docs/screenshots/strategy-desk.png)
+
+- **Yesterday, reviewed.** What the session actually did, in points and as a multiple of
+  the trailing median range, set against every headline the wire ran that day. The column
+  states plainly when the tape moved and the news had nothing to do with it, and when a
+  loud news day produced nothing. Correlation is named as correlation.
+- **The week, reviewed.** The same treatment across five sessions, so the days that
+  mattered can be told apart from the days that only looked busy.
+- **The book.** A 90-day backtest column per strategy, live, benched and retired, with a
+  verdict on which retired ones could come back. Every figure is read from that strategy's
+  own TradingView list-of-trades export, at the export's own contract size and the strategy
+  tester's own fills. The masthead says "backtests, not brokers" because that is the claim.
+
+## How it is built
+
+`builder.py` fetches every section in parallel, summarises the news through a Groq model,
+validates the result against a JSON schema, writes `web/brief.json` atomically, and rsyncs
+the `web/` tree to a VPS behind Caddy. The page itself is static HTML plus vanilla JS that
+reads the JSON. No framework, no build step for the front end.
 
 ```
-morning-brief/
-├── builder.py           # orchestrator — fetch, summarise, atomic write, rsync
-├── config.py            # env/paths (reads ~/MWM/.env)
-├── schema.py            # brief.json shape + empty-section helpers
-├── strategy.py          # regime → strategy picker (ORB / LiqSweep / FLAT)
-├── llm.py               # Groq summarisation wrapper (reuses core/llm_backends)
-├── http_util.py         # shared requests.get wrapper
-├── bar_refresh.sh       # 5-min MNQ candle refresh + rsync
-├── fetchers/            # per-section fetchers (market, system, research, …)
-├── systemd/             # user-level timers + services
-└── web/                 # rsync'd to VPS
-    ├── index.html
-    └── assets/          # style.css, app.js, chart.js, lightweight-charts.js,
-                         # tracker.js (live trades), backtest_stats.js (strategy perf)
+builder.py            orchestrator: fetch, summarise, validate, atomic write, deploy
+config.py             env and paths, read from a single .env
+schema.py             brief.json shape and empty-section helpers
+strategy.py           regime to strategy picker
+llm.py                Groq summarisation wrapper
+headlines.py          page-one headline selection
+machine_readable.py   llms.txt and the structured-data endpoints
+fetchers/             one module per section (28 of them)
+systemd/              user timers and services
+web/                  the static site that gets deployed
+  index.html          front page
+  analyst.html        The Strategy Desk
+  week-ahead.html     the full weekly edition
+  assets/             style.css plus one JS module per section
 ```
 
-Runtime outputs (`web/brief.json`, `web/bars_mnq.json`, `logs/`) are
-gitignored — they're regenerated each build.
+Runtime outputs (`web/brief.json`, `web/bars_*.json`, `logs/`) are gitignored. They are
+regenerated on every build.
+
+### Quality gate on the summaries
+
+Every summarised bullet passes five deterministic checks before an LLM judge ever sees it:
+JSON schema, URL provenance, a source index on every bullet, lede length and bullet length.
+Only then does the judge score it against a rubric, and a bullet that fails is compressed or
+dropped rather than published. A bullet with no traceable source never reaches the page.
 
 ## Schedule (Europe/Oslo)
 
-| When | Unit |
+| When | What |
 |---|---|
-| every 5 min Mon–Fri | `mwm-brief-bars-refresh.timer` → MNQ candles (project-x-py primary, Yahoo fallback) |
-| 05:30 + 17:30 UTC | `mwm-morning-brief.timer` → full rebuild + rsync (12h cadence so selfcalib + live trades stay fresh) |
-| 08:15 Mon–Fri | `mwm-morning-brief-post-ldn.timer` → rebuild after LDN market-detector fires (same-day LDN tile) |
-| 15:00 Mon–Fri | `mwm-morning-brief-post-ny.timer` → rebuild after NY market-detector fires (same-day NY tile) |
-| daily | `mwm-brief-regime.timer` → regime monitor refresh (VIX chart + 4-row regime panel) |
+| every 5 min, Mon to Fri | MNQ and MGC candle refresh |
+| 06:40 Oslo and 17:30 UTC | full rebuild and deploy |
+| 08:15 Mon to Fri | rebuild after the London detector fires |
+| 15:00 Mon to Fri | rebuild after the New York detector fires |
+| 22:00 UTC | regime monitor refresh, VIX chart and the four-row panel |
 
-## Build manually
+## Running it yourself
 
 ```bash
-cd ~/MWM/projects/mwm-morning-brief
-python3 builder.py                 # build + rsync
-python3 builder.py --no-llm        # skip Groq
-python3 builder.py --dry-run       # stdout only
-python3 builder.py --no-deploy     # build locally, don't rsync
+python3 builder.py              # build and deploy
+python3 builder.py --dry-run    # print to stdout, touch nothing
+python3 builder.py --no-llm     # skip the summariser
+python3 builder.py --no-deploy  # build locally, do not rsync
 ```
 
-## Dependencies
+Python 3.11, `requests` and `pandas`. Configuration comes from a `.env` file outside the
+repo. Nothing here is hardcoded to one machine or one host.
 
-Python 3.11, `requests`, `pandas` (via the shared `projects/mwm-trading`
-venv is fine). Also reads `~/MWM/core/llm_backends.py` for the Groq
-client.
+| Key | Used for |
+|---|---|
+| `GROQ_API_KEY` | news summarisation |
+| `FINNHUB_API_KEY` | market news |
+| `FRED_API_KEY` | macro series |
+| `BRIEF_VPS_TARGET` | rsync destination, `user@host:/path` |
+| `BRIEF_OUT_DIR` | output directory, defaults to `web/` |
 
-## Quality layer (Memento)
-
-All Groq-summarised bullets pass through `core/memento/compress_with_judge` before
-being written to `brief.json`. Five deterministic checks run first (JSONSchema,
-URL provenance, source_idx presence, lede length, bullet length), then an LLM judge
-scores the output on a rubric. Bullets that fail are compressed/rejected before rsync.
-Requires `source_idx` on every bullet (wired in `llm.py` 2026-04-21).
-
-## Self-calibration progress (SCCS-tracked)
-
-The hero's "Self-calibrating research-and-trading organism" bar is a **6-segment
-weighted progress readout** of how far the surrounding system is from full
-self-calibration. Source of truth = `selfcalib_state.json` (hand-tuned pcts,
-weights, keywords). On every build, `fetchers/selfcalib.py` enriches with
-freshness signals (`as_of`, `last_shipped` per dim from handoff filename
-scan, auto-flipped `status_badge`) and writes `web/selfcalib.json` atomically.
-
-Pcts are **not auto-bumped** — they're revised manually after CIP weekly review or
-when a master-queue milestone closes. See [`handoff-brief-selfcalib-shipped-2026-04-24.md`](https://github.com/Matswm86/mwm-infrastructure/blob/master/memory/handoff-brief-selfcalib-shipped-2026-04-24.md)
-for the design rationale (38.25% honest baseline beats 70% vibes).
-
-**Current aggregate (2026-06-01 re-review): 65.70%** — re-reviewed 2026-06-01: rubric recompute = 65.10%, manual = 65.70%, **flat since 05-19**. The 05-20→05-31 period was consolidation — one measurable retrieval win (contextual-retrieval CP-17, gold→82) offset by three honestly-killed tracks (Ricci/geodesic, betting-CS, reranker-on-context) and a starved selfcalib gate (n=11 all-0 deltas). Bullets refreshed per dim; pcts deliberately not inflated. Held at 65.70% from the 2026-05-19 wave: D1 98→99 (Phase B 3-judge minority-veto LIVE + B1 weekly scheduler), D2 62→67 (Phase A.6/A.7 topology drift metrics + retrieval-regression FIX with kill-test PASS + B1 counterfactual scout credit `D_i` + Ironclad Hardened r2 closeout), D3 68→75 (F18 FLIPPED LIVE + F19 boundary-flux build shipped + A1 Action-Reason Trace + Phase 0 freeze dissolved), D4 22→25 (D1 paired-ablation methodology codified + commit-msg lint), D6 78→79 (handoffs landed). Earlier 2026-05-19 progression was itself a bump from 62.30% (2026-05-12) after the 2026-05-18 + 2026-05-19 wave: D1 98→99 (Phase B 3-judge minority-veto LIVE + B1 weekly scheduler), D2 62→67 (Phase A.6/A.7 topology drift metrics + retrieval-regression FIX with kill-test PASS + B1 counterfactual scout credit `D_i` + Ironclad Hardened r2 closeout), D3 68→75 (F18 FLIPPED LIVE + F19 boundary-flux build shipped + A1 Action-Reason Trace + Phase 0 freeze dissolved), D4 22→25 (D1 paired-ablation methodology codified + commit-msg lint), D6 78→79 (handoffs landed). Prior progression: 43.75 → 55.80 (2026-04-28 after M0/M1/F4/F4.5/F6/F9) → 56.40 (2026-05-05 after F18 scaffold + C2 invariant) → 62.30 (2026-05-12 after F20-F23 + brain repair + F24 + agent audit + claim-verifier + voice corpus).
-
-SCCS Foundation track: M0/M1 closed 04-26..27, M2 closed 05-01, M3 opened (regime_label landed 05-05). F3 DoWhy 3-node causal gate flipped from dry-mode to **LIVE-consuming 2026-05-11**; F4 Bernstein + F6 BOCPD gates wired between decide+dispatch (04-27..28); **F4.5 Conformal LIVE 2026-05-04** (`SCCS_CONFORMAL_ENABLED=true`); F9 forward-sufficiency 6th rubric dim shipped 04-28; **F18 skill self-optimizer FLIPPED LIVE 2026-05-18** after 4 gates passed (first post-flip cycle was a clean dry-run self-cancel; C2 reward-immutability invariant gated); **F19 boundary-flux conservation monitor BUILD SHIPPED 2026-05-18** (`core/sccs/boundary_flux.py` 310 LOC + 12-test acceptance + CIP signal #20 with weight 0.03 + 3-axis kill criterion; orchestrator wire-in gated on first 3 Bernstein-confirmed F18 runs). **Scorer-defense Phase A (drift tripwire + topology metrics) + Phase B (3-judge minority-veto, observational) + Phase C (triangular consistency) all LIVE 2026-05-19**; first Phase B verdicts Sun 2026-05-24, gate-flip ~Sun 2026-06-21 after ≥25 verdicts.
-
-**Brief selfcalib v2 rubric in dry-run since 2026-05-05** — `selfcalib_rubric.yaml` + `recompute_selfcalib.py` live; first dry-run AGG=65.90 vs manual 56.40 (+9.5pp); 2026-05-12 dry-run AGG=65.10 vs manual 62.30 (+2.8pp, narrowing). 2-fire ratification window 2026-05-11 + 2026-05-18 replaces the original 4-week dry-run. See [`plans/selfcalib-bar-v2-rubric-2026-05-05.md`](https://github.com/Matswm86/mwm-infrastructure/blob/master/plans/selfcalib-bar-v2-rubric-2026-05-05.md).
-
-## SCCS F1 — policy_state logging
-
-Each build records one row to `~/MWM/data/sccs/policy_state.db` with
-`entry_point=morning_brief`, `regime_label`, `rubric_weights` (strategy
-picker decision), `model_tier`, and `retrieval_config` (sections + LLM toggles).
-Best-effort — missing `sccs` package or DB errors are logged at DEBUG and never
-break the build. Disable with `SCCS_OFF=1`. See `core/sccs/` in the
-[`mwm-infrastructure`](https://github.com/Matswm86/mwm-infrastructure) repo.
-
-Env (from `~/MWM/.env`):
-
-- `GROQ_API_KEY` — summariser (openai/gpt-oss-120b → llama-3.3-70b fallback)
-- `FINNHUB_API_KEY` — market news
-- `FRED_API_KEY` — macro
-- `BRIEF_VPS_TARGET` — rsync dest (e.g. `user@host:/srv/brief`)
-- `PROJECT_X_API_KEY` / `PROJECT_X_USERNAME` / `PROJECT_X_ACCOUNT_ID` — from
-  `projects/mwm-trading/.env`, used by `trade_tracker` for live trade counts
+Without the keys the build still runs and the affected sections render empty rather than
+failing, which is the design: a missing section is honest, a fabricated one is not.
 
 ## Sources
 
-- **Market**: project-x-py CME real-time bars (MNQ M26, zero delay) + Yahoo quotes (NQ=F, ES=F, GC=F, ^VIX, ^TNX, DX-Y.NYB) + Finnhub
-- **Regime**: local `data/market_regime/latest_{ldn,ny}.json` written by
-  `market_detector` package (see `projects/mwm-trading/`); long-term VIX chart
-  (2012+) + 4-row regime panel (trend/vol/credit/tripwires) + edge badge (green/amber/red)
-  via `fetchers/regime_monitor.py` + `fetchers/regime.py`
-- **Trade Environment**: `trade_guard`, `contextualize_macro`, `check_orb_handoff_status`
-  (market-news Track B tools) — verdict + risk bars + ORB handoff via `fetchers/trade_guard_daily.py`
-- **Live Trades**: today + this-week trade counts from the **50K Combine account `22484767`**
-  via `fetchers/trade_tracker.py` — counts `entry_market_placed` + `entry_limit_placed`
-  engine events from the 3 Combine service dirs in `~/MWM/data/vps_logs/` (must stay in
-  sync with `per_cell_tracker.COMBINE_SERVICES`). Practice (19907662) cells are excluded.
-- **Strategy Performance**: mirrors the **trading.mwmai.no strategy showcase** (the 2 strategies
-  live on the Combine fleet — Liquidity Sweep MNQ+MGC, ORB Breakout MNQ) via
-  `fetchers/backtest_stats.py`, which parses
-  `projects/mwm-trading/platform/frontend-rr7/app/lib/strategy-showcase.ts` (auto-generated
-  1-year backtest on the live cells). Re-run the platform showcase generator to refresh; the
-  brief picks up new numbers on the next build. No hand-edited stats.
-- **Geopolitics / Tech / Research**: arXiv q-fin + GDELT (Obsidian inbox removed 2026-04-21 — privacy fix)
-- **System**: docker ps · systemd user units · VPS pings · nightly diff review
+- **Price**: CME real-time bars through the TopstepX Python SDK, with Yahoo quotes as the
+  fallback and for the index, VIX, 10-year and dollar-index reads.
+- **News**: Finnhub, plus GDELT tone and arXiv q-fin for the back pages.
+- **Macro**: FRED and the BLS.
+- **Regime**: a local market-detector package plus FRED's VIX series back to 2012.
+- **Strategy figures**: TradingView list-of-trades exports, parsed as-is. No hand-edited
+  statistics appear anywhere on the site.
+
+## What this is not
+
+It is not advice, not a signal service, and not a broker. It does not execute anything.
+The page is display-only by design: the reader flips the switch, never the page. Strategy
+names and backtest figures are published so they can be checked, not so they can be copied.
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).

@@ -7,7 +7,7 @@ set -uo pipefail
 
 cd "$(dirname "$0")"
 
-PXPY="/home/mats/MWM-AI/projects/mwm-trading/.venv/bin/python"
+PXPY="$HOME/MWM/projects/mwm-trading/.venv/bin/python"
 YAHOO="/usr/bin/python3.11"
 
 refresh_symbol() {
@@ -45,6 +45,13 @@ refresh_symbol MNQ NQ=F  web/bars_mnq.json || rc=1
 refresh_symbol MGC MGC=F web/bars_mgc.json || rc=1
 refresh_session_levels || rc=1
 
-rsync -az web/bars_mnq.json web/bars_mgc.json web/session_levels_mnq.json \
-  mats@204.168.244.173:/var/www/brief/ || rc=1
+# Deploy target comes from BRIEF_VPS_TARGET in ~/MWM/.env (user@host:/path),
+# the same key config.py reads. No host is hardcoded here.
+BRIEF_VPS_TARGET="${BRIEF_VPS_TARGET:-$(sed -n "s/^BRIEF_VPS_TARGET=//p" "$HOME/MWM/.env" 2>/dev/null | tr -d "\"'" )}"
+if [ -z "$BRIEF_VPS_TARGET" ]; then
+  echo "WARN: BRIEF_VPS_TARGET unset, skipping deploy" >&2
+else
+  rsync -az web/bars_mnq.json web/bars_mgc.json web/session_levels_mnq.json \
+    "$BRIEF_VPS_TARGET/" || rc=1
+fi
 exit $rc

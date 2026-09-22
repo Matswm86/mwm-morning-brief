@@ -1,6 +1,6 @@
-"""per_cell_tracker — activity breakdown for the 2 live XFA Funded (24154823) cells.
+"""per_cell_tracker — activity breakdown for the live funded cells.
 
-Reads JSONL event logs from ~/MWM-AI/data/vps_logs/<svc>/ (populated by the
+Reads JSONL event logs from ~/MWM/data/vps_logs/<svc>/ (populated by the
 mwm-brief-vps-logs-sync.timer which rsyncs from VPS every 5 min).
 
 For each cell produces: symbol, contracts, window, trade-day status,
@@ -19,7 +19,8 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import date, datetime, timedelta, timezone
+import os
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -30,16 +31,20 @@ log = logging.getLogger("morning-brief.per_cell_tracker")
 
 VPS_LOGS = MWM_ROOT / "data" / "vps_logs"
 
+# Funded PDHR runner directory under vps_logs. Carries the broker account id,
+# so it is read from BRIEF_FUNDED_SERVICE in ~/MWM/.env rather than committed.
+FUNDED_PDHR_SERVICE = os.environ.get("BRIEF_FUNDED_SERVICE", "")
+
 # Display metadata per service. `window` is a short human label; `tz` is used
 # for DOW evaluation when the config omits it (MNQ orbaron services).
-# Live fleet = the PDHR cell on the XFA Funded account 24154823 (MNQ 5ct,
+# Live fleet = the PDHR cell on the funded account (MNQ 5ct,
 # RTH-only). LiqSweep was retired fleet-wide 2026-06-22 (overnight loss blew
 # XFA) and PARKED; PDHR (Prior-Day H/L break-and-retest) replaced it on all
 # three funded accounts. The practice cells are intentionally excluded — this
 # panel mirrors the real-money fleet only.
 CELLS: list[dict[str, Any]] = [
     {
-        "service": "pdhr-mnq-funded-24154823",
+        "service": FUNDED_PDHR_SERVICE,
         "label": "PDHR MNQ",
         "engine": "pdhr",
         "window": "RTH",
@@ -123,8 +128,8 @@ def _parse_utc(ts: str | None) -> datetime | None:
         s = str(ts).replace("Z", "+00:00")
         dt = datetime.fromisoformat(s)
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(timezone.utc)
+            dt = dt.replace(tzinfo=UTC)
+        return dt.astimezone(UTC)
     except Exception:
         return None
 
@@ -156,9 +161,7 @@ def _count_today(events: list[dict], now_utc: datetime, predicate) -> int:
     return n
 
 
-def _last_trade_info(
-    events: list[dict], now_utc: datetime
-) -> tuple[float | None, str | None]:
+def _last_trade_info(events: list[dict], now_utc: datetime) -> tuple[float | None, str | None]:
     """Return (engine_entry_price, ts_utc_iso) of most recent entry today."""
     today = now_utc.date()
     for ev in reversed(events):
@@ -259,15 +262,9 @@ def _cell_payload(meta: dict, now_utc: datetime) -> dict:
 
     bars_today = _count_today(events, now_utc, lambda e: e.get("type") == "bar")
     # entries_today: count distinct entry_* events on TODAY UTC
-    entries_today = _count_today(
-        events, now_utc, lambda e: e.get("type") in ENTRY_TYPES
-    )
-    fills_today = _count_today(
-        events, now_utc, lambda e: e.get("type") == "order_filled"
-    )
-    closes_today = _count_today(
-        events, now_utc, lambda e: e.get("type") == "position_closed"
-    )
+    entries_today = _count_today(events, now_utc, lambda e: e.get("type") in ENTRY_TYPES)
+    fills_today = _count_today(events, now_utc, lambda e: e.get("type") == "order_filled")
+    closes_today = _count_today(events, now_utc, lambda e: e.get("type") == "position_closed")
 
     # signals_today: prefer the engine counter from the most recent heartbeat
     # (runner tracks this); fallback to entries_today.
@@ -346,7 +343,7 @@ def _last_sync_utc() -> str | None:
 
 
 def fetch() -> dict:
-    now_utc = datetime.now(timezone.utc)
+    now_utc = datetime.now(UTC)
     cells: list[dict] = []
     for meta in CELLS:
         try:
