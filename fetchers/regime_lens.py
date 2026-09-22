@@ -28,12 +28,14 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
 log = logging.getLogger("morning-brief.lens")
 
-SRC = Path.home() / "MWM-AI" / "data" / "cockpit" / "regime_lens.json"
+_ROOT = Path(os.environ.get("MWM_AI_ROOT", Path.home() / "MWM"))  # ~/MWM-AI is gone on this box
+SRC = _ROOT / "data" / "cockpit" / "regime_lens.json"
 STALE_HOURS = 20.0
 
 # Measured on the locked 5y judgment window (dol_geometry.json, judge_5y).

@@ -125,9 +125,10 @@
 
   <!-- Pre-open expansion + ORB go/no-go. Read at 08:00 Oslo (02:00 ET) off the
        range model that already ships here (HAR+VOL+EVENT). Answers "will today's
-       range beat its 26-day median", never direction, never ORB P&L. Tiered:
-       calls only when the forecast is >=1.15x or <=0.80x the median and abstains
-       between, which is what takes the called days from 63.9% to 87%/70%.
+       range beat its 26-day median", never direction, never ORB P&L. Graded,
+       not abstaining: every day gets a call, and the rung it lands on carries
+       that rung's walk-forward hit rate (63.9% over all 1,719 days; the extreme
+       rungs are thresholds picked on that same run, not a separate test).
        Display only. The reader flips the switch, not this page. -->
   <section class="regime-section preopen-section" id="preopen-section">
     <div class="regime-head">

@@ -9,12 +9,14 @@ accuracy + CI + lift-vs-baseline + simulated PnL.
 from __future__ import annotations
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Optional
 
 log = logging.getLogger("morning-brief.calibration")
 
-CAL_DIR = Path.home() / "MWM-AI" / "projects" / "mwm-trading" / "data" / "market_detector_predictions"
+_ROOT = Path(os.environ.get("MWM_AI_ROOT", Path.home() / "MWM"))  # ~/MWM-AI is gone on this box
+CAL_DIR = _ROOT / "projects" / "mwm-trading" / "data" / "market_detector_predictions"
 
 
 def _latest_file() -> Optional[Path]:
@@ -23,6 +25,31 @@ def _latest_file() -> Optional[Path]:
     files = sorted(CAL_DIR.glob("calibration_*.json"),
                    key=lambda p: p.stat().st_mtime, reverse=True)
     return files[0] if files else None
+
+
+def _live() -> Optional[dict]:
+    """Direction accuracy of the live locks, from score_live.py's nightly file."""
+    path = CAL_DIR / "live_scored.json"
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError) as e:
+        log.warning("live calibration load failed: %s", e)
+        return None
+    o = data.get("overall") or {}
+    return {
+        "n": o.get("n"),
+        "accuracy": o.get("accuracy"),
+        "baseline": o.get("baseline_majority"),
+        "lift": o.get("lift_vs_baseline"),
+        "ci_90": o.get("ci90"),
+        "first": o.get("first"),
+        "last": o.get("last"),
+        "generated_at": data.get("generated_at"),
+        "by_session": {
+            k: {x: v.get(x) for x in ("n", "accuracy", "baseline_majority", "lift_vs_baseline")}
+            for k, v in (data.get("by_session") or {}).items()
+        },
+    }
 
 
 def fetch() -> dict:
@@ -55,6 +82,11 @@ def fetch() -> dict:
         "status": "ok",
         "n": data.get("n", 0),
         "source_file": path.name,
+        # The numbers below this block come from replay.py, which refits on data
+        # the live lock never had. "live" is the scored record of the calls as
+        # they were actually locked (score_live.py), and is the one to quote.
+        "basis": "replay",
+        "live": _live(),
         "direction": {
             "accuracy": d.get("accuracy"),
             "baseline": d.get("baseline_majority"),

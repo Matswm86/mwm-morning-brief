@@ -11,6 +11,7 @@ the sole source.
 from __future__ import annotations
 import json
 import logging
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -19,7 +20,8 @@ from typing import Any, Optional
 log = logging.getLogger("morning-brief.regime")
 
 # v3 local state paths (same host as this builder)
-_V3_DIR = Path.home() / "MWM-AI" / "projects" / "mwm-trading" / "data" / "market_regime"
+_ROOT = Path(os.environ.get("MWM_AI_ROOT", Path.home() / "MWM"))  # ~/MWM-AI is gone on this box
+_V3_DIR = _ROOT / "projects" / "mwm-trading" / "data" / "market_regime"
 V3_PATHS = {
     "ldn": _V3_DIR / "latest_ldn.json",
     "ny": _V3_DIR / "latest_ny.json",

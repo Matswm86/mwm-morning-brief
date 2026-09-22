@@ -14,12 +14,14 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
 log = logging.getLogger("morning-brief.preopen")
 
-SRC = Path.home() / "MWM-AI" / "data" / "cockpit" / "preopen_expansion.json"
+_ROOT = Path(os.environ.get("MWM_AI_ROOT", Path.home() / "MWM"))  # ~/MWM-AI is gone on this box
+SRC = _ROOT / "data" / "cockpit" / "preopen_expansion.json"
 STALE_HOURS = 20.0
 
 
