@@ -75,8 +75,11 @@ def fetch() -> dict:
         badge = "↑" if lift > 2 else "→" if abs(lift) <= 2 else "↓"
         return f"{acc:.0f}% {badge} baseline {base:.0f}% (lift {lift:+.0f}pp)"
 
-    usable_direction = d.get("lift_vs_baseline", 0) > 0.02
-    usable_strategy = s.get("lift_vs_baseline", 0) > 0.02
+    # 2026-09-23: replay.py fed each day its own closing VIX/DXY change (look-ahead,
+    # fixed in the detector the same day), so replay accuracy is never "usable".
+    # The live record (score_live.py) is the one to quote; it is below always-chop.
+    usable_direction = False
+    usable_strategy = False
 
     return {
         "status": "ok",
@@ -85,7 +88,7 @@ def fetch() -> dict:
         # The numbers below this block come from replay.py, which refits on data
         # the live lock never had. "live" is the scored record of the calls as
         # they were actually locked (score_live.py), and is the one to quote.
-        "basis": "replay",
+        "basis": "replay (look-ahead until 2026-09-23; quote live)",
         "live": _live(),
         "direction": {
             "accuracy": d.get("accuracy"),

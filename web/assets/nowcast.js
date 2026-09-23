@@ -48,6 +48,16 @@
     return null;
   }
 
+  /* 2026-09-23: a precision rests on the held-out CALLS of that kind, not on the
+     252 sessions (chop at 11:00 = 43 calls). Producer field: holdout_calls. */
+  function callsFor(call, h) {
+    const c = (h && h.holdout_calls) || null;
+    if (!c) return null;
+    if (call === "CHOP") return c.chop;
+    if (call === "TREND_UP" || call === "TREND_DOWN") return c.trend;
+    return null;
+  }
+
   /* ---- hero: the price path, extruded ----------------------------------- */
   const PATHS = {
     TREND_UP: [[10, 80], [23, 63], [32, 71], [45, 49], [55, 57], [69, 33], [79, 41], [94, 17]],
@@ -310,7 +320,8 @@
       const ryOwn = ry ? precisionFor(d.call, ry) : null;
       q(".nowcast-body").innerHTML = own != null
         ? "<strong>" + pct(own) + "</strong> of calls like this one were right at " + d.checkpoint +
-          " ET across " + (h.n_sessions || "—") + " held-out sessions." +
+          " ET" + (callsFor(d.call, h) != null ? " (" + callsFor(d.call, h) + " such calls" : " (") +
+          " in " + (h.n_sessions || "—") + " held-out sessions)." +
           (ryOwn != null
             ? " In " + ry.year + " alone (" + (ry.n_sessions || "—") + " sessions) it was <strong>" +
               pct(ryOwn) + "</strong>" +
@@ -323,7 +334,7 @@
         ? "Final read from the " + d.session + " session — today's first call lands " +
           (d.earliest_valid || "10:45") + " ET." +
           (reg
-            ? " Overnight detector now: " + (reg.tier_caption || reg.regime || "—") +
+            ? " Last hour of bars (a description, not a forecast): " + (reg.tier_caption || reg.regime || "—") +
               (reg.volatility ? ", " + reg.volatility + " vol." : ".")
             : "")
         : d.before_stable_window

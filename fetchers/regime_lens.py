@@ -99,12 +99,24 @@ def _dol_block(d: dict) -> dict:
         "acc_uncond": ACC_INSIDE_UNCOND,
         "p_callable": P_INSIDE,
     }
+    # 2026-09-23: the nearer-level rate equals what a random walk predicts from the
+    # two distances alone (77.8% vs 77.8%, n=631 inside-range days, 2021-26), so the
+    # card is geometry, not a read of the market. The producer now publishes that
+    # random-walk probability for today (dol_draw_bias.geometry.p_called_first).
+    geo = g.get("geometry") or {}
+    geo_p = geo.get("p_called_first") if inside else None
+    out["geometry_p"] = geo_p
     if inside:
         out["meaning"] = f"{call} is touched before {'PDL' if call == 'PDH' else 'PDH'} during RTH"
+        today = (
+            f"From the two distances alone a random walk puts it at {geo_p:.0%} today. "
+            if isinstance(geo_p, (int, float))
+            else ""
+        )
         out["basis"] = (
-            f"Right {ACC_INSIDE_5Y:.0%} of the time on days like this over the past "
-            f"five years. {ACC_INSIDE_UNCOND:.0%} if you also count days that never "
-            "reach either level."
+            f"{today}Over five years the nearer level came first {ACC_INSIDE_5Y:.0%} of "
+            "the time, the same rate a random walk gives, so this is distance "
+            "geometry, not a read of the market."
         )
     else:
         side = "PDH" if (px is not None and pdh is not None and px >= pdh) else "PDL"

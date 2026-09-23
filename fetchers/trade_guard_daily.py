@@ -249,7 +249,7 @@ def _build() -> dict[str, Any]:
     cur_p = _yahoo_nq_price()
     handoff = _oh.classify(payload=payload, age_hours=age_h, current_price=cur_p)
 
-    regime = (payload or {}).get("regime", "WARM").upper()
+    regime = ((payload or {}).get("regime") or "UNKNOWN").upper()
     signals = _collect_signals()
     snapshot = {
         "regime": regime,

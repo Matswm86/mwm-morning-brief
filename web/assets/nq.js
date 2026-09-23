@@ -158,7 +158,7 @@
         el("span", { class: "nq-call " + rangeClass(rangeWord(o.range_call)) }, rangeWord(o.range_call))),
       el("div", { class: "nq-col-meta" }, rangeMeta(o.range_call, o, modeWord, "NQ analyzer") + carriedNote(nq)),
       rangeScreen(o.range_forecast, "pts"),
-      el("p", { class: "nq-one" }, el("span", { class: "wa-analyst-k" }, "Analyst · "), o.one_line || "—", el("span", { class: "wa-analyst-dir" }, " (lean " + String((o.direction_call || {}).call || o.call || "—").replace(/_/g, " ").toLowerCase() + " · not tradeable)")),
+      el("p", { class: "nq-one" }, el("span", { class: "wa-analyst-k" }, "Analyst · "), o.one_line || "—"),
       el("div", { class: "nq-gates" }, gates("MNQ")));
 
     const mgc = nq.mgc || {};
@@ -169,7 +169,7 @@
         el("span", { class: "nq-call " + rangeClass(rangeWord(mgc.range_call)) }, rangeWord(mgc.range_call))),
       el("div", { class: "nq-col-meta" }, rangeMeta(mgc.range_call, mgc, modeWord, "gold analyzer") + (mgcLive || nq.carried ? carriedNote(nq) : " · analyst layer off")),
       rangeScreen(mgc.range_forecast, "$/oz≈pts"),
-      el("p", { class: "nq-one" }, el("span", { class: "wa-analyst-k" }, "Analyst · "), mgc.one_line || "—", el("span", { class: "wa-analyst-dir" }, " (lean " + String((mgc.direction_call || {}).call || mgc.call || "—").replace(/_/g, " ").toLowerCase() + " · not tradeable)")),
+      el("p", { class: "nq-one" }, el("span", { class: "wa-analyst-k" }, "Analyst · "), mgc.one_line || "—"),
       el("div", { class: "nq-gates" }, gates("MGC")));
 
     board.replaceChildren(mnqCard, mgcCard);
@@ -323,21 +323,21 @@
           el("div", { class: "wa-bigcall " + rangeClass(rangeWord(mnq.rangeCall)) }, rangeWord(mnq.rangeCall)),
           el("div", { class: "wa-callmeta" }, rangeMeta(mnq.rangeCall, mnq, (meta.mode || "") + " run", "NQ analyzer") + (mnq.status === "fallback" ? " · ANALYST LAYER OFF — rule labels only" : carriedNote(d))),
           rangeScreen(mnq.rangeForecast, "pts"),
-          el("div", { class: "wa-gateline" }, "Strategy gates · ", gateLine("MNQ")),
-          el("p", { class: "wa-analyst" }, el("span", { class: "wa-analyst-k" }, "Analyst · "), mnq.oneLiner || "—", el("span", { class: "wa-analyst-dir" }, " (lean " + String((mnq.directionCall || {}).call || mnq.call || "—").replace(/_/g, " ").toLowerCase() + " · not tradeable)"), " ", chips(mnq.oneLinerFacts))),
+          verdicts.length ? el("div", { class: "wa-gateline" }, "Strategy gates · ", gateLine("MNQ")) : null,
+          el("p", { class: "wa-analyst" }, el("span", { class: "wa-analyst-k" }, "Analyst · "), mnq.oneLiner || "—", " ", chips(mnq.oneLinerFacts))),
         el("div", { class: "wa-half wa-half-right" },
           el("div", { class: "wa-inst" }, el("span", { class: "wa-inst-sym" }, "MGC"), el("span", { class: "wa-inst-name" }, "Micro Gold")),
           el("div", { class: "wa-bigcall " + rangeClass(rangeWord(mgc.rangeCall)) }, rangeWord(mgc.rangeCall)),
           el("div", { class: "wa-callmeta" }, rangeMeta(mgc.rangeCall, mgc, (meta.mode || "") + " run", "gold analyzer") + " · XAUUSD ≈ MGC pts" + (mgc.status === "ok" ? "" : " · analyst layer off")),
           rangeScreen(mgc.rangeForecast, "$/oz≈pts"),
-          el("div", { class: "wa-gateline" }, "Strategy gate · ", gateLine("MGC")),
-          el("p", { class: "wa-analyst" }, el("span", { class: "wa-analyst-k" }, "Analyst · "), mgc.oneLiner || "—", el("span", { class: "wa-analyst-dir" }, " (lean " + String((mgc.directionCall || {}).call || mgc.call || "—").replace(/_/g, " ").toLowerCase() + " · not tradeable)"), " ", chips(mgc.oneLinerFacts)))));
+          verdicts.length ? el("div", { class: "wa-gateline" }, "Strategy gate · ", gateLine("MGC")) : null,
+          el("p", { class: "wa-analyst" }, el("span", { class: "wa-analyst-k" }, "Analyst · "), mgc.oneLiner || "—", " ", chips(mgc.oneLinerFacts)))));
 
     /* Why + flips (both instruments) */
     const whyPair = (label, o) => el("div", { class: "wa-two wa-why-row" },
       el("div", { class: "wa-half" }, sub(label + " · why"), (o.why || []).slice(0, 3).map(pointRow)),
-      el("div", { class: "wa-half wa-half-right" }, sub(label + " · flips if"), (o.flipsIf || []).slice(0, 3).map(pointRow)));
-    const why = el("section", { class: "wa-section" }, h2("Why, and What Flips It", "three facts each · measurable conditions"),
+      (o.flipsIf || []).length ? el("div", { class: "wa-half wa-half-right" }, sub(label + " · flips if"), (o.flipsIf || []).slice(0, 3).map(pointRow)) : null);
+    const why = el("section", { class: "wa-section" }, h2("Why", "three facts each"),
       whyPair("MNQ", mnq), (mgc.why || []).length || (mgc.flipsIf || []).length ? whyPair("MGC", mgc) : null);
 
     /* Day by day (both instruments) */
@@ -358,8 +358,13 @@
     /* Strategies */
     const bts = d.backtests || {};
     const btFor = (v) => (v.key === "qcs" ? bts.mnq : v.key === "mnq" ? bts.qcTrendMnq : v.key === "mgc" ? bts.mgc : null);
-    const strat = el("section", { class: "wa-section" }, h2("Strategies · Run or Stop", "watchdog + regime tables → verdict · TradingView backtest beneath"),
-      el("div", { class: "wa-cards" }, verdicts.map((v) => strategyCard(v, btFor(v)))));
+    // 2026-09-23: per-strategy RUN/STOP verdicts retired. They were never scored, and
+    // the one-year study found always-run beat every gate (regime-review 2026-09-23).
+    const strat = verdicts.length
+      ? el("section", { class: "wa-section" }, h2("Strategies · Run or Stop", "watchdog + regime tables → verdict · TradingView backtest beneath"),
+          el("div", { class: "wa-cards" }, verdicts.map((v) => strategyCard(v, btFor(v)))))
+      : el("section", { class: "wa-section" }, h2("Strategies", "no run/stop verdicts"),
+          el("p", { class: "wa-note" }, "Run/stop verdicts per strategy were retired on 2026-09-23: they were never scored, and a one-year study found that running every day beat every gate we tested."));
 
     /* Calendar (concrete, visible) */
     const cal = d.calendar || {}, earn = d.earnings || {};

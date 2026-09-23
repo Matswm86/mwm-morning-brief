@@ -20,11 +20,16 @@ from pathlib import Path
 
 log = logging.getLogger("morning-brief.nq")
 
-WS = Path(os.environ.get("MWM_AI_ROOT", Path.home() / "MWM-AI"))
+WS = Path(os.environ.get("MWM_AI_ROOT", Path.home() / "MWM"))
 RUNS = WS / "data" / "nq-analyzer" / "runs"
 STALE_HOURS = 30
 KEEP_DATED = 14
 EDITION_HREF = "week-ahead.html"
+
+
+def _range_word(call: object) -> str | None:
+    """Pass only a range call through; an old run's direction label becomes None."""
+    return call if call in ("WIDE", "NARROW", "UNKNOWN") else None
 
 
 def _newest_run() -> Path | None:
@@ -94,18 +99,11 @@ def fetch(web_dir: Path | None = None) -> dict:
     stale = bool(age_h is not None and age_h > STALE_HOURS and weekday)
     mnq = wa.get("mnq") or {}
     au = wa.get("audit") or {}
-    verdicts = []
-    for v in wa.get("strategyVerdicts") or []:
-        verdicts.append({
-            "name": v.get("name"),
-            "key": v.get("key"),
-            "instrument": v.get("instrument"),
-            "word": v.get("word"),
-            "confidence": v.get("confidence"),
-            "why": v.get("why"),
-            "watchdog": v.get("watchdog"),
-            "watchdogStatus": v.get("watchdogStatus"),
-        })
+    # 2026-09-23: per-strategy RUN/STOP verdicts and the UP/DOWN/CHOP direction
+    # call are retired (never scored; direction measured 43% vs 50% always-chop).
+    # The analyzer stopped emitting them the same day; this guard keeps an older
+    # run from publishing them.
+    verdicts: list[dict] = []
     return {
         "status": "carried"
         if meta.get("carried")
@@ -125,26 +123,26 @@ def fetch(web_dir: Path | None = None) -> dict:
         "analyst_error": meta.get("analyst_error"),
         "validation": (meta.get("validation") or {}).get("verdict"),
         "outlook": {
-            "call": mnq.get("call"),
-            "confidence": mnq.get("confidence"),
+            "call": _range_word(mnq.get("call")),
+            "confidence": None,
             "one_line": mnq.get("oneLiner"),
             "facts": mnq.get("oneLinerFacts") or [],
             "expected_range": mnq.get("expectedRange"),
             "range_call": mnq.get("rangeCall") or {},
             "range_forecast": mnq.get("rangeForecast") or {},
-            "direction_call": mnq.get("directionCall") or {},
+            "direction_call": {"call": None, "note": "not forecast"},
             "labels": mnq.get("labels") or {},
         },
         "mgc": {
             "status": (wa.get("mgc") or {}).get("status"),
-            "call": (wa.get("mgc") or {}).get("call"),
-            "confidence": (wa.get("mgc") or {}).get("confidence"),
+            "call": _range_word((wa.get("mgc") or {}).get("call")),
+            "confidence": None,
             "one_line": (wa.get("mgc") or {}).get("oneLiner"),
             "facts": (wa.get("mgc") or {}).get("oneLinerFacts") or [],
             "expected_range": (wa.get("mgc") or {}).get("expectedRange"),
             "range_call": (wa.get("mgc") or {}).get("rangeCall") or {},
             "range_forecast": (wa.get("mgc") or {}).get("rangeForecast") or {},
-            "direction_call": (wa.get("mgc") or {}).get("directionCall") or {},
+            "direction_call": {"call": None, "note": "not forecast"},
             "labels": (wa.get("mgc") or {}).get("labels") or {},
         },
         "strategy_verdicts": verdicts,

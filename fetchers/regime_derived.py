@@ -15,7 +15,7 @@ Schema matches what web/assets/outlook.js reads:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 from fetchers import bars as f_bars
@@ -156,24 +156,29 @@ def fetch(symbol: str = DEFAULT_SYMBOL) -> dict:
         day_term = max(-1.0, min(1.0, day_chg_pct / 1.0)) * trend_sign * 0.4
     strength = max(0.0, min(1.0, slope_term + day_term))
     if up and not day_conflict:
-        direction, regime = "long bias", "trend up"
+        regime = "last hour drifting up"
     elif down and not day_conflict:
-        direction, regime = "short bias", "trend down"
+        regime = "last hour drifting down"
     else:
-        direction, regime = "chop", "range / chop"
+        regime = "last hour flat / two-way"
         strength = min(strength, 0.35)
 
     score = round(strength * 100)
     tier = "A" if strength >= 0.65 else "B" if strength >= 0.35 else "C"
     return {
         "tier": tier,
-        "tier_caption": f"{regime} {score}%",
+        "tier_caption": regime,
         "regime": regime,
         "score": score,
-        "direction": direction,
-        "direction_confidence": round(0.3 + 0.6 * strength, 2),
+        # 2026-09-23: this describes the last hour of bars; it was labelled
+        # "long bias" / "trend up" like a forecast and never scored. Direction
+        # is not forecast anywhere on the brief (pre-open direction measured
+        # unknowable). Keys kept for schema stability.
+        "direction": None,
+        "direction_confidence": None,
+        "basis": "the last hour of 5m bars, not a forecast",
         "volatility": volatility,
-        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "levels": {k: round(v, 1) for k, v in levels.items()},
         "source": f"derived: yahoo {symbol} 5m bars (EMA20 trend + ATR14 vol)",
         "raw": {
@@ -193,10 +198,10 @@ def _empty(symbol: str, reason: str) -> dict:
         "tier_caption": f"no data: {reason}",
         "regime": None,
         "score": None,
-        "direction": "—",
-        "direction_confidence": 0,
+        "direction": None,
+        "direction_confidence": None,
         "volatility": "—",
-        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "levels": {},
         "source": f"derived: yahoo {symbol}",
         "raw": {},

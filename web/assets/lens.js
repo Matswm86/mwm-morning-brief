@@ -68,7 +68,8 @@
     c.appendChild(row("yesterday's high", num(g.pdh), null));
     c.appendChild(row("yesterday's low", num(g.pdl), null));
     c.appendChild(row("price at the read", num(g.px_0924), null));
-    if (can) c.appendChild(row("track record", pct(g.acc_inside_5y), "over five years"));
+    if (can && g.geometry_p != null) c.appendChild(row("distance-only odds", pct(g.geometry_p), "random walk, today"));
+    if (can) c.appendChild(row("track record", pct(g.acc_inside_5y), "five years, same as a random walk"));
     if (g.basis) c.appendChild(el("p", { class: "lens-caveat" }, [g.basis]));
     return c;
   }

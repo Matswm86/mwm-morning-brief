@@ -8,14 +8,15 @@ v3 (2026-04-20): Reads ~/MWM-AI/projects/mwm-trading/data/market_regime/
 decommissioned and the VPS receiver no longer fed. Local v3 files are
 the sole source.
 """
+
 from __future__ import annotations
+
 import json
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Optional
-
 
 log = logging.getLogger("morning-brief.regime")
 
@@ -47,13 +48,18 @@ STRATEGY_DESC = {
 
 REGIME_TO_TIER = {"HOT": "A", "WARM": "B", "MILD": "B", "COLD": "C", "FROZEN": "C"}
 
+DIRECTION_NOTE = (
+    "Direction is not forecast: the detector's live call scored 39.4% against "
+    "53.7% for always-chop (n=218)."
+)
+
 
 def _age_hours(ts: str | None) -> float | None:
     if not ts:
         return None
     try:
         t = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-        return (datetime.now(timezone.utc) - t).total_seconds() / 3600.0
+        return (datetime.now(UTC) - t).total_seconds() / 3600.0
     except Exception:
         return None
 
@@ -72,26 +78,17 @@ def _load_local(session: str) -> Optional[dict]:
 def _shape_v3(data: dict) -> dict:
     """Transform market_regime.v3 payload into dashboard dict."""
     regime = str(data.get("regime") or "").upper() or None
-    score = data.get("score")          # 0..1
+    score = data.get("score")  # 0..1
     score_pct = float(score) * 100 if score is not None else None
-    sc = data.get("strategy_code")
-    contracts = data.get("contracts_reco") or data.get("contracts") or 0
     ts = data.get("ts")
     age_h = _age_hours(ts)
 
-    tier = REGIME_TO_TIER.get(regime or "", None)
-    strategy_label = STRATEGY_LABELS.get(int(sc), "—") if isinstance(sc, int) else "—"
-
-    direction_raw = str(data.get("direction") or "").upper() or None
-    direction_score = data.get("direction_score")
-    direction_conf = data.get("direction_confidence")
-
+    tier = REGIME_TO_TIER.get(regime or "")
     tier_a = data.get("tier_a_score")
     tier_b = data.get("tier_b_score")
     tier_c = data.get("tier_c_score")
 
     tier_c_dict = data.get("tier_c") or {}
-    hurst = tier_c_dict.get("hurst")
     adx = tier_c_dict.get("adx")
 
     session = (data.get("session") or "").upper() or "?"
@@ -100,33 +97,38 @@ def _shape_v3(data: dict) -> dict:
         session_label += " · STALE"
 
     vol = _volatility_label(adx)
-    direction = _direction_caption(direction_raw, direction_score, direction_conf)
 
+    # 2026-09-23: direction, strategy and contracts are no longer published. Live
+    # record of the detector's call: 39.4% vs 53.7% for always-chop (n=218,
+    # 2026-04-20..09-21), i.e. worse than a constant. The raw payload is dropped
+    # from the public JSON for the same reason. Review:
+    # mwm-trading research/regime-review/REVIEW_2026-09-23.md.
     return {
         "tier": tier,
         "tier_caption": _tier_caption_v3(regime, score_pct, age_h),
         "session_label": session_label,
         "session": session,
-        "strategy_code": sc if isinstance(sc, int) else None,
-        "strategy_label": strategy_label,
-        "strategy_confidence": data.get("strategy_confidence"),
-        "strategy_rationale": data.get("strategy_rationale", ""),
-        "orb_affinity": data.get("orb_affinity"),
-        "pdhr_affinity": data.get("pdhr_affinity"),
+        "strategy_code": None,
+        "strategy_label": "not published",
+        "strategy_confidence": None,
+        "strategy_rationale": "",
+        "orb_affinity": None,
+        "pdhr_affinity": None,
         "volatility": vol,
-        "direction": direction,
-        "direction_raw": direction_raw,
-        "direction_score": direction_score,
-        "direction_confidence": direction_conf,
+        "direction": "not forecast",
+        "direction_raw": None,
+        "direction_score": None,
+        "direction_confidence": None,
+        "direction_note": DIRECTION_NOTE,
         "regime": regime,
         "score": score_pct,
-        "contracts": contracts,
+        "contracts": None,
         "tier_a_score": tier_a,
         "tier_b_score": tier_b,
         "tier_c_score": tier_c,
         "age_hours": round(age_h, 2) if age_h is not None else None,
         "generated_at": ts or "",
-        "raw": data,
+        "raw": {},
     }
 
 
@@ -170,13 +172,14 @@ def _empty(reason: str) -> dict:
         "orb_affinity": None,
         "pdhr_affinity": None,
         "volatility": "—",
-        "direction": "—",
+        "direction": "not forecast",
         "direction_raw": None,
         "direction_score": None,
         "direction_confidence": None,
+        "direction_note": DIRECTION_NOTE,
         "regime": None,
         "score": None,
-        "contracts": 0,
+        "contracts": None,
         "tier_a_score": None,
         "tier_b_score": None,
         "tier_c_score": None,
@@ -192,9 +195,12 @@ def _volatility_label(adx: Any) -> str:
         v = float(adx)
     except Exception:
         return "—"
-    if v < 15: return "low"
-    if v < 25: return "medium"
-    if v < 40: return "elevated"
+    if v < 15:
+        return "low"
+    if v < 25:
+        return "medium"
+    if v < 40:
+        return "elevated"
     return "high"
 
 
@@ -209,8 +215,7 @@ def _direction_caption(raw: str | None, score: Any, conf: Any) -> str:
     return f"{raw.lower()} ({qual})"
 
 
-def _tier_caption_v3(regime: str | None, score_pct: float | None,
-                     age_h: float | None) -> str:
+def _tier_caption_v3(regime: str | None, score_pct: float | None, age_h: float | None) -> str:
     if not regime:
         return "awaiting lock"
     s_part = f" {score_pct:.0f}%" if score_pct is not None else ""
