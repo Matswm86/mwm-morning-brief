@@ -22,6 +22,7 @@ output shape.
 Legacy strategy_code map (v3, 2026-04-20): 0 FLAT · 1 ORB_full · 2 ORB_half ·
 3 PDHR (replaced retired LiqSweep) · 4 SKIP.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta
@@ -115,7 +116,11 @@ def pick_play(
 
     # Early Globex halt (Labor Day pattern): the book trades the morning; the
     # halt is a note on the row, not a stand-down.
-    h_target = h_today if target == today_d.isoformat() else (hol.get("tomorrow") if (hol.get("tomorrow") or {}).get("date_et") == target else {})
+    h_target = (
+        h_today
+        if target == today_d.isoformat()
+        else (hol.get("tomorrow") if (hol.get("tomorrow") or {}).get("date_et") == target else {})
+    )
     early = h_target or {}
     halt_note = ""
     if early.get("early_halt"):
@@ -149,9 +154,11 @@ def pick_play(
             else:
                 why += "No tier-1 US release scheduled."
             if other:
-                why += " Also scheduled: " + ", ".join(
-                    f"{o.get('family')} {o.get('time_et')} ET" for o in other
-                ) + "."
+                why += (
+                    " Also scheduled: "
+                    + ", ".join(f"{o.get('family')} {o.get('time_et')} ET" for o in other)
+                    + "."
+                )
             row["why"] = why + halt_note
             if halt_note:
                 row["verdict"] = "RUN · EARLY HALT"
