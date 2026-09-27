@@ -45,8 +45,8 @@ GATE_FAMILIES = {
 FOMC_DECISION = "FOMC rate decision"
 
 EVIDENCE = (
-    "Live book since 2026-09-06: Drift VWAP Pullback v3.4.1 on MNQ and Tokyo "
-    "Drift v1.5.1 on MGC, one contract each, one 50K account. Calendar effect "
+    "Live book since 2026-09-06: Drift VWAP Pullback v3.6.2 on MNQ and Tokyo "
+    "Drift v2.2.5 on MGC, one contract each, one 50K account. Calendar effect "
     "on either strategy is unmeasured, so tier-1 releases are listed, not "
     "gated; FOMC decision days are a house-rule SKIP. Backtest numbers live on "
     "the Strategy Desk page. Display only: you flip the switch, not this page."
