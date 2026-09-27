@@ -201,9 +201,12 @@ def _github_commits_24h() -> dict | None:
 
 def _diff_review_tail(cap: int = 1) -> list[dict]:
     """Pick up the latest daily-diff-review note(s) — nightly codebase audit."""
-    if not INBOX_DIR.exists():
+    # Moved out of the inbox 2026-09-27; still check the inbox for old files.
+    dirs = [MWM_ROOT / "notes" / "reports" / "daily-diff-review", INBOX_DIR]
+    files = [f for d in dirs if d.exists() for f in d.glob("daily-diff-review-*.md")]
+    if not files:
         return []
-    hits = sorted(INBOX_DIR.glob("daily-diff-review-*.md"),
+    hits = sorted(files,
                   key=lambda p: p.stat().st_mtime, reverse=True)[:cap]
     out: list[dict] = []
     for p in hits:

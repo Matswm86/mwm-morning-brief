@@ -619,12 +619,12 @@ def signal_cip_synthesis_writeback(p: dict, ctx: dict) -> int | None:
 
 
 def signal_dev_digest_freshness(p: dict, ctx: dict) -> int | None:
-    inbox = MWM_ROOT / "notes" / "inbox"
-    if not inbox.exists():
-        return 0
-    candidates = list(inbox.glob("*dev-digest*.md")) + list(
-        inbox.glob("*dev_digest*.md")
-    )
+    # dev-digest lives in notes/reports/dev-digest since 2026-09-27.
+    dirs = [MWM_ROOT / "notes" / "reports" / "dev-digest", MWM_ROOT / "notes" / "inbox"]
+    candidates = [
+        f for d in dirs if d.exists() for pat in ("*dev-digest*.md", "*dev_digest*.md")
+        for f in d.glob(pat)
+    ]
     if not candidates:
         return 0
     newest = max(candidates, key=lambda f: f.stat().st_mtime)
