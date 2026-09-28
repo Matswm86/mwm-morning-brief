@@ -310,7 +310,7 @@ def _narrate(f: dict) -> tuple[str, str, str]:
         from anthropic_via_claude_cli import call_claude_cli  # type: ignore
 
         text = call_claude_cli(
-            model="sonnet", system_prompt=SYSTEM_PROMPT, user_prompt=_facts_text(f), timeout=180
+            model="claude-opus-5-5", system_prompt=SYSTEM_PROMPT, user_prompt=_facts_text(f), timeout=180
         )
         if text and "---" in text:
             a, b = text.split("---", 1)

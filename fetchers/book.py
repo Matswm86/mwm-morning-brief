@@ -355,7 +355,7 @@ def _write_prose(entries: list[dict]) -> None:
         paras: list[str] | None = None
         if call:
             text = call(
-                model="sonnet", system_prompt=PROSE_SYSTEM, user_prompt=_prose_facts(e), timeout=180
+                model="claude-opus-5-5", system_prompt=PROSE_SYSTEM, user_prompt=_prose_facts(e), timeout=180
             )
             if text:
                 paras = [_clean(p) for p in text.strip().split("\n\n") if p.strip()]
