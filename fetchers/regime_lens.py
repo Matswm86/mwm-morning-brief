@@ -39,12 +39,22 @@ SRC = _ROOT / "data" / "cockpit" / "regime_lens.json"
 STALE_HOURS = 20.0
 
 # Measured on the locked 5y judgment window (dol_geometry.json, judge_5y).
-ACC_INSIDE_5Y = 0.776        # n=635 decided, price between PDL and PDH at 09:24
+ACC_INSIDE_5Y = 0.776  # n=635 decided, price between PDL and PDH at 09:24
 ACC_INSIDE_CI90 = [0.748, 0.802]
 ACC_INSIDE_N = 635
-ACC_INSIDE_UNCOND = 0.647    # counting inside sessions that never touch either
-P_INSIDE = 0.607             # 762 of 1256 sessions are callable at all
-ACC_HEADLINE_ARTIFACT = 0.8741   # provenance only, never quoted as the rate
+ACC_INSIDE_UNCOND = 0.647  # counting inside sessions that never touch either
+P_INSIDE = 0.607  # 762 of 1256 sessions are callable at all
+ACC_HEADLINE_ARTIFACT = 0.8741  # provenance only, never quoted as the rate
+
+
+# Three-state range call, pre-registered 2026-09-28 (NARROW at p <= 0.35, WIDE at p >= 0.65).
+# Walk-forward 2017-2026 hit rate per call; NO_CALL days score 52.6% with the binary call (n=981).
+_VOL_3STATE_WF = {"NARROW": 0.693, "WIDE": 0.773, "NO_CALL": 0.526}
+_VOL_MEANING = {
+    "WIDE": "today's RTH range lands ABOVE the trailing-20-session median",
+    "NARROW": "today's RTH range lands BELOW the trailing-20-session median",
+    "NO_CALL": "model probability sits between 0.35 and 0.65, where the call is a coin flip",
+}
 
 
 def _vol_block(d: dict) -> dict:
@@ -53,14 +63,17 @@ def _vol_block(d: dict) -> dict:
         return {"status": "unavailable"}
     p, thr = v.get("p_high_range"), v.get("threshold")
     emp = v.get("confidence_empirical") or {}
+    binary = "WIDE" if v.get("pred_high_range") else "NARROW"
+    call = v.get("call_3state")
+    if call is None and p is not None:
+        call = "NARROW" if p <= 0.35 else "WIDE" if p >= 0.65 else "NO_CALL"
+    call = call or binary
     return {
         "status": "ok",
-        "call": "WIDE" if v.get("pred_high_range") else "NARROW",
-        "meaning": (
-            "today's RTH range lands ABOVE the trailing-20-session median"
-            if v.get("pred_high_range")
-            else "today's RTH range lands BELOW the trailing-20-session median"
-        ),
+        "call": call,
+        "binary_call": binary,
+        "meaning": _VOL_MEANING[call],
+        "call_hit_rate": _VOL_3STATE_WF.get(call),
         "p_high_range": p,
         "threshold": thr,
         "edge": round(abs(p - thr), 3) if p is not None and thr is not None else None,
@@ -142,7 +155,9 @@ def fetch() -> dict:
 
     age_h = None
     try:
-        age_h = (datetime.now(UTC) - datetime.fromisoformat(d["generated_at"])).total_seconds() / 3600.0
+        age_h = (
+            datetime.now(UTC) - datetime.fromisoformat(d["generated_at"])
+        ).total_seconds() / 3600.0
     except (KeyError, ValueError):
         pass
 
@@ -166,7 +181,11 @@ def fetch() -> dict:
         # FINDINGS.md and the handoff, never in a shipped artifact.
         "caveat": "Size of the day and which prior level comes first. Not a direction call.",
     }
-    log.info("regime lens: %s vol=%s dol=%s callable=%s", out["lens_status"],
-             out["vol_regime"].get("call"), out["dol_draw"].get("call"),
-             out["dol_draw"].get("callable"))
+    log.info(
+        "regime lens: %s vol=%s dol=%s callable=%s",
+        out["lens_status"],
+        out["vol_regime"].get("call"),
+        out["dol_draw"].get("call"),
+        out["dol_draw"].get("callable"),
+    )
     return out

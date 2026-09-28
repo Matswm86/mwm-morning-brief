@@ -38,15 +38,17 @@
     if (!v || v.status !== "ok") {
       return el("div", { class: "lens-card" }, [el("p", { class: "lens-none" }, ["range read unavailable"])]);
     }
-    var cls = v.call === "WIDE" ? "is-green" : "is-red";
+    var cls = v.call === "WIDE" ? "is-green" : v.call === "NARROW" ? "is-red" : "is-unknown";
     var c = el("div", { class: "lens-card" }, [
       el("div", { class: "lens-top" }, [
         el("span", { class: "lens-sym" }, ["TODAY'S RANGE"]),
-        el("span", { class: "lens-call " + cls }, [v.call || "—"])
+        el("span", { class: "lens-call " + cls }, [v.call === "NO_CALL" ? "NO CALL" : (v.call || "—")])
       ]),
       el("p", { class: "lens-meaning" }, [v.meaning || ""])
     ]);
-    if (v.track_record) {
+    if (v.call_hit_rate != null) {
+      c.appendChild(row("this call, backtest", pct(v.call_hit_rate), "walk-forward 2017-2026"));
+    } else if (v.track_record) {
       c.appendChild(row("track record", pct(v.track_record.hit_rate),
         "over " + v.track_record.years + " years"));
     }
