@@ -272,21 +272,9 @@ def build(use_llm: bool = True) -> dict:
         brief["book"] = {"status": "error", "error": f"{e.__class__.__name__}: {e}"}
     # NQ analyzer (weekly Sunday + daily pre-open runs) → lead board on the front page +
     # the Week Ahead edition page (web/nq/weekahead-latest.json). Advisory only.
+    # nq, preopen and lens each get their own try so one failure cannot blank the others.
     try:
         brief["nq"] = f_nq.fetch(web_dir=WEB_DIR)
-        from fetchers import preopen_expansion as f_preopen
-
-        brief["preopen"] = f_preopen.fetch()
-        log.info(
-            "preopen expansion: %s",
-            {k: v.get("orb") for k, v in (brief["preopen"].get("instruments") or {}).items()},
-        )
-        # Regime Lens v1 — the 09:25 ET read. Two pre-registered survivors only
-        # (vol regime + DOL draw geometry); trend/chop and direction are absent
-        # by measurement, not by omission.
-        from fetchers import regime_lens as f_lens
-
-        brief["lens"] = f_lens.fetch()
         log.info(
             "nq analyzer: %s run %s (%s) stale=%s audit=%s",
             brief["nq"].get("status"),
@@ -298,6 +286,27 @@ def build(use_llm: bool = True) -> dict:
     except Exception as e:
         log.exception("nq analyzer fetch failed")
         brief["nq"] = {"status": "unavailable", "error": f"{e.__class__.__name__}: {e}"}
+    try:
+        from fetchers import preopen_expansion as f_preopen
+
+        brief["preopen"] = f_preopen.fetch()
+        log.info(
+            "preopen expansion: %s",
+            {k: v.get("orb") for k, v in (brief["preopen"].get("instruments") or {}).items()},
+        )
+    except Exception as e:
+        log.exception("preopen expansion fetch failed")
+        brief["preopen"] = {"status": "unavailable", "error": f"{e.__class__.__name__}: {e}"}
+    # Regime Lens v1 — the 09:25 ET read. Two pre-registered survivors only
+    # (vol regime + DOL draw geometry); trend/chop and direction are absent
+    # by measurement, not by omission.
+    try:
+        from fetchers import regime_lens as f_lens
+
+        brief["lens"] = f_lens.fetch()
+    except Exception as e:
+        log.exception("regime lens fetch failed")
+        brief["lens"] = {"status": "unavailable", "error": f"{e.__class__.__name__}: {e}"}
     if regimes:
         brief["regimes"] = regimes
     # Yesterday and the week, reviewed (analyst page). Needs the wire (ledger)

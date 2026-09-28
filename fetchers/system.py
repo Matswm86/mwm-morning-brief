@@ -28,7 +28,7 @@ GIT_REPOS: list[tuple[str, Path]] = [
 log = logging.getLogger("morning-brief.system")
 
 SYSTEMD_UNITS = [
-    "mwm-market-news-verify-predictions.timer",
+    "mwm-verify-predictions.timer",
     "mwm-market-detector-ldn.timer",
     "mwm-market-detector-ny.timer",
     "mwm-brief-bars-refresh.timer",
@@ -38,7 +38,7 @@ VPS_PING_URLS = [
     ("mwmai.no",   "https://mwmai.no/"),
     # 2026-06-11: columbus.mwmai.no taken offline (vhost removed, content
     # archived at VPS /srv/offline-sites/) — replaced by trading platform.
-    ("trading",    "https://trading.mwmai.no/"),
+    # 2026-08-26: trading.mwmai.no vhost removed; row dropped 2026-09-28.
     ("pytor",      "https://pytor.mwmai.no/"),
 ]
 
