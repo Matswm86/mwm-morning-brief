@@ -68,10 +68,11 @@ def test_agreeing_day_and_slope_still_scores_high(monkeypatch):
     day2 = _bars([100.0 + 0.03 * i for i in range(80)], start2)
     out = _run(day1 + day2, monkeypatch)
 
-    assert out["regime"] == "trend up", out["tier_caption"]
+    assert out["regime"] == "last hour drifting up", out["tier_caption"]
     assert out["raw"]["day_conflict"] is False
     assert out["score"] >= 65, out["tier_caption"]
-    assert out["direction"] == "long bias"
+    # The block describes the last hour; it publishes no direction call.
+    assert out["direction"] is None
 
 
 def test_down_day_with_down_slope_is_a_down_trend(monkeypatch):
@@ -81,8 +82,8 @@ def test_down_day_with_down_slope_is_a_down_trend(monkeypatch):
     day2 = _bars([100.0 - 0.03 * i for i in range(80)], start2)
     out = _run(day1 + day2, monkeypatch)
 
-    assert out["regime"] == "trend down", out["tier_caption"]
-    assert out["direction"] == "short bias"
+    assert out["regime"] == "last hour drifting down", out["tier_caption"]
+    assert out["direction"] is None
     assert out["score"] >= 65
 
 
@@ -94,7 +95,7 @@ def test_strength_is_bounded(monkeypatch):
     day2 = _bars([100.0 + 0.5 * i for i in range(80)], start2)
     out = _run(day1 + day2, monkeypatch)
     assert 0 <= out["score"] <= 100
-    assert 0.3 <= out["direction_confidence"] <= 0.9
+    assert out["direction_confidence"] is None
 
 
 def test_volatility_baseline_is_phase_matched(monkeypatch):
