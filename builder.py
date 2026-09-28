@@ -422,10 +422,9 @@ def _log_morning_brief_policy_state(regime: dict, strategy: dict, use_llm: bool)
                     "use_llm": bool(use_llm),
                 },
                 rubric_weights={
-                    "strategy_name": strategy.get("name"),
-                    "strategy_code": regime.get("strategy_code"),
-                    "contracts": strategy.get("contracts"),
-                    "symbol": strategy.get("symbol"),
+                    "live_strategies": [
+                        f"{r['strategy']} ({r['size']})" for r in strategy_picker.LIVE_ROWS
+                    ],
                     "tier": regime.get("tier"),
                     "score": regime.get("score"),
                 },

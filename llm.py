@@ -98,8 +98,8 @@ def _run_memento(section_label: str, user_prompt: str, *, num_items: int) -> str
         )
 
     def judge_llm(*, system_prompt: str, user_prompt: str, max_tokens: int, temperature: float):
-        # Bulk tier (llama-3.1-8b-instant) for the judge: the task is
-        # rubric-scoring over ~2k input tokens, which 8b handles fine and
+        # Bulk tier (qwen/qwen3.8-27b) for the judge: the task is
+        # rubric-scoring over ~2k input tokens, which the bulk tier handles and
         # avoids contention with the compressor on the reason-tier 120b.
         return _llm_generate(
             system_prompt=system_prompt,
