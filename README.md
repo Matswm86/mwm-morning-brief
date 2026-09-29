@@ -21,7 +21,7 @@ closure or a tier-1 US release outranks it. Under it:
 
 | Section | What it shows |
 |---|---|
-| Page one | Pre-open range forecast against the 26-day median, three sub-headlines from the trading wire, the next exchange closure, and the strategies running today |
+| Page one | Pre-open range forecast against the 26-day median, three sub-headlines from the trading wire, the next exchange closure, and the strategies running today, under a masthead with a rotating motto and the day's weather. The lead headline is picked from a pool that rotates by day; a template whose figures the feed cannot fill is skipped |
 | The Week Ahead | A weekly master read on MNQ and MGC, a WIDE or NARROW range call each, refreshed each weekday pre-open, with a second model auditing the first and the audit verdict always printed |
 | Trading wire | The last 24 hours of news filtered to things that move MNQ or MGC, each item tagged MNQ, MGC or BOTH |
 | Live charts | MNQ and MGC 5-minute candles with prior-day and overnight levels in the footer |
@@ -32,7 +32,7 @@ closure or a tier-1 US release outranks it. Under it:
 | Today's Play | A verdict for each live strategy (RUN or SKIP) beside the day's calendar. Tier-1 releases are listed, not gated, and FOMC decision days read SKIP by house rule |
 | Regime | Structural backdrop over weeks to months: trend, volatility, credit and four tripwires, over a VIX chart back to 2012 |
 | Scheduled | US macro events for the next 7 days, because a regime read that ignores an 08:30 ET CPI print is misleading |
-| Back pages | Tech and AI, research, consciousness and system-health cards, and a self-calibration progress strip drawn as a comic |
+| Back pages | Tech and AI, research, consciousness and system-health cards, and the Funny Pages, a self-calibration progress strip drawn as a comic with four gags that rotate daily |
 
 ![Intraday nowcast for MNQ and MGC](docs/screenshots/intraday-nowcast.png)
 
@@ -74,11 +74,11 @@ config.py             env and paths, read from ~/MWM/.env
 schema.py             brief.json shape, empty-section helper and the atomic writer
 strategy.py           Today's Play card for the live strategy pair, plus a legacy regime picker
 llm.py                summarisation wrapper and the check-and-judge loop
-headlines.py          page-one headline selection
+headlines.py          page-one lead headline, motto, weather and corrections box, rotated by day
 machine_readable.py   llms.txt, robots.txt, sitemap.xml and the noscript summary
 bar_refresh.sh        5-minute MNQ and MGC bar refresh, run by a systemd timer
 recompute_selfcalib.py  scores the self-calibration dimensions against selfcalib_rubric.yaml
-fetchers/             26 modules: one per section, plus bar and level helpers
+fetchers/             27 modules: one per section, plus bar, level and Reddit helpers
 data/tv_exports/      TradingView list-of-trades exports behind the Strategy Desk
 tests/                pytest suite
 systemd/              user timers and services
@@ -130,8 +130,9 @@ Python 3.11, `requests`, `beautifulsoup4` and `pyyaml`, plus `pytest` for the te
 Configuration comes from `~/MWM/.env`, outside the repo, and `config.py` refuses to start
 if that file is missing. Paths assume the checkout lives at `~/MWM/projects/mwm-morning-brief`
 (the systemd units use it), and `llm.py` imports the summariser backend and the judge loop
-from a shared `core/` folder under `~/MWM`. No host is hardcoded: the deploy target comes
-from the environment.
+from a shared `core/` folder under `~/MWM`. `fetchers/reddit_feed.py` reads Reddit through
+the paced, cached RSS client in the same folder; without it the Reddit items are left out.
+No host is hardcoded: the deploy target comes from the environment.
 
 | Key | Used for |
 |---|---|
@@ -152,7 +153,7 @@ failing, which is the design: a missing section is honest, a fabricated one is n
 - **Price**: CME real-time bars through `project-x-py` (TopstepX / ProjectX gateway), with
   Yahoo quotes as the fallback and for the index, VIX, 10-year and dollar-index reads.
 - **News**: Finnhub and Google News RSS for the wire and the market cards, GDELT tone for
-  geopolitics, Hacker News, Reddit and arXiv for the back pages.
+  geopolitics, Hacker News, Reddit (hot RSS feeds) and arXiv for the back pages.
 - **Macro**: the TradingEconomics calendar and the Fed's FOMC calendar for the schedule,
   FRED for the VIX, high-yield spread and 10y-2y spread.
 - **Regime**: FRED (VIX back to 2012) and Yahoo (S&P 500, VIX3M) for the structural
