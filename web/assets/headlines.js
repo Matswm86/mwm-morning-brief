@@ -35,13 +35,30 @@
     }
     var ear = $("ear-note");
     if (ear && h.ear) ear.textContent = "“" + h.ear + "”";
+    // Masthead ear: the weather's first sentence. Issue number: day of the year.
+    var ew = $("ear-weather");
+    if (ew && h.weather) ew.textContent = String(h.weather).split(/(?<=\.)\s/)[0];
+    var iss = $("issue-no");
+    if (iss && h.date_et) {
+      var d = new Date(h.date_et + "T12:00:00Z"), y0 = Date.UTC(d.getUTCFullYear(), 0, 0);
+      iss.textContent = "No. " + Math.floor((d - y0) / 864e5);
+    }
 
     var lead = h.lead;
+    // Stacked decks, as an old front page set them: the deck's first sentence
+    // becomes a second headline in small caps, the rest runs as body copy.
+    var parts = String(lead.deck || "").split(/(?<=\.)\s+/);
+    var subdeck = parts.length > 1 ? parts[0] : null;
+    var body = parts.length > 1 ? parts.slice(1).join(" ") : parts[0];
     root.setAttribute("data-tone", lead.tone || "range");
     var leadNode = el("div", { class: "hl-lead" }, [
       el("span", { class: "hl-kicker" }, [lead.kicker || ""]),
       el("h2", { class: "hl-head" }, [lead.headline || ""]),
-      el("p", { class: "hl-deck" }, [lead.deck || ""]),
+      el("div", { class: "hl-rule", "aria-hidden": "true" }, []),
+      subdeck ? el("p", { class: "hl-subdeck" }, [subdeck]) : null,
+      subdeck ? el("div", { class: "hl-rule hl-rule-short", "aria-hidden": "true" }, []) : null,
+      el("p", { class: "hl-deck" }, [body]),
+      el("p", { class: "hl-jump" }, [el("a", { href: "#nq-section" }, ["Continued in The Week Ahead, below"])]),
       h.notice ? el("p", { class: "hl-notice" }, [h.notice]) : null,
       h.desk_line ? el("p", { class: "hl-desk" }, [h.desk_line]) : null
     ]);

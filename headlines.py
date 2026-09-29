@@ -15,6 +15,7 @@ box). Priority for the lead:
 Every figure in a headline is read from the feed. The jokes are written here
 by hand; they name no person, no account, no internal system. Display only.
 """
+
 from __future__ import annotations
 
 from datetime import date, datetime
@@ -59,16 +60,89 @@ CORRECTIONS = [
 ]
 
 WEATHER = {
-    "NARROW": "Tight and drizzly. Range contracting; bring a small stop and low expectations.",
-    "CONTRACTION": "Tight and drizzly. Range contracting; bring a small stop and low expectations.",
-    "WIDE": "Gusty with a chance of expansion. Ranges above the recent norm; hold on to your hat and your stop.",
-    "EXPANSION": "Gusty with a chance of expansion. Ranges above the recent norm; hold on to your hat and your stop.",
-    "NO CALL": "Overcast. The range model declines to commit, which is the most honest forecast in the paper.",
+    "NARROW": [
+        "Tight and drizzly. Range contracting; bring a small stop and low expectations.",
+        "Still air over the pit. Expect the tape to pace a small room.",
+        "Light winds, low visibility of anything dramatic. A day for patience.",
+    ],
+    "WIDE": [
+        "Gusty with a chance of expansion. Ranges above the recent norm; hold on to your hat and your stop.",
+        "Squalls likely. Wide bars forecast; secure loose positions.",
+        "A front moves through. Expect weather in both directions and plenty of it.",
+    ],
+    "NO CALL": [
+        "Overcast. The range model declines to commit, which is the most honest forecast in the paper.",
+        "Changeable. The barometer reads exactly normal and refuses to elaborate.",
+        "Fair to middling, with a chance of either. Pack for both.",
+        "Mild, according to the model, which is hedging its bets and admits it.",
+    ],
 }
+WEATHER["CONTRACTION"] = WEATHER["NARROW"]
+WEATHER["EXPANSION"] = WEATHER["WIDE"]
 
 
 def _pick(pool: list[str], d: date) -> str:
     return pool[d.timetuple().tm_yday % len(pool)]
+
+
+# Lead headline pools. Each entry is a format string; an entry whose fields the
+# feed cannot fill is skipped, so a thin feed still gets a plain headline.
+# Rotated by day of year like the ear. Every word is about the SIZE of the day,
+# never its direction. Fields: p50, norm, pct (p50/norm), yday (yesterday's
+# range; yday_big only when it beat the norm), pwide (model's P(wide day), NO CALL only), gold (gold's call word).
+RANGE_HEADS = {
+    "NO CALL": [
+        "NASDAQ: RANGE MODEL DECLINES TO CALL",
+        "NASDAQ: TOO CLOSE TO CALL",
+        "RANGE DESK KEEPS ITS OWN COUNSEL ON NASDAQ",
+        "NASDAQ SIZE A COIN FLIP: {pwide}% ODDS OF A WIDE DAY",
+        "NO CALL ON NASDAQ; FORECAST {p50} POINTS AGAINST A {norm} NORM",
+        "AFTER A {yday}-POINT SESSION, NASDAQ MODEL SITS ON ITS HANDS",
+        "NASDAQ: NEITHER WIDE NOR NARROW, SAYS THE DESK",
+        "GOLD LEANS {gold}; NASDAQ MODEL ABSTAINS",
+        "HOLD THE PRESSES: NOTHING TO CALL ON NASDAQ",
+        "NASDAQ FORECAST LANDS IN NO MAN'S LAND",
+        "MODEL WEIGHS NASDAQ, FINDS IT ORDINARY",
+    ],
+    "WIDE": [
+        "NASDAQ: WIDE DAY EXPECTED",
+        "ROOM TO RUN: NASDAQ SEEN AT {pct_above}% OF ITS NORMAL RANGE",
+        "NASDAQ BRACES FOR A BIG DAY: {p50} POINTS FORECAST",
+        "EXPANSION ON THE CARDS FOR NASDAQ",
+        "RANGE MODEL CALLS FOR A WIDE SESSION ON NASDAQ",
+        "NASDAQ TO OUTGROW ITS {norm_above}-POINT NORM, MODEL SAYS",
+        "WIDE DAY FORECAST FOR NASDAQ; GOLD {gold}",
+    ],
+    "NARROW": [
+        "NASDAQ: NARROW DAY EXPECTED",
+        "TIGHT QUARTERS ON NASDAQ, MODEL SAYS",
+        "NASDAQ SEEN IN A SMALL BOX: {p50} POINTS",
+        "QUIET SESSION FORECAST FOR NASDAQ",
+        "NASDAQ RANGE TO SHRINK BELOW ITS {norm_below}-POINT NORM",
+        "AFTER {yday_big} POINTS YESTERDAY, NASDAQ SEEN CATCHING ITS BREATH",
+        "NARROW DAY FORECAST FOR NASDAQ; GOLD {gold}",
+    ],
+}
+
+EVENT_HEADS = [
+    "{word} AT {time} ET",
+    "ALL EYES ON {word}, {time} ET",
+    "TAPE WAITS ON {word} AT {time} ET",
+    "{word} DAY: THE PRINT LANDS {time} ET",
+    "{time} ET: {word} DUE",
+]
+
+
+def _fill(pool: list[str], d: date, fields: dict) -> str:
+    """Rotate through the pool from today's slot; first entry the fields can fill wins."""
+    start = d.timetuple().tm_yday % len(pool)
+    for i in range(len(pool)):
+        tpl = pool[(start + i) % len(pool)]
+        try:
+            return tpl.format(**{k: v for k, v in fields.items() if v is not None})
+        except KeyError:
+            continue
+    return pool[0].format_map({})
 
 
 def _fmt_date(iso: str) -> str:
@@ -115,7 +189,15 @@ def _event_lead(events: list[dict], today: str) -> dict | None:
     if more:
         deck += f" Also on the slate: {more}."
     deck += " Tier-1 prints move the tape faster than a stop can; the calendar block below carries every row."
-    return {"kicker": f"Scheduled · {_fmt_date(today)}", "headline": f"{word} AT {e.get('time_et', '—')} ET", "deck": deck, "tone": "event"}
+    head = _fill(
+        EVENT_HEADS, date.fromisoformat(today), {"word": word, "time": e.get("time_et") or "—"}
+    )
+    return {
+        "kicker": f"Scheduled · {_fmt_date(today)}",
+        "headline": head,
+        "deck": deck,
+        "tone": "event",
+    }
 
 
 def _range_lead(preopen: dict, today: str) -> dict:
@@ -125,9 +207,23 @@ def _range_lead(preopen: dict, today: str) -> dict:
     call_g = (mgc.get("expansion") or mgc.get("call") or "NO CALL").upper()
     word = {"EXPANSION": "WIDE", "CONTRACTION": "NARROW"}.get(call_m, call_m)
     gold = {"EXPANSION": "WIDE", "CONTRACTION": "NARROW"}.get(call_g, call_g)
-    head = f"NASDAQ: {word} DAY EXPECTED" if word != "NO CALL" else "NASDAQ: RANGE MODEL DECLINES TO CALL"
     rng = (mnq.get("expected_range_pts") or {}).get("p50")
     rng_g = (mgc.get("expected_range_pts") or {}).get("p50")
+    norm = mnq.get("median26d_pts")
+    pw = (mnq.get("contraction_prob") or {}).get("p_wide")
+    yday = mnq.get("yesterday_pts")
+    fields = {
+        "p50": round(rng) if rng else None,
+        "norm": round(norm) if norm else None,
+        "pct_above": round(100 * rng / norm) if rng and norm and rng > norm else None,
+        "norm_above": round(norm) if rng and norm and rng > norm else None,
+        "norm_below": round(norm) if rng and norm and rng < norm else None,
+        "yday": round(yday) if yday else None,
+        "yday_big": round(yday) if yday and norm and yday > norm else None,
+        "pwide": round(100 * pw) if pw is not None else None,
+        "gold": gold if gold != "NO CALL" else None,
+    }
+    head = _fill(RANGE_HEADS.get(word, RANGE_HEADS["NO CALL"]), date.fromisoformat(today), fields)
     deck = ""
     if rng:
         deck += f"Median forecast {round(rng)} points on MNQ against a 26-day median of {round(mnq.get('median26d_pts') or 0)}. "
@@ -136,7 +232,12 @@ def _range_lead(preopen: dict, today: str) -> dict:
     deck += "Size of the day, not a direction call and not a profit claim."
     if preopen and preopen.get("stale"):
         deck += f" (Read is {preopen.get('age_hours')} h old.)"
-    return {"kicker": f"Pre-open · {_fmt_date(today)}", "headline": head, "deck": deck.strip(), "tone": "range"}
+    return {
+        "kicker": f"Pre-open · {_fmt_date(today)}",
+        "headline": head,
+        "deck": deck.strip(),
+        "tone": "range",
+    }
 
 
 def compose(
@@ -161,27 +262,35 @@ def compose(
     elif h_today.get("weekend"):
         lead = _closed_lead(h_today, "today")
     else:
-        lead = _event_lead((event_section or {}).get("items") or [], today) or _range_lead(preopen, today)
+        lead = _event_lead((event_section or {}).get("items") or [], today) or _range_lead(
+            preopen, today
+        )
 
     subs = []
     for it in ((trading_news or {}).get("items") or [])[:3]:
-        subs.append({
-            "headline": it.get("headline"),
-            "url": it.get("url"),
-            "tag": it.get("instrument") or "BOTH",
-            "driver": it.get("driver"),
-            "source": it.get("source"),
-        })
+        subs.append(
+            {
+                "headline": it.get("headline"),
+                "url": it.get("url"),
+                "tag": it.get("instrument") or "BOTH",
+                "driver": it.get("driver"),
+                "source": it.get("source"),
+            }
+        )
 
     # Weather = the range call, read as a forecast. Closed days get a calm front.
     insts = (preopen or {}).get("instruments") or {}
-    call = ((insts.get("MNQ") or {}).get("expansion") or (insts.get("MNQ") or {}).get("call") or "NO CALL").upper()
+    call = (
+        (insts.get("MNQ") or {}).get("expansion")
+        or (insts.get("MNQ") or {}).get("call")
+        or "NO CALL"
+    ).upper()
     if lead["tone"] == "closed":
         weather = "Calm. Nothing is open, so nothing can chop you. Enjoy it."
     elif lead["tone"] == "early":
         weather = "A short day. Thin book after the New York lunch, then the halt. Whatever the range model says, it has fewer hours to say it in."
     else:
-        weather = WEATHER.get(call, WEATHER["NO CALL"])
+        weather = _pick(WEATHER.get(call, WEATHER["NO CALL"]), d)
 
     nxt = (holidays or {}).get("next_holiday") or {}
     notice = None
