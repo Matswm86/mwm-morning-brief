@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-22",
+  "as_of": "2026-09-29",
   "target_state": "Self-calibrating research organism",
   "target_state_no": "Selvkalibrerende forskningsorganisme",
   "subtitle": "Opus as disposable cognition, re-instantiated per cron tick or session",
@@ -8,8 +8,8 @@
       "id": "D1",
       "label": "Closed-loop firing",
       "weight": 15,
-      "pct": 99,
-      "status_badge": "live",
+      "pct": 72,
+      "status_badge": "partial",
       "done_n": 14,
       "next_n": 2,
       "last_shipped": "2026-06-10"
@@ -18,9 +18,9 @@
       "id": "D2",
       "label": "Outcome-grounded learning",
       "weight": 25,
-      "pct": 55,
-      "status_badge": "partial",
-      "done_n": 25,
+      "pct": 37,
+      "status_badge": "shadow",
+      "done_n": 26,
       "next_n": 5,
       "last_shipped": "2026-08-17"
     },
@@ -28,28 +28,28 @@
       "id": "D3",
       "label": "Bounded self-modification",
       "weight": 20,
-      "pct": 78,
+      "pct": 53,
       "status_badge": "partial",
       "done_n": 18,
       "next_n": 4,
-      "last_shipped": "2026-07-14"
+      "last_shipped": "2026-09-28"
     },
     {
       "id": "D4",
       "label": "Autonomous prioritization",
       "weight": 15,
-      "pct": 65,
+      "pct": 60,
       "status_badge": "partial",
       "done_n": 9,
       "next_n": 3,
-      "last_shipped": "2026-08-03"
+      "last_shipped": "2026-05-28"
     },
     {
       "id": "D5",
       "label": "Cost & resource governance",
       "weight": 10,
-      "pct": 35,
-      "status_badge": "shadow",
+      "pct": 60,
+      "status_badge": "partial",
       "done_n": 3,
       "next_n": 4,
       "last_shipped": "2026-07-26"
@@ -58,14 +58,14 @@
       "id": "D6",
       "label": "Cross-session continuity",
       "weight": 15,
-      "pct": 79,
-      "status_badge": "partial",
+      "pct": 85,
+      "status_badge": "live",
       "done_n": 13,
       "next_n": 3,
-      "last_shipped": null
+      "last_shipped": "2026-08-31"
     }
   ],
-  "aggregate_pct": 69.3,
+  "aggregate_pct": 58.4,
   "judge_score_ci": {
     "status": "sccs_unavailable",
     "method": "disabled",
