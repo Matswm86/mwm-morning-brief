@@ -3,14 +3,19 @@
 A pre-open trading page for two futures contracts, MNQ (Micro E-mini Nasdaq-100) and MGC
 (Micro Gold), typeset as a broadsheet newspaper.
 
-Live at **[brief.mwmai.no](https://brief.mwmai.no/)**.
-
 ![The Morning Brief front page](docs/screenshots/front-page.png)
+
+*The front page: masthead, the day's range-forecast headline, the trading wire and the weather box.*
 
 The page answers one question before the bell: how big is today likely to be, and does
 anything on the calendar or the tape argue against trading it. It never calls direction,
 never posts a profit target, and never places an order. Every number on it is either read
 from a public API or computed from a held-out backtest, and the page says which.
+
+## Download
+
+Nothing to install to read it: **[Open in the browser](https://brief.mwmai.no/)**. To run
+your own copy, see [Running it yourself](#running-it-yourself).
 
 ## The two pages
 
@@ -103,6 +108,11 @@ a candidate that passes the checks reaches the LLM judge, which scores it agains
 The loop fails open: if no candidate is accepted the best one is kept, and if the
 summariser is unavailable the raw fetcher items are shown instead. `BRIEF_MEMENTO=0`
 bypasses the loop and restores single-shot summarisation.
+
+## Status
+
+Live at brief.mwmai.no and rebuilt on the schedule below; there are no tagged releases.
+Direction and trend/chop calls are not built because both measured null.
 
 ## Schedule (Europe/Oslo)
 
