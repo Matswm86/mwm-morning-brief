@@ -63,6 +63,10 @@ Rules, all binding:
 
 def _clean(text: str) -> str:
     text = re.sub(r"\s*[\u2014\u2013]\s*", ", ", text)
+    # The replacement model emits U+2011 inside dates and U+202F before "%", and
+    # SYSTEM_PROMPT asks for plain typography. Neither was normalised, so both
+    # reached the published page. Observed 2026-10-20.
+    text = text.replace("\u2011", "-").replace("\u202f", " ").replace("\u00a0", " ")
     return re.sub(r"[ \t]{2,}", " ", text).strip()
 
 
@@ -309,15 +313,24 @@ def _narrate(f: dict) -> tuple[str, str, str]:
             sys.path.insert(0, core)
         from anthropic_via_claude_cli import call_claude_cli  # type: ignore
 
-        text = call_claude_cli(
-            model="claude-opus-5-5", system_prompt=SYSTEM_PROMPT, user_prompt=_facts_text(f), timeout=180
-        )
-        if text and "---" in text:
-            a, b = text.split("---", 1)
-            a, b = _clean(a), _clean(b)
-            if len(a) > 80 and len(b) > 80:
-                return a, b, "By the analyst desk"
-        log.warning("review narration rejected: %r", (text or "")[:120])
+        facts = _facts_text(f)
+        # Two attempts. The replacement model misses the "---" split often enough
+        # that a single try lost the whole analyst column on 2026-10-20, and the
+        # edition shipped with "analyst unavailable" in the byline. The table
+        # fallback below is unchanged and still catches a second miss.
+        for attempt in (1, 2):
+            text = call_claude_cli(
+                model="claude-opus-5-5",
+                system_prompt=SYSTEM_PROMPT,
+                user_prompt=facts,
+                timeout=180,
+            )
+            if text and "---" in text:
+                a, b = text.split("---", 1)
+                a, b = _clean(a), _clean(b)
+                if len(a) > 80 and len(b) > 80:
+                    return a, b, "By the analyst desk"
+            log.warning("review narration rejected (attempt %d/2): %r", attempt, (text or "")[:120])
     except Exception:
         log.exception("review narration failed")
     a, b = _fallback_prose(f)
