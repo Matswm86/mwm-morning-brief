@@ -302,6 +302,65 @@ def _fallback_prose(f: dict) -> tuple[str, str]:
     return p1, p2
 
 
+_UP = re.compile(
+    r"\b(rose|rises|risen|gain(?:ed|s)?|climb(?:ed|s)?|jump(?:ed|s)?|rall(?:y|ied|ies)"
+    r"|advance[ds]?|surge[ds]?|added)\b",
+    re.I,
+)
+_DOWN = re.compile(
+    r"\b(fell|fall(?:s|en)?|drop(?:ped|s)?|slid|slip(?:ped|s)?|decline[ds]?|lost|sank"
+    r"|tumbl(?:e|ed|es)|retreat(?:ed|s)?|shed)\b",
+    re.I,
+)
+
+
+def _fact_conflicts(prose: str, f: dict) -> list[str]:
+    """Ways the copy contradicts the session table. Empty list means publishable.
+
+    Written after 2026-10-20, when the Groq fallback model (openai/gpt-oss-20b,
+    reached after qwen3.8-27b returned 429 three times) wrote "MNQ fell 1.11%"
+    for a session the table records as +1.13%. The strict "---" separator parser
+    rejected that copy by accident, on a formatting technicality. These checks
+    make the rejection deliberate so the separator rule can be relaxed without
+    an inverted number reaching a paid product.
+
+    Two checks, both scoped to yesterday because that is the claim the headline
+    and part 1 rest on:
+      1. every given percentage must appear exactly, which SYSTEM_PROMPT already
+         demands ("Percentages and points appear exactly as given"). This is what
+         catches a wrong magnitude like 1.11 for 1.13.
+      2. no sentence naming the instrument may use the opposite direction verb.
+    """
+    bad: list[str] = []
+    y = f.get("yesterday") or {}
+    for inst, key, alias in (("MNQ", "mnq", "nasdaq"), ("MGC", "mgc", "gold")):
+        pct = (y.get(key) or {}).get("move_pct")
+        try:
+            pct = float(pct)
+        except (TypeError, ValueError):
+            continue
+        mag = f"{abs(pct):.2f}"
+        # Also accept the trailing-zero-stripped form, so a table value of 1.10
+        # matches copy that says "1.1%". Deliberately NOT a 1dp match on a 2dp
+        # value: that is what would let "1.11%" pass as a match for 1.13%.
+        forms = {mag, mag.rstrip("0").rstrip(".") or "0"}
+        if not any(form in prose for form in forms):
+            bad.append(
+                f"{inst}: table move {pct:+.2f}% but none of {sorted(forms)} appears in the copy"
+            )
+        if abs(pct) < 0.005:
+            continue
+        for sent in re.split(r"(?<=[.!?])\s+", prose):
+            if not re.search(rf"\b(?:{inst}|{alias})\b", sent, re.I):
+                continue
+            has_up, has_down = bool(_UP.search(sent)), bool(_DOWN.search(sent))
+            if pct > 0 and has_down and not has_up:
+                bad.append(f"{inst}: table {pct:+.2f}% but the copy says down: {sent[:90]!r}")
+            elif pct < 0 and has_up and not has_down:
+                bad.append(f"{inst}: table {pct:+.2f}% but the copy says up: {sent[:90]!r}")
+    return bad
+
+
 def _narrate(f: dict) -> tuple[str, str, str]:
     """Returns (part1, part2, byline)."""
     try:
@@ -329,7 +388,15 @@ def _narrate(f: dict) -> tuple[str, str, str]:
                 a, b = text.split("---", 1)
                 a, b = _clean(a), _clean(b)
                 if len(a) > 80 and len(b) > 80:
-                    return a, b, "By the analyst desk"
+                    conflicts = _fact_conflicts(f"{a}\n{b}", f)
+                    if not conflicts:
+                        return a, b, "By the analyst desk"
+                    log.error(
+                        "review narration contradicts the session table (attempt %d/2): %s",
+                        attempt,
+                        conflicts[:3],
+                    )
+                    continue
             log.warning("review narration rejected (attempt %d/2): %r", attempt, (text or "")[:120])
     except Exception:
         log.exception("review narration failed")
