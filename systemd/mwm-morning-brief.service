@@ -4,6 +4,8 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
+# liveness: heartbeat via ExecStopPost (P3.56)
+ExecStopPost=%h/MWM/core/heartbeat/hb_stoppost.sh mwm-morning-brief daily
 Type=oneshot
 WorkingDirectory=%h/MWM/projects/mwm-morning-brief
 Environment=SCCS_CONFORMAL_ENABLED=true

@@ -4,11 +4,13 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
+# liveness: heartbeat via ExecStopPost (P3.56)
+ExecStopPost=%h/MWM/core/heartbeat/hb_stoppost.sh mwm-brief-regime daily
 Type=oneshot
 WorkingDirectory=%h/MWM/projects/mwm-morning-brief
 ExecStart=/usr/bin/python3 -m fetchers.regime_monitor
 EnvironmentFile=%h/MWM/.env
-ExecStartPost=/usr/bin/rsync -az web/regime.json ${BRIEF_VPS_TARGET}/regime.json
+ExecStartPost=/usr/bin/rsync -az web/regime.json mats@204.168.244.173:/var/www/brief/regime.json
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=mwm-brief-regime
