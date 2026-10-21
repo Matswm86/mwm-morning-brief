@@ -2,10 +2,10 @@
 Description=Morning brief editions: 06:40 Oslo (the 07:00 paper) + 17:30 UTC
 
 [Timer]
-OnCalendar=*-*-* 06:40:00 Europe/Oslo
+OnCalendar=*-*-* 16:10:00
 OnCalendar=*-*-* 17:30:00 UTC
 RandomizedDelaySec=60
-Persistent=true
+Persistent=false
 Unit=mwm-morning-brief.service
 
 [Install]
